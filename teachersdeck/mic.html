@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeachersDeck — microphone setup</title>
+<style>
+  body{ margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+        font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:#14161c; color:#eef0f5; }
+  main{ max-width:440px; padding:32px; text-align:center; }
+  h1{ font-size:20px; margin:0 0 10px; }
+  p{ font-size:14px; line-height:1.5; color:#b8bdc9; margin:0 0 16px; }
+  button{ font:inherit; font-weight:600; padding:10px 20px; border-radius:10px; border:0; cursor:pointer;
+          background:#6c8cff; color:#fff; }
+  #status{ margin-top:16px; font-size:13.5px; min-height:20px; }
+  #status.ok{ color:#4FD18A; } #status.bad{ color:#E0555A; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎤 Allow the microphone for TeachersDeck</h1>
+  <p>Chrome can't show the microphone prompt on the New Tab page, so it is asked for here, once. After you click <b>Allow</b> in Chrome's prompt, close this tab and click <b>Enable microphone</b> in the Noise Meter again.</p>
+  <button id="go">Allow microphone</button>
+  <div id="status" role="status"></div>
+</main>
+<script src="js/mic-permission.js?v=0.21.4"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+TeachersDeck Suite — proprietary licence
+
+Copyright (c) 2026 TeachersDeck. All rights reserved.
+
+TeachersDeck, StudentDeck, ParentDeck, AdminDeck and their backend are licensed, not sold. You may install and use
+them only as your licence or subscription allows. Unless the law where you live allows it despite this notice, you
+may not: copy, redistribute, resell, rent or sublicense them; publish or upload them, modified or not, under any
+name; modify, decompile or reverse engineer them; or remove, change or hide copyright notices, licence checks,
+build fingerprints or watermarks.
+
+Files you export (for example CSV, Word and text files) may carry an invisible watermark that identifies the
+licence, account or school that made them. It is there to trace unauthorised copies, and it contains no personal
+data that the export does not already hold.
+
+Licence keys are personal to the device, parent account or school they activate on and may not be shared.
+Contact: the address on your purchase confirmation.

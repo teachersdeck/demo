@@ -1,0 +1,13 @@
+Guess the Number — how to play
+
+1. The game picks a random whole number between 1 and 50.
+2. Type your guess and click "Guess" (or press Enter).
+3. The game tells you to go higher or lower.
+4. Keep guessing until you find the number — your try count is shown.
+5. Reload the page to play again with a new number.
+
+This is a self-contained example (just index.html — no other files needed),
+included to show how the games/ folder works. Real games can have as many
+extra files as they need next to their own index.html: images, sound
+effects, a separate .js/.css file, a PDF of instructions for students, etc.
+See ../README.md for how to add your own.

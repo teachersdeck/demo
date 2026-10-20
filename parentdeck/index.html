@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ParentDeck</title>
+<link rel="stylesheet" href="css/style.css?v=0.21.5">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="mark">◆</span> ParentDeck</div>
+    <div id="kids" class="kids" aria-label="Your children"></div>
+    <div class="hright">
+      <button class="xp" id="xp" aria-label="Open Student Stats and XP" hidden><b id="xp-lv"></b><span class="xpbar"><i id="xp-fill"></i></span><span id="xp-tot"></span></button>
+      <div id="lang-toggle" class="langpill" aria-label="Language"></div>
+      <button class="iconbtn" id="settings-btn" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.96 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.96a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.6a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg></button>
+      <div id="acct" class="acct"></div>
+      <span class="ver" id="ver"></span>
+    </div>
+  </header>
+  <main id="wall" aria-label="Widget area"></main>
+  <!-- Bottom dock with the app-tray tab attached to its top edge: one unit (layout system ported from StudentDeck v0.9.0). -->
+  <div class="dock-wrap" id="dock-wrap">
+    <button class="app-tray-tab" id="app-tray-tab" aria-label="Open all widgets" aria-expanded="false" title="Open all widgets"><span class="app-tray-tab-line"></span></button>
+    <nav class="dock" id="dock" aria-label="Widget launcher"></nav>
+  </div>
+  <nav class="edge-dock edge-dock-left" id="dock-left" aria-label="Left widget launcher" hidden><div class="edge-dock-items" id="dock-left-items"></div></nav>
+  <nav class="edge-dock edge-dock-right" id="dock-right" aria-label="Right widget launcher" hidden><div class="edge-dock-items" id="dock-right-items"></div></nav>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- App tray: a bottom sheet with every widget, whatever its launcher or the layout mode (tab on the dock's top edge) -->
+  <div class="app-tray-backdrop" id="app-tray-backdrop" hidden>
+    <div class="app-tray" id="app-tray" role="dialog" aria-modal="true" aria-labelledby="app-tray-title">
+      <button class="app-tray-handle" id="app-tray-handle" aria-label="Close" title="Close"></button>
+      <p class="app-tray-title" id="app-tray-title"></p>
+      <div class="app-tray-grid" id="app-tray-grid"></div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="mcard">
+      <div class="mhead"><b id="m-title"></b><button class="hbtn" id="m-close" aria-label="Close">×</button></div>
+      <div id="m-body" class="mbody"></div>
+    </div>
+  </div>
+
+  <!-- Cloud sync (optional): see js/firebase-config.js to enable -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js?v=0.21.5"></script>
+  <script src="js/data.js?v=0.21.5"></script>
+  <script src="js/demo.js?v=0.21.5"></script>
+  <script src="js/badges.js?v=0.21.5"></script>
+  <script src="js/tier1.js?v=0.21.5"></script>
+  <script src="js/progate.js?v=0.21.5"></script>
+  <script src="js/watermark.js?v=0.21.5"></script>
+  <script src="js/app.js?v=0.21.5"></script>
+</body>
+</html>

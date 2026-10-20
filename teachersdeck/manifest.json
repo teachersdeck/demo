@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo8DvYpIQqu+YY4pQPpb9arGb+yurPuqSX1OWcTlReZqEdgm2dKwtEe/kjrb7DgdYhgTc1TfR9DIFudWLTT/0s+44V8kPHUkEaBPrrAJNoVgSw06WVVh5CttzQ76r7x6e+8naAkD6v74CDNzw1l0BtBP08ZqYnl1rj+ZbMrB82hYUY5ht/q2Z5T2OY2VQaoydGl54ILuvzGKtLQCczas9sAA52rEPnhVveIg6+u+capDZJPgGWmjmcwV2y7Ed85HK0UKjXueQHlCTatMLS0TGeHmWiLlM4wI+rklY6b+xWZekbtf4qM5b5kOvqp2nb/YvndzpYWQCM84v/1NF7XSFQQIDAQAB",
+  "name": "TeachersDeck",
+  "version": "0.21.4",
+  "version_name": "0.21.4 beta",
+  "description": "A classroom management app for teachers.",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [],
+  "optional_permissions": [
+    "identity",
+    "downloads",
+    "downloads.open"
+  ]
+}

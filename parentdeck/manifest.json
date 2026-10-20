@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwN+b83TWY9sSMIDIxJg7qww9CEHAFV4XcUpDyfN4RHqsiQwNJq8+j8AG95HMhPm31QmSXT6P0WbccjHRD5iHEj4T9aSJ7PTdVcC1uaY4K7Jc02CPxjT2tiT2txqpOVTB400VZAHgvoHY8cm2ZH33nYL65QbNYKlgCLaVaxBeylA3XvXUHVhxIrLGqS99OWUTdaoxjIjfgvc5w7UA56YVPu5Uhod/ZFU2aFBmBTyCTWxTe0FbmEfAHqrDJ0n8TN/0z4yHTPSP4VKxTsRRLzBP+j9TUcrl++rtTKdEPuRS71fSHM7SdyM3Rcfa5NioOWg+w9x/7NqpSpdyjajT59rQ8wIDAQAB",
+  "name": "ParentDeck",
+  "version": "0.21.5",
+  "version_name": "0.21.5 beta",
+  "description": "A real-time family dashboard: reward points, behaviour notes, class ranking, a weekly summary, and reading/homework/mood trends, synced from TeachersDeck/StudentDeck.",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": []
+}
