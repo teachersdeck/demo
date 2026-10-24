@@ -14,11 +14,11 @@
    Dates are generated relative to today, so the demo always looks current. */
 const PD_DEMO = (() => {
   const KEY = 'pd_demo', realLS = window.localStorage;   // captured before demo mode swaps localStorage out (below)
-  try {
-    const q = new URLSearchParams(location.search).get('demo');
-    if (q === '1') realLS.setItem(KEY, '1'); else if (q === '0') realLS.removeItem(KEY);
-  } catch (e) {}
-  let on = false; try { on = realLS.getItem(KEY) === '1'; } catch (e) {}
+  let q = null; try { q = new URLSearchParams(location.search).get('demo'); } catch (e) {}
+  try { if (q === '1') realLS.setItem(KEY, '1'); else if (q === '0') realLS.removeItem(KEY); } catch (e) {}
+  // ?demo=1 in the address always wins, even when the browser won't let the flag persist to localStorage
+  // (e.g. storage blocked for this origin) — otherwise "Try demo" just reloads into the same dead end.
+  let on = q === '1'; if (!on) { try { on = realLS.getItem(KEY) === '1'; } catch (e) {} }
   const api = {
     active: on,
     enter() { try { realLS.setItem(KEY, '1'); } catch (e) {} location.href = location.pathname + '?demo=1'; },

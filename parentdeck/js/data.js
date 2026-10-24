@@ -100,7 +100,8 @@ const PD = (() => {
   let attendanceUnsubs = {}; // studentId -> unsub (students/{id}/attendance — Attendance, v0.15.0)
   let rewardUnsubs = {};   // classId -> unsub (classes/{id}/rewards — v0.9.1, Rewards Wishlist)
   let notesUnsubs = {};   // studentId -> unsub (classes/{id}/notesHome where studentId == child — Notes Home, v0.9.0)
-  const cache = { links: [], students: {}, classes: {}, calendars: {}, homework: {}, homeworkDone: {}, badges: {}, ledgers: {}, practice: {}, notes: {}, rewards: {}, reports: {}, attendance: {} };
+  let scrapPagesUnsubs = {}; // studentId -> unsub (students/{id}/scrapPages, approved + shared to family — Scrapbook, v0.22.0, backend v2.8.0)
+  const cache = { links: [], students: {}, classes: {}, calendars: {}, homework: {}, homeworkDone: {}, badges: {}, ledgers: {}, practice: {}, notes: {}, rewards: {}, reports: {}, attendance: {}, scrapPages: {} };
   const childListeners = {}; // studentId -> Set(cb)
   const pointsListeners = new Set();
   const homeworkListeners = new Set();
@@ -135,6 +136,7 @@ const PD = (() => {
         if (link && !rewardUnsubs[link.classId]) subscribeRewards(link.classId);
         if (!reportUnsubs[sid]) subscribeProgressReports(sid);
         if (!attendanceUnsubs[sid]) subscribeAttendance(sid);
+        if (!scrapPagesUnsubs[sid]) subscribeScrapPages(sid);
       });
       Object.keys(studentUnsubs).forEach(sid => { if (!wantStudentIds.has(sid)) { studentUnsubs[sid](); delete studentUnsubs[sid]; delete cache.students[sid]; } });
       Object.keys(homeworkDoneUnsubs).forEach(sid => { if (!wantStudentIds.has(sid)) { homeworkDoneUnsubs[sid](); delete homeworkDoneUnsubs[sid]; delete cache.homeworkDone[sid]; } });
@@ -143,6 +145,7 @@ const PD = (() => {
       Object.keys(practiceUnsubs).forEach(sid => { if (!wantStudentIds.has(sid)) { practiceUnsubs[sid](); delete practiceUnsubs[sid]; delete cache.practice[sid]; } });
       Object.keys(reportUnsubs).forEach(sid => { if (!wantStudentIds.has(sid)) { reportUnsubs[sid](); delete reportUnsubs[sid]; delete cache.reports[sid]; } });
       Object.keys(attendanceUnsubs).forEach(sid => { if (!wantStudentIds.has(sid)) { attendanceUnsubs[sid](); delete attendanceUnsubs[sid]; delete cache.attendance[sid]; } });
+      Object.keys(scrapPagesUnsubs).forEach(sid => { if (!wantStudentIds.has(sid)) { scrapPagesUnsubs[sid](); delete scrapPagesUnsubs[sid]; delete cache.scrapPages[sid]; } });
       Object.keys(notesUnsubs).forEach(sid => { if (!wantStudentIds.has(sid)) { notesUnsubs[sid](); delete notesUnsubs[sid]; delete cache.notes[sid]; } });
       // A class stops being readable (isGuardianOfClass) the moment no
       // linked child of ours is in it anymore — Firestore will actively
@@ -176,7 +179,8 @@ const PD = (() => {
     Object.values(rewardUnsubs).forEach(u => u()); rewardUnsubs = {};
     Object.values(reportUnsubs).forEach(u => u()); reportUnsubs = {};
     Object.values(attendanceUnsubs).forEach(u => u()); attendanceUnsubs = {};
-    cache.links = []; cache.students = {}; cache.classes = {}; cache.calendars = {}; cache.homework = {}; cache.homeworkDone = {}; cache.badges = {}; cache.ledgers = {}; cache.practice = {}; cache.notes = {}; cache.rewards = {}; cache.reports = {}; cache.attendance = {};
+    Object.values(scrapPagesUnsubs).forEach(u => u()); scrapPagesUnsubs = {};
+    cache.links = []; cache.students = {}; cache.classes = {}; cache.calendars = {}; cache.homework = {}; cache.homeworkDone = {}; cache.badges = {}; cache.ledgers = {}; cache.practice = {}; cache.notes = {}; cache.rewards = {}; cache.reports = {}; cache.attendance = {}; cache.scrapPages = {};
     notifyNotesChanged();
   }
   // students/{studentId}/homeworkDone/{assignmentId} — StudentDeck's per-assignment check-off
@@ -338,6 +342,26 @@ const PD = (() => {
         cache.attendance[studentId] = { available: true, days }; notifyChild(studentId);
       }, () => { cache.attendance[studentId] = { available: false, days: {} }; notifyChild(studentId); }); // rule not deployed / not synced yet / access revoked
   }
+  // students/{id}/scrapPages/{pageId} — Scrapdeck pages this child shared (v0.22.0, backend v2.8.0).
+  // Filtered to status=='approved' at the query level (matches the rule's intent and avoids reading
+  // pending/hidden pages at all); firestore.rules itself ALSO requires 'family' in audiences for a
+  // guardian to read a given doc, so pages shared "to my class" only are silently absent from this
+  // listener's results even though the query doesn't filter on audiences (array-contains plus an
+  // equality filter would need a composite index this repo doesn't have — the rule already does the
+  // real filtering, so the query doesn't need to). Thumbnails only, not the full image — same
+  // "read a small field, not the big one" shape as the badge/homework listeners above.
+  function subscribeScrapPages(studentId) {
+    scrapPagesUnsubs[studentId] = db.collection('students').doc(studentId).collection('scrapPages')
+      .where('status', '==', 'approved').onSnapshot(snap => {
+        cache.scrapPages[studentId] = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => (b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0) - (a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0));
+        notifyChild(studentId);
+      }, () => { cache.scrapPages[studentId] = []; notifyChild(studentId); }); // rule not deployed yet / access revoked
+  }
+  async function getScrapImage(studentId, pageId) {
+    const d = await db.collection('students').doc(studentId).collection('scrapImages').doc(pageId).get();
+    return d.exists ? d.data().imageDataUrl : null;
+  }
   /* getClassPulse(classId) — Cloud Function (Class Pulse, v0.15.0). The server totals the class's practiceDaily / homeworkDone with admin access and returns
      RANGES ONLY — no per-child values, no names, no ranks. Expected reply:
        { available: true,  weekFrom: 'YYYY-MM-DD', weekTo: 'YYYY-MM-DD', classSize: n,
@@ -457,6 +481,7 @@ const PD = (() => {
       progressReports: cache.reports[studentId] || [], // newest first — see subscribeProgressReports above
       notes: cache.notes[studentId] || [], // Notes Home, newest first — see subscribeNotes above
       attendance: cache.attendance[studentId] || { available: null, days: {} }, // available: null = still loading, false = not shared yet — see subscribeAttendance above
+      scrapPages: cache.scrapPages[studentId] || [], // approved Scrapdeck pages shared with this family, newest first — see subscribeScrapPages above
       weekly: {
         pointsEarned: weekly.filter(e => e.delta > 0).reduce((a, e) => a + e.delta, 0),
         homeworkDone: sum7('hw'), readingMinutes: sum7('readMin'),
@@ -587,6 +612,7 @@ const PD = (() => {
     isConfigured, onAuthChanged, signInWithGoogle, signOut, getSession,
     getLinkedChildren, onLinksChanged, linkChild, unlinkChild,
     getChildSnapshot, subscribeChild, refreshChild, getRanking, getClassPulse, onPointsAwarded, onHomeworkCompleted, onBadgeEarned,
-    markNoteRead, getUnreadNotesCount, onNoteReceived, onNotesChanged, onProgressReportReceived
+    markNoteRead, getUnreadNotesCount, onNoteReceived, onNotesChanged, onProgressReportReceived,
+    getScrapImage
   };
 })();

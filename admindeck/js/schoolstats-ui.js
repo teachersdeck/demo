@@ -281,15 +281,23 @@ function renderSchoolStats(body){
     if(needsReload()) load(false); else { fxMode = mode || 'redraw'; compute(); paint(); }      // a new range replays the whole entrance; picking a class just redraws the numbers and charts
   }
 
-  /* ----- drawing ----- */
+  /* ----- drawing -----
+     A click on a class-focus button (table row, by-class bar, Class Trend legend chip) gives it focus as the browser's
+     own default action for mousedown — and if that control sits near the edge of the scrolled panel, the browser
+     scrolls it into view right then, before our own 'click' listener below (and paint()'s own scrollTop restore)
+     ever run, so there was nothing honest left to restore to. The actual fix is simpler than chasing the scroll
+     position around that: these buttons don't need focus-by-mouse at all (Tab still reaches them for keyboard use),
+     so preventDefault() on mousedown stops the browser from focusing — and therefore scrolling to — them in the
+     first place. Picking a class with the mouse never moves the viewport again. */
+  root.addEventListener('mousedown', e => { if(e.target.closest('[data-ss-focus]')) e.preventDefault(); });
   function paint(){
     const sc = body.scrollTop;
     drawHead(); drawBanner(); drawOverview(); drawTiles();
     SECTIONS.forEach(s => paintSection(s));
-    body.scrollTop = sc;
     drawLegend();
     ssFitTiles(root);
     playFx();
+    body.scrollTop = sc;   // restored last — drawLegend/ssFitTiles/playFx above still mutate the DOM and can shift scroll on their own
   }
   function paintSection(s, fx){
     const collapsed = !!ui.collapsed[s.key];

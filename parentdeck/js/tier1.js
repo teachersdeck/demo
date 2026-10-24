@@ -196,6 +196,7 @@ const T1_STRINGS = {
 
   // ---- Attendance (v0.15.0) ----
   w_attend:   { en:'Attendance', vi:'Điểm danh' },
+  w_scrapbook:{ en:'Scrapbook', vi:'Sổ lưu niệm' },
   at_present: { en:'Present', vi:'Có mặt' },
   at_late:    { en:'Late', vi:'Đi trễ' },
   at_absent:  { en:'Absent', vi:'Vắng' },
@@ -209,7 +210,12 @@ const T1_STRINGS = {
   at_empty:   { en:'No attendance has been recorded for {name} yet.', vi:'Chưa có điểm danh nào được ghi nhận cho {name}.' },
   at_na:      { en:'Attendance is not shared with families yet. It will appear here once the school switches it on.', vi:'Điểm danh chưa được chia sẻ với phụ huynh. Dữ liệu sẽ hiện ở đây khi nhà trường bật.' },
   at_note:    { en:'Recorded by the teacher. A day with no mark means nothing was recorded, not that {name} was absent. Weekends are shaded.', vi:'Do giáo viên ghi nhận. Ngày không có dấu nghĩa là chưa có ghi nhận, không phải {name} vắng mặt. Cuối tuần được làm mờ.' },
-  at_day_tip: { en:'{date}: {status}', vi:'{date}: {status}' }
+  at_day_tip: { en:'{date}: {status}', vi:'{date}: {status}' },
+  // v0.22.0 (backend v2.8.0): Scrapbook — approved Scrapdeck pages {name} shared with your family (Scrapdeck sharing, M3)
+  sb_hint:    { en:'Pages {name} chose to share with your family from StudentDeck’s Scrapdeck, approved by the teacher.', vi:'Các trang {name} chọn chia sẻ với gia đình từ Scrapdeck trên StudentDeck, đã được giáo viên duyệt.' },
+  sb_empty:   { en:'{name} hasn’t shared any scrapbook pages with your family yet.', vi:'{name} chưa chia sẻ trang sổ lưu niệm nào với gia đình.' },
+  sb_close:   { en:'Close', vi:'Đóng' },
+  sb_load_fail: { en:'Couldn’t open this picture right now.', vi:'Không mở được hình này.' }
 };
 
 const T1 = (() => {
@@ -795,6 +801,39 @@ function renderAttendance(body) {
         ${atEnd ? '' : `<div class="row nochrome"><button class="btn" data-nav="today">${esc(t('at_month'))}</button></div>`}
         <p style="margin:8px 0 0"><b>${esc(absences ? t('at_total', { date: since, n: absences }) : t('at_total_0', { date: since }))}</b></p>
         <p class="muted" style="margin-top:6px">${esc(t('at_note', { name }))}</p>`;
+    }
+    const unsub = PD.subscribeChild(id, s => { if (!s) return; latest = s; draw(); });
+    return () => { ac.abort(); unsub(); };
+  });
+}
+
+/* v0.22.0 (backend v2.8.0): Scrapbook — approved Scrapdeck pages this child shared with your family
+   (Scrapdeck sharing, M3). Read-only: a grid of thumbnails, tap to open a full-size view. Nothing here
+   is paid for or configured by a parent — a student shares, a teacher approves, this just shows it. */
+function renderScrapbook(body) {
+  return widgetGate(body, id => {
+    let latest = null, box = null; // box: { pageId, loading, url }
+    async function openOne(pageId) {
+      box = { pageId, loading: true, url: null }; draw();
+      try { box.url = await PD.getScrapImage(id, pageId); } catch (e) { box.url = null; }
+      box.loading = false; draw();
+    }
+    const ac = T1.listen(body, e => {
+      if (e.target.classList && e.target.classList.contains('sb-modal')) { box = null; draw(); return; }
+      if (e.target.closest('[data-close]')) { box = null; draw(); return; }
+      const open = e.target.closest('[data-open]'); if (open) openOne(open.dataset.open);
+    });
+    function draw() {
+      if (!latest) return;
+      const pages = latest.scrapPages || [];
+      const grid = pages.length
+        ? '<div class="sb-grid">' + pages.map(p => `<button type="button" class="sb-card" data-open="${esc(p.id)}">
+            <img alt="" src="${esc(p.thumbDataUrl || '')}">
+            <span class="sb-cap"><b>${esc(p.title || '')}</b>${p.caption ? `<br>${esc(p.caption)}` : ''}</span>
+          </button>`).join('') + '</div>'
+        : emptyState(t('sb_empty', { name: latest.displayName }));
+      const modal = box ? `<div class="sb-modal"><div class="sb-mcard">${box.loading ? `<p class="muted">${esc(t('loading'))}</p>` : (box.url ? `<img alt="" src="${esc(box.url)}">` : `<p class="muted">${esc(t('sb_load_fail'))}</p>`)}<button type="button" class="btn" data-close="1">${esc(t('sb_close'))}</button></div></div>` : '';
+      body.innerHTML = `<p class="muted" style="margin:0 0 8px">${esc(t('sb_hint', { name: latest.displayName }))}</p>${grid}${modal}`;
     }
     const unsub = PD.subscribeChild(id, s => { if (!s) return; latest = s; draw(); });
     return () => { ac.abort(); unsub(); };

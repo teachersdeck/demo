@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "AdminDeck",
-  "version": "0.9.4",
-  "version_name": "0.9.4 beta",
+  "version": "0.13.0",
+  "version_name": "0.13.0 beta",
   "description": "School oversight dashboard and people directory for the TeachersDeck family: school stats and snapshot, SchoolDeck (staff directory, parent links, roster import), points leaderboard, class comparison, assignment pipeline, calendar, join codes, roster health, teacher directory, homework completion, student activity, points economy, onboarding funnel, family link coverage and teacher engagement.",
   "chrome_url_overrides": {
     "newtab": "index.html"

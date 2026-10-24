@@ -89,6 +89,14 @@ const AD = (function(){
     }
     return detailCache[classId];
   }
+  // v0.13.0 (backend v2.10.0) — the History tab: one class's own classdeck.* audit entries, newest first.
+  let historyCache = {};
+  function getClassHistory(classId, force){
+    if(force || !historyCache[classId]){
+      historyCache[classId] = callFn('adminClassHistory', { method:'POST', body:{ classId } });
+    }
+    return historyCache[classId];
+  }
   async function getAllDetails(force){
     if(force) allDetailsPromise = null;
     if(!allDetailsPromise){
@@ -173,6 +181,19 @@ const AD = (function(){
     if(name !== 'adminSchoolDeckActivity') dirPromise = null;
     return callFn(name, { method:'POST', body }).catch(e => { throw sdNotDeployed(e); });
   }
+  /* v0.10.0 — ClassDeck (functions/adminClassDeck.js): adminCreateClass, adminAssignTeacher, adminUpdateClass, adminRegenerateJoinCode. They change classes
+     (and so the teacher's TeachersDeck, the directory's class list and the aggregates), so every cache that holds a class is dropped. */
+  const cdNotDeployed = (e) => {
+    if(e && (e.notDeployed || /Couldn't reach/.test(e.message || ''))){
+      const err = new Error('ClassDeck needs the adminClassDeck Cloud Functions (backend v2.4.0). Deploy them first — see README → Deploy.');
+      err.notDeployed = true; return err;
+    }
+    return e;
+  };
+  function classDeckCall(name, body){
+    classesPromise = null; detailCache = {}; allDetailsPromise = null; statsCache = {}; activityPromise = null; dirPromise = null; historyCache = {};
+    return callFn(name, { method:'POST', body }).catch(e => { throw cdNotDeployed(e); });
+  }
   function refreshAll(){
     classesPromise = null;
     detailCache = {};
@@ -181,6 +202,7 @@ const AD = (function(){
     forceStatsNext = true;
     activityPromise = null;
     dirPromise = null;
+    historyCache = {};
   }
 
   /* v0.5.0 — the first WRITE in AdminDeck: push a theme (a built-in preset or a background image) to the TeachersDeck of the given classes
@@ -203,7 +225,9 @@ const AD = (function(){
   const sendTeacherNote = (o) => AD.callFn('adminSendTeacherNote', { method:'POST', body:o });
   const listTeacherNotes = () => AD.callFn('adminListTeacherNotes');
   const activateLicense = (key) => AD.callFn('adminActivateSchoolLicense', { method:'POST', body:{ key } });
+  // v0.12.0 (backend v2.6.0): the school's student policy — { studentPhotos?, studentSharing?, studentStore? }
+  const setSchoolPolicy = (o) => AD.callFn('adminSetSchoolPolicy', { method:'POST', body:o });
 
-  return { getSchool, setSchool, whoAmI, listSchools, createSchool, updateSchool, backfillSchools, sendTeacherNote, listTeacherNotes, activateLicense,
-    getConfig, setConfig, isConfigured, callFn, getClasses, getClassDetail, getAllDetails, getSchoolStats, getSchoolActivity, getSchoolActivityOrNull, directoryList, directoryCall, schoolDeckCall, pushTheme, refreshAll };
+  return { setSchoolPolicy, getSchool, setSchool, whoAmI, listSchools, createSchool, updateSchool, backfillSchools, sendTeacherNote, listTeacherNotes, activateLicense,
+    getConfig, setConfig, isConfigured, callFn, getClasses, getClassDetail, getClassHistory, getAllDetails, getSchoolStats, getSchoolActivity, getSchoolActivityOrNull, directoryList, directoryCall, schoolDeckCall, classDeckCall, pushTheme, refreshAll };
 })();

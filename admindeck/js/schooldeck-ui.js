@@ -1,8 +1,9 @@
 /* ============================================================
    AdminDeck SchoolDeck (v0.8.0) — the widget.
    ------------------------------------------------------------
-   One widget with four tabs, built on the People Directory (same records, same audit log, same secret):
+   One widget with five tabs (v0.10.0 added ClassDeck, js/classdeck-ui.js), built on the People Directory (same records, same audit log, same secret):
      Overview — the setup checklist (teachers, students, parents, classes, teacher assignment, push) and what needs attention;
+     ClassDeck — the school builds its classes, assigns teachers (= pushes the class to them) and manages codes and settings;
      Staff directory — admin staff grouped by department: add / edit / archive, CSV in and out, printable directory;
      Parents & links — import students WITH their parents from one CSV, and link or unlink parents and students by hand;
      Activity — the audit log of every change.
@@ -25,11 +26,11 @@ const SD_STRINGS = {
   sd_step_parents: { en:'Link parents to students', vi:'Liên kết phụ huynh với học sinh' },
   sd_step_parents_d: { en:'Every student should have at least one parent or guardian.', vi:'Mỗi học sinh nên có ít nhất một phụ huynh hoặc người giám hộ.' },
   sd_step_classes: { en:'Build classes', vi:'Tạo lớp học' },
-  sd_step_classes_d: { en:'Classes come from TeachersDeck for now. The SchoolDeck class builder arrives in the next build.', vi:'Hiện lớp học đến từ TeachersDeck. Công cụ tạo lớp của SchoolDeck sẽ có ở bản sau.' },
+  sd_step_classes_d: { en:'Build the school’s classes in the ClassDeck tab. Classes teachers made in TeachersDeck show up there too.', vi:'Tạo lớp của trường trong tab ClassDeck. Lớp giáo viên tạo trong TeachersDeck cũng hiện ở đó.' },
   sd_step_assign: { en:'Assign teachers', vi:'Phân công giáo viên' },
-  sd_step_assign_d: { en:'Every class needs a teacher. Assigning classes arrives with the class builder.', vi:'Mỗi lớp cần một giáo viên. Phân công lớp sẽ có cùng công cụ tạo lớp.' },
+  sd_step_assign_d: { en:'Every class needs a teacher. Choose one in the ClassDeck tab.', vi:'Mỗi lớp cần một giáo viên. Hãy chọn trong tab ClassDeck.' },
   sd_step_push: { en:'Push classes to teachers', vi:'Đẩy lớp đến giáo viên' },
-  sd_step_push_d: { en:'Coming with the class builder: push a class straight to a teacher, or give them a join code.', vi:'Sắp có cùng công cụ tạo lớp: đẩy lớp thẳng đến giáo viên hoặc gửi mã tham gia.' },
+  sd_step_push_d: { en:'Assigning a teacher pushes the class to their TeachersDeck. Share the join codes with students and parents.', vi:'Phân công giáo viên là đẩy lớp đến TeachersDeck của họ. Hãy gửi mã tham gia cho học sinh và phụ huynh.' },
   sd_state_done: { en:'Done', vi:'Xong' }, sd_state_doing: { en:'In progress', vi:'Đang làm' }, sd_state_todo: { en:'Not started', vi:'Chưa bắt đầu' },
   sd_state_later: { en:'Coming later', vi:'Sắp có' }, sd_state_unknown: { en:'Unknown', vi:'Chưa rõ' },
   sd_progress: { en:'{done} of {have}', vi:'{done} / {have}' },
@@ -134,7 +135,7 @@ function renderSchoolDeck(body){
 }
 function sdPaint(){
   const body = SDUI.body;
-  const tabs = ['overview', 'staff', 'families', 'activity'].map(k => `<button class="chip${SDUI.tab === k ? ' on' : ''}" data-act="tab" data-tab="${k}" role="tab" aria-selected="${SDUI.tab === k}">${esc(t('sd_tab_' + k))}</button>`).join('');
+  const tabs = ['overview', 'classes', 'schedule', 'history', 'staff', 'families', 'activity'].map(k => `<button class="chip${SDUI.tab === k ? ' on' : ''}" data-act="tab" data-tab="${k}" role="tab" aria-selected="${SDUI.tab === k}">${esc(t('sd_tab_' + k))}</button>`).join('');
   body.innerHTML = frameTop() + `<div class="seg" role="tablist">${tabs}</div><div id="sd-pane"></div>`;
   wireRefreshBtn(body);
   body.onclick = sdClick; body.oninput = sdInput; body.onchange = sdChange;
@@ -145,6 +146,9 @@ function sdPaintPane(){
   if(!pane) return;
   body.querySelectorAll('[data-act="tab"]').forEach(b => { const on = b.dataset.tab === SDUI.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   if(SDUI.tab === 'overview') pane.innerHTML = sdOverviewHtml();
+  else if(SDUI.tab === 'classes'){ pane.innerHTML = cdHtml(); cdShow(); }          // js/classdeck-ui.js
+  else if(SDUI.tab === 'schedule'){ pane.innerHTML = scHtml(); scShow(); }           // js/schedule-ui.js
+  else if(SDUI.tab === 'history'){ pane.innerHTML = hsHtml(); hsShow(); }            // js/history-ui.js
   else if(SDUI.tab === 'staff') pane.innerHTML = sdStaffHtml();
   else if(SDUI.tab === 'families') pane.innerHTML = sdFamiliesHtml();
   else { pane.innerHTML = sdActivityHtml(); if(SDUI.act.entries === null && !SDUI.act.loading) sdLoadActivity(); }
@@ -158,7 +162,7 @@ function sdOverviewHtml(){
   const bf = SDUI.data.backfill;
   const banner = bf && bf.total > 0 ? `<div class="dir-banner"><span>${esc(t('sd_backfill', { n: bf.total }))}</span><button class="wbtn sm primary" data-act="go" data-go="directory">${esc(t('sd_go_directory'))}</button></div>` : '';
   const marks = { done: '✓', doing: '…', todo: '○', later: '·', unknown: '?' };
-  const go = { teachers: ['directory', 'sd_go_directory'], students: ['import', 'sd_go_import'], parents: ['link', 'sd_go_link'] };
+  const go = { teachers: ['directory', 'sd_go_directory'], students: ['import', 'sd_go_import'], parents: ['link', 'sd_go_link'], classes: ['classes', 'sd_go_classes'], assign: ['classes', 'sd_go_classes'], push: ['classes', 'sd_go_classes'] };
   const steps = SDUI.check.steps.map((s, i) => {
     const g = go[s.key];
     const prog = s.have > 0 && s.state !== 'unknown' ? ` <span class="sd-prog">${esc(t('sd_progress', { done: s.done, have: s.have }))}</span>` : '';
@@ -472,9 +476,10 @@ function sdClick(e){
   const el = e.target.closest('[data-act]'); if(!el || !SDUI.body.contains(el)) return;
   const d = el.dataset, f = SDUI.staff, fam = SDUI.fam;
   switch(d.act){
-    case 'tab': SDUI.tab = d.tab; if(d.tab === 'activity') SDUI.act.entries = null; sdPaintPane(); break;
+    case 'tab': SDUI.tab = d.tab; if(d.tab === 'activity') SDUI.act.entries = null; else if(d.tab === 'history') HSUI.entries = null; sdPaintPane(); break;
     case 'go':
       if(d.go === 'directory'){ if(typeof openWidget === 'function') openWidget('directory'); }
+      else if(d.go === 'classes'){ SDUI.tab = 'classes'; sdPaintPane(); }
       else { SDUI.tab = 'families'; if(d.go === 'import'){ fam.rosterOpen = true; fam.roster = fam.roster || { text: '', parsed: null, plan: null, done: null }; } sdPaintPane(); }
       break;
     case 'attn': SDUI.attnOpen = SDUI.attnOpen === d.key ? '' : d.key; sdPaintPane(); break;
@@ -505,10 +510,16 @@ function sdClick(e){
     case 'link-use': sdLinkGo(d.parent); break;
     case 'link-go': sdLinkGo(); break;
     case 'unlink': sdUnlink(d.parent, d.student); break;
+    default:
+      if(String(d.act).indexOf('cd-') === 0) cdClick(d);        // ClassDeck (js/classdeck-ui.js)
+      else if(String(d.act).indexOf('sc-') === 0) scClick(d);   // Schedule (js/schedule-ui.js)
+      else if(String(d.act).indexOf('hs-') === 0) hsClick(d);   // History (js/history-ui.js)
   }
 }
 function sdInput(e){
   const id = e.target.id, f = SDUI.staff, fam = SDUI.fam;
+  if(id.indexOf('cd-') === 0){ cdInput(e); return; }
+  if(id.indexOf('sc-') === 0){ scInput(e); return; }
   if(id === 'sd-staff-q'){ f.search = e.target.value; const el = SDUI.body.querySelector('#sd-staff-list'); if(el) el.innerHTML = sdStaffListHtml(); }
   else if(id === 'sd-fam-q'){ fam.search = e.target.value; sdPaintFamList(); }
   else if(id === 'sd-imp-text'){ f.imp.text = e.target.value; }
@@ -522,6 +533,9 @@ function sdInput(e){
 }
 function sdChange(e){
   const id = e.target.id, f = SDUI.staff, fam = SDUI.fam;
+  if(id.indexOf('cd-') === 0){ cdChange(e); return; }
+  if(id.indexOf('sc-') === 0){ scChange(e); return; }
+  if(id.indexOf('hs-') === 0){ hsChange(e); return; }
   if(id === 'sd-staff-dept'){ f.department = e.target.value; const el = SDUI.body.querySelector('#sd-staff-list'); if(el) el.innerHTML = sdStaffListHtml(); }
   else if(id === 'sd-staff-status'){ f.status = e.target.value; f.department = ''; sdPaintPane(); }
   else if(id === 'sd-fam-only'){ fam.onlyEmpty = e.target.checked; sdPaintFamList(); }

@@ -167,6 +167,27 @@ const SDCloud = (() => {
       err=>{ try{ if(onError) onError(err); }catch(e){} cb([], err); }
     );
   }
+  // v0.13.0 (backend v2.6.0): the school's student policy for this class, classes/{classId}/policy/current
+  // ({ studentPhotos, studentSharing, studentStore, version }). Scrapdeck obeys it. cb(null) = no policy document
+  // (or the backend is older), which Scrapdeck treats as the defaults: photos and sharing allowed, no shop.
+  function subscribePolicy(cb){
+    if(!ready || !joined){ try{ cb(null); }catch(e){} return ()=>{}; }
+    return db.collection('classes').doc(joined.classId).collection('policy').doc('current').onSnapshot(
+      d=> cb(d.exists ? d.data() : null),
+      ()=> cb(null)
+    );
+  }
+  // v0.14.0 (backend v2.7.0): the page a teacher is sharing from DrawDeck right now,
+  // classes/{classId}/sharedBoards/current ({ imageDataUrl, sharedAt, sharedBy }). One page
+  // at a time: sharing again replaces it, cb(null) = nothing currently shared (or the
+  // backend is older than v2.7.0 — same "cb(null) = off" convention as subscribePolicy above).
+  function subscribeSharedBoard(cb){
+    if(!ready || !joined){ try{ cb(null); }catch(e){} return ()=>{}; }
+    return db.collection('classes').doc(joined.classId).collection('sharedBoards').doc('current').onSnapshot(
+      d=> cb(d.exists ? d.data() : null),
+      ()=> cb(null)
+    );
+  }
   // This student's own completion marks, students/{studentId}/homeworkDone/{assignmentId}.
   // Doc id = the assignment's id (same id TeachersDeck uses in classes/{id}/homework), so a
   // check-off is idempotent and ParentDeck can join it to the assignment list by id.
@@ -234,6 +255,58 @@ const SDCloud = (() => {
     return (await functions.httpsCallable('getClassRanking')({ classId: joined.classId })).data;
   }
 
+  // v0.15.0 (backend v2.8.0): Scrapdeck sharing (M3). shareScrapPage/unshareScrapPage are thin
+  // wrappers — scrapdeck.js does the flattening (JPEG + thumbnail) before calling share().
+  async function shareScrapPage(data){
+    return (await functions.httpsCallable('shareScrapPage')(data)).data;
+  }
+  async function unshareScrapPage(pageId){
+    return (await functions.httpsCallable('unshareScrapPage')({ pageId })).data;
+  }
+  // The student's own shared pages, for showing a status badge ("waiting for your teacher",
+  // "shared with your family", …) per LOCAL scrapbook page — keyed by pageId, not joined to a
+  // local page id anywhere server-side, so the widget matches them up itself (see scrapdeck.js).
+  function subscribeMyScrapPages(cb){
+    if(!ready || !joined){ try{ cb([]); }catch(e){} return ()=>{}; }
+    return db.collection('students').doc(joined.studentId).collection('scrapPages').onSnapshot(
+      snap=> cb(snap.docs.map(d=> ({ id:d.id, ...d.data() }))),
+      ()=> cb([])
+    );
+  }
+  // M3b: approved pages classmates shared "to my class", first names only — empty/no-op until
+  // the teacher's scrapGalleryOn switch is on (cb([]) either way; there's no way to tell from
+  // here whether it's off or just empty, which is the point — no "ask your teacher" nagging).
+  function subscribeScrapGallery(cb){
+    if(!ready || !joined){ try{ cb([]); }catch(e){} return ()=>{}; }
+    return db.collection('classes').doc(joined.classId).collection('scrapGallery')
+      .onSnapshot(snap=> cb(snap.docs.map(d=> ({ id:d.id, ...d.data() }))), ()=> cb([]));
+  }
+
+  // v0.17.0 (backend v2.9.0): Board Assignments — DrawDeck pages the teacher pushed to the class
+  // (DrawDeck scope step D). subscribeBoardAssignments returns every assignment (open and closed, newest
+  // first) — StudentDeck itself decides what "open" means for the UI; subscribeMyBoardAnswers keyed by
+  // assignmentId tells it which ones this student has already submitted or been graded on.
+  function subscribeBoardAssignments(cb){
+    if(!ready || !joined){ try{ cb([]); }catch(e){} return ()=>{}; }
+    return db.collection('classes').doc(joined.classId).collection('boardAssignments').onSnapshot(
+      snap=> cb(snap.docs.map(d=> ({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0) - (a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0))),
+      ()=> cb([])
+    );
+  }
+  function subscribeMyBoardAnswers(cb){
+    if(!ready || !joined){ try{ cb([]); }catch(e){} return ()=>{}; }
+    return db.collection('students').doc(joined.studentId).collection('boardAnswers').onSnapshot(
+      snap=> cb(snap.docs.map(d=> ({ id:d.id, ...d.data() }))), ()=> cb([])
+    );
+  }
+  async function getBoardAssignmentImage(assignmentId){
+    const d = await db.collection('classes').doc(joined.classId).collection('boardAssignmentImages').doc(assignmentId).get();
+    return d.exists ? d.data().imageDataUrl : null;
+  }
+  async function submitBoardAnswer(data){
+    return (await functions.httpsCallable('submitBoardAnswer')({ classId: joined.classId, ...data })).data;
+  }
+
   /* Practice sync — pushes the LOCAL XP/stats engine (app.js's state.xp/state.stats, completely
      separate from Class Points above) up to Firestore so ParentDeck's Student Stats and XP can show
      it. Only numbers + a single mood value per day ever leave the device — journal TEXT is never sent.
@@ -284,7 +357,9 @@ const SDCloud = (() => {
 
   return {
     isConfigured, init, onStatusChanged, joinClass, resumeClass, autoResume, leaveClass, getJoined, getStatus,
-    subscribeStudent, subscribeClassMeta, subscribeRewards, subscribeCalendar, subscribeHomework, subscribeHomeworkDone, setHomeworkDone, pushBadge, redeemReward, getRanking, getFamilyCode,
+    subscribeStudent, subscribeClassMeta, subscribeRewards, subscribeCalendar, subscribeHomework, subscribePolicy, subscribeSharedBoard, subscribeHomeworkDone, setHomeworkDone, pushBadge, redeemReward, getRanking, getFamilyCode,
+    shareScrapPage, unshareScrapPage, subscribeMyScrapPages, subscribeScrapGallery,
+    subscribeBoardAssignments, subscribeMyBoardAnswers, getBoardAssignmentImage, submitBoardAnswer,
     pushPracticeStats, getSyncInfo, onSyncChanged
   };
 })();

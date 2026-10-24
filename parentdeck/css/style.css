@@ -714,11 +714,11 @@ body.dr .widget.full .body{padding-right:128px}
    yellow = needs monitoring, red = off track. A solid 2px box in the full colour, a strong tint, a glow, and ONE colour for all of its text; a shape
    (● / ▲ / ■) comes with it so colour is never the only signal. Boxes with no verdict keep the plain gold look.
    ===================================================================================================================================== */
-:root{ --sl-good:#2EE66B; --sl-watch:#FFE600; --sl-off:#FF3B3B;
-       --sl-good-bg:rgba(46,230,107,.22); --sl-watch-bg:rgba(255,230,0,.20); --sl-off-bg:rgba(255,59,59,.24); }
-.st-item.lv-good,.sm-tiles .tile[data-sl="good"],.sl-key[data-sl="good"]{ --c:var(--sl-good); --bg:var(--sl-good-bg); --rgb:46,230,107; }
-.st-item.lv-watch,.sm-tiles .tile[data-sl="watch"],.sl-key[data-sl="watch"]{ --c:var(--sl-watch); --bg:var(--sl-watch-bg); --rgb:255,230,0; }
-.st-item.lv-off,.sm-tiles .tile[data-sl="off"],.sl-key[data-sl="off"]{ --c:var(--sl-off); --bg:var(--sl-off-bg); --rgb:255,59,59; }
+:root{ --st-good:#2EE66B; --st-watch:#FFE600; --st-bad:#FF3B3B;
+       --st-good-bg:rgba(46,230,107,.22); --st-watch-bg:rgba(255,230,0,.20); --st-bad-bg:rgba(255,59,59,.24); }
+.st-item.lv-good,.sm-tiles .tile[data-st="good"],.sl-key[data-st="good"]{ --c:var(--st-good); --bg:var(--st-good-bg); --rgb:46,230,107; }
+.st-item.lv-watch,.sm-tiles .tile[data-st="watch"],.sl-key[data-st="watch"]{ --c:var(--st-watch); --bg:var(--st-watch-bg); --rgb:255,230,0; }
+.st-item.lv-off,.sm-tiles .tile[data-st="bad"],.sl-key[data-st="bad"]{ --c:var(--st-bad); --bg:var(--st-bad-bg); --rgb:255,59,59; }
 
 /* the four status boxes at the very top */
 .st-item.lv-good,.st-item.lv-watch,.st-item.lv-off{ border:2px solid var(--c); background:var(--bg); color:var(--c); box-shadow:0 0 0 1px rgba(var(--rgb),.25),0 0 18px rgba(var(--rgb),.30); }
@@ -728,7 +728,10 @@ body.dr .widget.full .body{padding-right:128px}
 .st-item.lv-good .st-pill,.st-item.lv-watch .st-pill,.st-item.lv-off .st-pill{ color:var(--c); background:var(--bg); border:1.5px solid currentColor; }
 .st-item.lv-good .st-hint,.st-item.lv-watch .st-hint,.st-item.lv-off .st-hint{ opacity:.9; }
 .st-item.lv-good:hover,.st-item.lv-watch:hover,.st-item.lv-off:hover{ border-color:var(--c); box-shadow:0 0 0 1px rgba(var(--rgb),.4),0 8px 26px rgba(var(--rgb),.42); }
-.status-card.ov-good{ border-left-color:var(--sl-good); }.status-card.ov-watch{ border-left-color:var(--sl-watch); }.status-card.ov-off{ border-left-color:var(--sl-off); }
+/* red is lower-luminance than green/yellow, so the shared formula above reads weaker for it — boosted to match, same baseline as AdminDeck's School Stats */
+.st-item.lv-off{ box-shadow:0 0 0 1.5px rgba(255,59,59,.55), 0 0 28px rgba(255,59,59,.6), 0 0 46px rgba(255,59,59,.22); }
+.st-item.lv-off:hover{ box-shadow:0 0 0 1.5px rgba(255,59,59,.7), 0 10px 32px rgba(255,59,59,.65), 0 0 50px rgba(255,59,59,.28); }
+.status-card.ov-good{ border-left-color:var(--st-good); }.status-card.ov-watch{ border-left-color:var(--st-watch); }.status-card.ov-off{ border-left-color:var(--st-bad); }
 
 /* the four "this week" tiles: centred stat cards like School Stats' top row (gold when there is no verdict) */
 .sm-tiles{ grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
@@ -738,17 +741,19 @@ body.dr .widget.full .body{padding-right:128px}
 .sm-tiles .tile b small.sl-u{ font-size:.5em; font-weight:600; margin:0 .12em 0 .06em; }
 .sm-tiles .tile > span{ width:100%; margin-top:6px; font-size:13.5px; font-weight:600; color:#F6DDA6; }
 .sm-tiles .tile:hover{ border-color:rgba(255,203,92,.75); box-shadow:0 8px 20px rgba(255,203,92,.18); }
-.sm-tiles .tile[data-sl]{ border-color:var(--c); background:var(--bg); color:var(--c); box-shadow:0 0 0 1px rgba(var(--rgb),.25),0 0 18px rgba(var(--rgb),.30); }
-.sm-tiles .tile[data-sl] b,.sm-tiles .tile[data-sl] > span,.sm-tiles .tile[data-sl] b small.sl-u{ color:inherit; }
-.sm-tiles .tile[data-sl]:hover{ border-color:var(--c); box-shadow:0 0 0 1px rgba(var(--rgb),.4),0 8px 26px rgba(var(--rgb),.45); }
-.sm-tiles .tile[data-sl]::after{ position:absolute; top:8px; right:11px; font-size:16px; line-height:1; color:var(--c); }
-.sm-tiles .tile[data-sl="good"]::after{ content:'●'; }.sm-tiles .tile[data-sl="watch"]::after{ content:'▲'; }.sm-tiles .tile[data-sl="off"]::after{ content:'■'; }
+.sm-tiles .tile[data-st]{ border-color:var(--c); background:var(--bg); color:var(--c); box-shadow:0 0 0 1px rgba(var(--rgb),.25),0 0 18px rgba(var(--rgb),.30); }
+.sm-tiles .tile[data-st] b,.sm-tiles .tile[data-st] > span,.sm-tiles .tile[data-st] b small.sl-u{ color:inherit; }
+.sm-tiles .tile[data-st]:hover{ border-color:var(--c); box-shadow:0 0 0 1px rgba(var(--rgb),.4),0 8px 26px rgba(var(--rgb),.45); }
+.sm-tiles .tile[data-st="bad"]{ box-shadow:0 0 0 1.5px rgba(255,59,59,.55), 0 0 28px rgba(255,59,59,.6), 0 0 46px rgba(255,59,59,.22); }
+.sm-tiles .tile[data-st="bad"]:hover{ box-shadow:0 0 0 1.5px rgba(255,59,59,.7), 0 10px 32px rgba(255,59,59,.65), 0 0 50px rgba(255,59,59,.28); }
+.sm-tiles .tile[data-st]::after{ position:absolute; top:8px; right:11px; font-size:16px; line-height:1; color:var(--c); }
+.sm-tiles .tile[data-st="good"]::after{ content:'●'; }.sm-tiles .tile[data-st="watch"]::after{ content:'▲'; }.sm-tiles .tile[data-st="bad"]::after{ content:'■'; }
 
 /* the colour key above the tiles */
 .sl-legend{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 12px; margin:8px 0 10px; font-size:13px; font-weight:600; }
 .sl-key{ display:inline-block; padding:1px 9px; border-radius:999px; border:1.5px solid var(--c); color:var(--c); background:var(--bg); line-height:1.5; }
 .sl-key::before{ font-size:.7em; margin-right:5px; vertical-align:.1em; }
-.sl-key[data-sl="good"]::before{ content:'●'; }.sl-key[data-sl="watch"]::before{ content:'▲'; }.sl-key[data-sl="off"]::before{ content:'■'; }
+.sl-key[data-st="good"]::before{ content:'●'; }.sl-key[data-st="watch"]::before{ content:'▲'; }.sl-key[data-st="bad"]::before{ content:'■'; }
 .sl-legend details{ flex:1 1 260px; color:var(--lo); font-weight:500; font-size:12.5px; margin-left:6px; }
 .sl-legend summary{ cursor:pointer; width:max-content; padding-top:3px; }
 .sl-legend details p{ margin:5px 0 0; }
@@ -767,3 +772,12 @@ details.join-classcode summary{cursor:pointer;color:var(--muted, #aab);font-size
 
 /* anti-theft: shown only in a copy running under a different extension ID */
 .unofficial-build{position:fixed;top:0;left:0;right:0;z-index:2147483647;padding:8px 14px;background:#b91c1c;color:#fff;font:600 13px/1.3 system-ui,sans-serif;text-align:center}
+
+/* v0.22.0 (backend v2.8.0) — Scrapbook (Scrapdeck sharing, M3) */
+.sb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.sb-card{display:flex;flex-direction:column;text-align:left;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:none;cursor:pointer;padding:0;color:inherit}
+.sb-card img{width:100%;aspect-ratio:3/2;object-fit:cover;display:block;background:rgba(0,0,0,.2)}
+.sb-cap{padding:6px 8px;font-size:12px;line-height:1.3}
+.sb-modal{position:fixed;inset:0;background:rgba(10,14,24,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.sb-mcard{background:var(--panel2,#1b2434);border-radius:14px;padding:14px;max-width:min(520px,100%);max-height:85vh;overflow:auto;display:flex;flex-direction:column;gap:10px;align-items:center}
+.sb-mcard img{max-width:100%;max-height:70vh;border-radius:8px}

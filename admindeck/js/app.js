@@ -21,7 +21,7 @@
    Product Scope (v2) §7 — all read-only, all built from data that
    already exists via adminListClasses/adminGetClass (js/data.js).
    ============================================================ */
-const APP_VERSION = '0.9.4';
+const APP_VERSION = '0.13.0';
 const $ = (sel, root) => (root || document).querySelector(sel);
 
 /* ---------------- i18n ----------------
@@ -186,6 +186,7 @@ const STRINGS = {
   pipe_empty: { en:'Nothing due this week across any class.', vi:'Không có bài tập nào đến hạn trong tuần này ở bất kỳ lớp nào.' },
 
   cal_filter_all: { en:'All classes', vi:'Tất cả lớp' },
+  cal_show_tt: { en:'Show timetable', vi:'Hiện thời khóa biểu' },
   cal_no_events: { en:'No events this day.', vi:'Không có sự kiện trong ngày này.' },
   cal_pick_day: { en:'Tap a day with a dot to see its events.', vi:'Nhấn vào ngày có chấm để xem sự kiện.' },
 
@@ -435,6 +436,12 @@ const STRINGS = {
 /* v0.5.0: add the other six languages (and any shell key AdminDeck lacks) from js/i18n-shell.js. AdminDeck's own en/vi wording wins. */
 /* v0.8.0 (SchoolDeck line): SchoolDeck's strings live beside its widget (js/schooldeck-ui.js). */
 if(typeof SD_STRINGS !== 'undefined') Object.assign(STRINGS, SD_STRINGS);
+/* v0.10.0 (ClassDeck): its strings live beside its tab (js/classdeck-ui.js). */
+if(typeof CD_STRINGS !== 'undefined') Object.assign(STRINGS, CD_STRINGS);
+/* v0.11.0 (Schedule): likewise. */
+if(typeof SC_STRINGS !== 'undefined') Object.assign(STRINGS, SC_STRINGS);
+/* v0.13.0 (History): likewise (js/history-ui.js). */
+if(typeof HS_STRINGS !== 'undefined') Object.assign(STRINGS, HS_STRINGS);
 if(typeof SHELL_I18N !== 'undefined'){
   Object.keys(SHELL_I18N).forEach(k=>{ STRINGS[k] = Object.assign({}, SHELL_I18N[k], STRINGS[k] || {}); });
 }
@@ -549,6 +556,7 @@ async function renderSchoolSettings(){
       catch(e){ toast(e.message || String(e)); }
     });
   }
+  renderPolicyBox(who);   // v0.12.0
   if(who.role !== 'owner'){ row.hidden = true; adm.hidden = true; return; }
   let schools = [];
   try{ schools = await AD.listSchools(); }catch(e){}
@@ -586,6 +594,28 @@ async function renderSchoolSettings(){
 }
 (()=>{ const d = document.getElementById('settings-drawer'); if(!d) return;
   new MutationObserver(()=>{ if(!d.hidden) renderSchoolSettings(); }).observe(d, { attributes:true, attributeFilter:['hidden'] }); })();
+
+/* v0.12.0 (backend v2.6.0) — Student safety: the school's policy for StudentDeck (Scrapdeck scope, M0).
+   FREE on purpose: a safety control is never Pro. Saved for every class in the school at once. */
+const POLICY_FLAGS = [
+  ['studentPhotos', 'Students may add photos to Scrapdeck', 'Off: Add photo is disabled in every class. Photos already on a student\u2019s computer stay there and can\u2019t be shared.'],
+  ['studentSharing', 'Students may share Scrapdeck pages', 'Off: nothing a student makes leaves their computer (sharing arrives in a later StudentDeck update).'],
+  ['studentStore', 'Students may see the Scrapdeck Shop', 'For a later update; nothing uses it yet. Students never pay — a parent approves every purchase.'],
+];
+function renderPolicyBox(who){
+  const box = document.getElementById('policy-box'); if(!box) return;
+  if(!who || who.all || !who.schoolId){ box.innerHTML = '<p class="drawer-label" style="margin-top:14px">Student safety</p><p class="hint">Pick a school above to set its student safety switches.</p>'; return; }
+  const p = who.policy || { studentPhotos: true, studentSharing: true, studentStore: false };
+  box.innerHTML = `<p class="drawer-label" style="margin-top:14px">Student safety — ${esc(who.schoolName || '')}</p>`
+    + POLICY_FLAGS.map(([k, label, hint])=> `<label class="pol-row"><input type="checkbox" data-pol="${k}" ${p[k] ? 'checked' : ''}><span><b>${esc(label)}</b><br><span class="hint">${esc(hint)}</span></span></label>`).join('')
+    + '<p class="hint">Applies to every class in the school, including classes created later. Free.</p>';
+  box.querySelectorAll('[data-pol]').forEach(cb=> cb.addEventListener('change', async ()=>{
+    cb.disabled = true;
+    try{ const r = await AD.setSchoolPolicy({ [cb.dataset.pol]: cb.checked }); if(WHO) WHO.policy = r.policy; toast(`Saved for ${r.classes} class${r.classes === 1 ? '' : 'es'}`); }
+    catch(e){ cb.checked = !cb.checked; toast(e.message || String(e)); }
+    cb.disabled = false;
+  }));
+}
 
 function renderTeacherNotes(body){
   let alive = true;
@@ -1212,7 +1242,7 @@ function wireSettingsDrawer(){
   });
   document.getElementById('settings-close').addEventListener('click', ()=> drawer.hidden = true);
 
-  document.getElementById('cfg-save').addEventListener('click', ()=>{
+  document.getElementById('cfg-save').addEventListener('click', async ()=>{
     const cfg = {
       project: document.getElementById('cfg-project').value.trim() || AD.getConfig().project,
       region: document.getElementById('cfg-region').value.trim() || AD.getConfig().region,
@@ -1220,8 +1250,10 @@ function wireSettingsDrawer(){
     };
     AD.setConfig(cfg);
     AD.refreshAll();
-    document.getElementById('cfg-status').textContent = t('cfg_saved');
-    refreshStatusPill();
+    const statusEl = document.getElementById('cfg-status');
+    statusEl.textContent = t('cfg_saved');
+    await refreshStatusPill();
+    statusEl.textContent = t(lastStatusKey);               // replaces "Saved. Reconnecting…" once the pill knows the real outcome
     refreshOpenWidgets();
   });
 
@@ -1637,7 +1669,7 @@ function renderPoints(body){
 /* ---------------- Widget 5: Calendar Master View ---------------- */
 function renderCalendarWidget(body){
   let viewDate = new Date(); viewDate.setDate(1);
-  let filterClassId = 'all', selectedDay = null;
+  let filterClassId = 'all', selectedDay = null, showTimetable = true;     // v0.11.0: the weekly timetable (SchoolDeck → Schedule) overlays the month
   return widgetBoot(body, async (body, isAlive)=>{
     const classes = await AD.getClasses();
     const details = await AD.getAllDetails();
@@ -1649,6 +1681,15 @@ function renderCalendarWidget(body){
         const d = details.get(c.id); if(!d || d.error || !d.calendarEvents) return;
         d.calendarEvents.forEach(e=> out.push({ ...e, className: c.className }));
       });
+      if(showTimetable && typeof ClassScheduleFns !== 'undefined'){
+        // Lessons from each class's weekly timetable, for the month on screen. Dates are school calendar days (no time zone), so nothing shifts.
+        const pad = n => String(n).padStart(2,'0'), y = viewDate.getFullYear(), m = viewDate.getMonth(), last = new Date(y, m+1, 0).getDate();
+        const from = `${y}-${pad(m+1)}-01`, to = `${y}-${pad(m+1)}-${pad(last)}`;
+        classes.forEach(c=>{
+          if(filterClassId !== 'all' && c.id !== filterClassId) return;
+          ClassScheduleFns.occurrences(c.schedule, from, to).forEach(o=> out.push({ date: o.date, title: '🕘 ' + c.className, type: 'timetable', className: c.className, time: o.start + '–' + o.end + (o.room ? ' · ' + o.room : ''), tt: true }));
+        });
+      }
       return out;
     }
     function draw(){
@@ -1671,9 +1712,9 @@ function renderCalendarWidget(body){
       const monthLabel = viewDate.toLocaleDateString(LOCALE_MAP[state.lang] || 'en-US', { month:'long', year:'numeric' });
       let dayListHtml;
       if(selectedDay){
-        const items = byDate[selectedDay] || [];
+        const items = (byDate[selectedDay] || []).slice().sort((a, b) => (a.tt ? 1 : 0) - (b.tt ? 1 : 0) || String(a.time || '').localeCompare(String(b.time || '')));
         dayListHtml = `<div class="cal-day-list"><p class="muted" style="font-weight:700;font-family:'Quicksand';margin:0 0 6px">${esc(selectedDay)}</p>`
-          + (items.length ? items.map(e=>`<div class="arow"><span class="name">${esc(e.title||e.type||'—')}</span><span class="meta">${esc(e.className)}${e.time?(' · '+esc(e.time)):''}</span></div>`).join('') : emptyState(t('cal_no_events')))
+          + (items.length ? items.map(e=>`<div class="arow"><span class="name">${esc(e.title||e.type||'—')}</span><span class="meta">${e.tt ? esc(e.time) : esc(e.className) + (e.time ? (' · '+esc(e.time)) : '')}</span></div>`).join('') : emptyState(t('cal_no_events')))
           + `</div>`;
       } else {
         dayListHtml = `<p class="hint" style="margin-top:10px">${t('cal_pick_day')}</p>`;
@@ -1685,12 +1726,14 @@ function renderCalendarWidget(body){
           <button class="wbtn sm" data-nav="1">›</button>
         </div>
         <select id="cal-filter" style="width:100%;margin-bottom:8px">${classOpts}</select>
+        <label class="hint" style="display:flex;gap:6px;align-items:center;margin:0 0 8px"><input type="checkbox" id="cal-tt"${showTimetable ? ' checked' : ''}> ${t('cal_show_tt')}</label>
         <div class="cal-grid">${cells}</div>
         ${dayListHtml}
       `;
       body.querySelectorAll('[data-nav]').forEach(b=> b.addEventListener('click', ()=>{ viewDate.setMonth(viewDate.getMonth()+parseInt(b.dataset.nav)); selectedDay = null; draw(); }));
       body.querySelectorAll('[data-day].has-evt').forEach(c=> c.addEventListener('click', ()=>{ selectedDay = c.dataset.day; draw(); }));
       $('#cal-filter', body).addEventListener('change', e=>{ filterClassId = e.target.value; draw(); });
+      $('#cal-tt', body).addEventListener('change', e=>{ showTimetable = e.target.checked; draw(); });
       wireRefreshBtn(body);
     }
     draw();

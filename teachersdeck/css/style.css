@@ -1327,6 +1327,31 @@ select:disabled{ cursor:not-allowed; opacity:.7; }
 .sx-tile{ background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
 .sx-tile b{ display:block; font-size:17px; color:var(--amber-hi); }
 .sx-tile span{ font-size:11px; color:var(--text-lo); }
+/* Stoplight tiles on "My Stats & XP" and Student Stats' whole-class tiles (both live inside .sx-wrap) — copied straight from AdminDeck's School Stats formula/colours (admindeck/css/style.css, the .ss-tiles .tile[data-st] rules), not reinterpreted: same hex, same alpha, same always-on (not hover-only) glow, no animation. */
+.sx-wrap .sx-tile[data-st]{ position:relative; border-width:2px;
+  --st-good:#2EE66B; --st-watch:#FFE600; --st-bad:#FF3B3B;
+  --st-good-bg:rgba(46,230,107,.22); --st-watch-bg:rgba(255,230,0,.20); --st-bad-bg:rgba(255,59,59,.24); }
+.sx-wrap .sx-tile[data-st="good"]{ border-color:var(--st-good); background:var(--st-good-bg); box-shadow:0 0 0 1px rgba(46,230,107,.25), 0 0 18px rgba(46,230,107,.30); }
+.sx-wrap .sx-tile[data-st="watch"]{ border-color:var(--st-watch); background:var(--st-watch-bg); box-shadow:0 0 0 1px rgba(255,230,0,.25), 0 0 18px rgba(255,230,0,.28); }
+.sx-wrap .sx-tile[data-st="bad"]{ border-color:var(--st-bad); background:var(--st-bad-bg); box-shadow:0 0 0 1.5px rgba(255,59,59,.55), 0 0 28px rgba(255,59,59,.6), 0 0 46px rgba(255,59,59,.22); }
+.sx-wrap .sx-tile[data-st="good"]:hover{ box-shadow:0 0 0 1px rgba(46,230,107,.4), 0 8px 26px rgba(46,230,107,.45); }
+.sx-wrap .sx-tile[data-st="watch"]:hover{ box-shadow:0 0 0 1px rgba(255,230,0,.4), 0 8px 26px rgba(255,230,0,.42); }
+.sx-wrap .sx-tile[data-st="bad"]:hover{ box-shadow:0 0 0 1.5px rgba(255,59,59,.7), 0 10px 32px rgba(255,59,59,.65), 0 0 50px rgba(255,59,59,.28); }
+.sx-wrap .sx-tile[data-st="good"]{ color:var(--st-good); } .sx-wrap .sx-tile[data-st="watch"]{ color:var(--st-watch); } .sx-wrap .sx-tile[data-st="bad"]{ color:var(--st-bad); }
+.sx-wrap .sx-tile[data-st] b, .sx-wrap .sx-tile[data-st] > span{ color:inherit; }
+.sx-wrap .sx-tile[data-st]::after{ position:absolute; top:8px; right:11px; font-size:14px; line-height:1; }
+.sx-wrap .sx-tile[data-st="good"]::after{ content:'●'; } .sx-wrap .sx-tile[data-st="watch"]::after{ content:'▲'; } .sx-wrap .sx-tile[data-st="bad"]::after{ content:'■'; }
+/* the colour key above a stoplight-tiled grid — same pill pattern as AdminDeck's School Stats legend */
+.ss-st[data-st]{ display:inline-block; padding:1px 9px; border-radius:999px; border:1.5px solid currentColor; font-weight:700; line-height:1.5; }
+.ss-st[data-st="good"]{ color:#2EE66B; background:rgba(46,230,107,.22); }
+.ss-st[data-st="watch"]{ color:#FFE600; background:rgba(255,230,0,.20); }
+.ss-st[data-st="bad"]{ color:#FF3B3B; background:rgba(255,59,59,.24); }
+.ss-st[data-st]::before{ font-size:.7em; margin-right:5px; vertical-align:.1em; }
+.ss-st[data-st="good"]::before{ content:'●'; } .ss-st[data-st="watch"]::before{ content:'▲'; } .ss-st[data-st="bad"]::before{ content:'■'; }
+.ss-stlegend{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 12px; margin:2px 0 10px; font-size:13px; font-weight:600; }
+.ss-stlegend details{ flex:1 1 260px; color:var(--text-lo); font-weight:500; font-size:12.5px; margin-left:6px; }
+.ss-stlegend summary{ cursor:pointer; width:max-content; padding-top:3px; }
+.ss-stlegend details p{ margin:5px 0 0; }
 #sx-body h4{ margin:14px 0 6px; font-family:'Quicksand'; font-size:12.5px; color:var(--text-hi); }
 .sx-bar{ display:grid; grid-template-columns:minmax(70px,38%) 1fr auto; align-items:center; gap:8px; font-size:12px; margin:3px 0; }
 .sx-bar > span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1406,20 +1431,11 @@ body.doc-open.doc-two-row.doc-collapsed .doc-status{ top:0; }
 .file-list li button.file-app:hover{ background:rgba(232,163,61,0.18); }
 
 /* ---------------- Notes Home widget ---------------- */
-.nh-panel textarea{ width:100%; box-sizing:border-box; resize:vertical; min-height:64px; font:inherit; font-size:13px; }
-.nh-panel select{ width:100%; }
-.nh-sign input{ width:100%; box-sizing:border-box; }
-.nh-students{ max-height:150px; }
-.nh-student{ display:flex; align-items:center; gap:8px; font-size:12.5px; padding:4px 8px; border-radius:var(--radius-chip); cursor:pointer; }
-.nh-student:hover{ background:var(--ink-2); }
 .nh-moods{ display:flex; gap:8px; }
 .nh-mood{ flex:1; padding:8px 6px; font:inherit; font-size:13px; color:var(--text-hi); background:var(--ink-2); border:1.5px solid var(--line); border-radius:var(--radius-chip); cursor:pointer; }
 .nh-mood:hover{ border-color:var(--amber); }
 .nh-mood.on{ border-color:var(--amber); background:rgba(240,168,58,0.16); font-weight:700; }
 .nh-foot{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.nh-history{ max-height:260px; }
-.cc-roster-row.nh-note{ flex-direction:column; align-items:stretch; gap:3px; }
-.nh-note-top{ display:flex; align-items:center; gap:6px; }
 .nh-face{ font-size:16px; line-height:1; }
 .nh-note-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .nh-status{ font-size:11px; white-space:nowrap; }
@@ -1659,6 +1675,7 @@ body:has(#dock-right:not([hidden])) .widget.widget-full{ right:88px; }
 @keyframes bdSpin{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}
 @keyframes bdWobble{0%,100%{transform:rotate(0) scale(1)}25%{transform:rotate(-9deg) scale(1.12)}60%{transform:rotate(7deg) scale(1.12)}}
 @keyframes bdShine{from{background-position:-130% 0}to{background-position:230% 0}}
+@keyframes bcBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes bdChip{0%,100%{transform:scale(1)}30%{transform:scale(1.25) rotate(-8deg)}60%{transform:scale(1.15) rotate(6deg)}}
 
 /* the medal: a ring in the tier's metal around a dark disc with the emoji; locked = grey and dimmed */
@@ -1688,6 +1705,24 @@ body.doc-open .topbar .badge-chip{ pointer-events:auto; }
 body.doc-open .badge-chip{ background:none; border-color:transparent; }
 body.doc-open .badge-chip:hover{ border-color:var(--amber); }
 
+/* the Badges card: a display case — hero spot for the top badge, shelves by group, redeemed rewards underneath. Same visual language as ParentDeck's Badge Display Case / StudentDeck's own badge case. */
+.bc-hero{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:14px 18px; margin-bottom:10px; border:1px solid rgba(232,163,61,.35); border-radius:18px; background:radial-gradient(120% 140% at 10% 0%, rgba(232,163,61,.12), transparent 60%); }
+.bc-spot{ flex:none; }
+.bc-spot:not(.empty){ animation:bcBob 4s ease-in-out infinite; }
+.bc-spot:hover .medal::after{ animation:bdShine .9s ease-out; }
+.bc-spot .medal{ width:84px; height:84px; } .bc-spot .medal .mi{ width:64px; height:64px; font-size:35px; }
+.bc-spot.empty{ width:72px; height:72px; display:flex; align-items:center; justify-content:center; font-size:36px; border-radius:50%; border:2px dashed var(--line); opacity:.6; animation:none; }
+.bc-hero-t{ flex:1; min-width:200px; }
+.bc-count{ margin:0 0 6px; font-size:15px; color:var(--amber-hi); } .bc-last{ margin:8px 0 0; }
+.bc-cabinet{ padding:10px 14px 2px; border-radius:14px; border:1px solid var(--line); background:rgba(0,0,0,.12); }
+.bc-shelf{ padding-top:4px; } .bc-shelf:first-child{ padding-top:0; }
+.bc-ledge{ height:9px; margin:8px -6px 10px; border-radius:3px; background:linear-gradient(180deg, rgba(232,163,61,.35), rgba(232,163,61,.08) 55%, rgba(0,0,0,.25)); box-shadow:0 5px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.2); }
+.bc-shelf:last-child .bc-ledge{ display:none; }
+.bc-prizes{ margin-top:14px; }
+.bc-prow{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+.bc-prize{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; padding:10px 8px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.03); }
+.bc-prize b{ font-size:12.5px; } .bc-prize small{ font-size:11px; color:var(--text-lo); }
+.bc-gift{ font-size:22px; }
 /* the Badges card */
 .bd-sum{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:8px; }
 .bd-sum .bd-xpbar{ flex:1; min-width:140px; margin:0; }
@@ -1707,7 +1742,7 @@ body.doc-open .badge-chip:hover{ border-color:var(--amber); }
 .fx-in .bd{ animation:sxPop .45s both; animation-delay:calc(.3s + var(--n,0) * 18ms); }
 
 @media (prefers-reduced-motion: reduce){
-  .badge-pop, .badge-pop *, .badge-chip, .bd, .bd *{ animation:none !important; transition:none !important; }
+  .badge-pop, .badge-pop *, .badge-chip, .bd, .bd *, .bc-spot, .bc-spot *{ animation:none !important; transition:none !important; }
   .badge-pop{ transform:translateX(-50%); }
   .bd:hover{ transform:none; }
 }
@@ -1737,6 +1772,8 @@ body.doc-open .badge-chip:hover{ border-color:var(--amber); }
 .wm-tx b{ font-size:13.5px; color:var(--text-hi); }
 .wm-tx small{ flex-basis:100%; font-size:11.5px; line-height:1.35; color:var(--text-lo); }
 .wm-tx .wm-use{ font-size:10.5px; opacity:.8; }
+.wm-info{ display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; font-size:11px; line-height:1; color:var(--text-lo); cursor:help; }
+.wm-info:hover, .wm-info:focus-visible{ color:var(--amber-hi); outline:none; }
 .wm-tag{ font-style:normal; font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:99px; border:1px solid currentColor; }
 .wm-tag.t-core{ color:var(--amber-hi); } .wm-tag.t-keep{ color:var(--teal); } .wm-tag.t-shelve{ color:#f0a58a; } .wm-tag.t-use{ color:#fff; background:rgba(255,255,255,.14); border-color:transparent; }
 .wm-sw{ position:relative; flex-shrink:0; width:40px; height:22px; }
@@ -1790,7 +1827,7 @@ body.doc-open .badge-chip:hover{ border-color:var(--amber); }
 .ss-bar .sx-range{ margin:0 0 0 auto; }
 .ss-h{ margin:0; font-family:'Quicksand'; font-size:18px; color:var(--text-hi); } .ss-h2{ margin:18px 0 2px; font-size:15px; }
 .ss-stat{ display:inline-block; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,0.06); white-space:nowrap; }
-.ss-stat.st-good{ color:#7fe0a3; border-color:rgba(127,224,163,.4); } .ss-stat.st-watch{ color:#ffd66e; border-color:rgba(255,214,110,.4); } .ss-stat.st-off{ color:#ff9a8a; border-color:rgba(255,154,138,.45); }
+.ss-stat.st-good{ color:var(--st-good); border-color:var(--st-good); background:var(--st-good-bg); } .ss-stat.st-watch{ color:var(--st-watch); border-color:var(--st-watch); background:var(--st-watch-bg); } .ss-stat.st-off{ color:var(--st-bad); border-color:var(--st-bad); background:var(--st-bad-bg); }
 .ss-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:12px; margin:8px 0 4px; }
 .ss-stu{ display:flex; flex-direction:column; gap:8px; text-align:left; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:rgba(255,255,255,0.04); color:var(--text-hi); cursor:pointer; font-family:inherit; transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease; }
 .ss-stu:hover, .ss-stu:focus-visible{ transform:translateY(-4px) scale(1.02); border-color:var(--amber); background:rgba(232,163,61,.1); box-shadow:0 10px 22px rgba(0,0,0,.35), 0 0 16px rgba(232,163,61,.2); }
@@ -1802,9 +1839,15 @@ body.doc-open .badge-chip:hover{ border-color:var(--amber); }
 .ss-minibar{ height:6px; margin:0; } .ss-minibar i{ transition:none; }
 .ss-stu-meta{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:12px; color:var(--text-lo); }
 .ss-medals{ display:flex; gap:4px; min-height:32px; } .ss-medals .medal{ width:32px; height:32px; box-shadow:none; } .ss-medals .medal .mi{ width:23px; height:23px; font-size:13px; }
-.ss-status{ margin:0 0 14px; } .ss-status.st-good{ border-color:rgba(127,224,163,.4); } .ss-status.st-watch{ border-color:rgba(255,214,110,.4); } .ss-status.st-off{ border-color:rgba(255,154,138,.45); }
+.ss-status{ margin:0 0 14px; border-width:2px; }
+.ss-status.st-good{ border-color:var(--st-good); background:var(--st-good-bg); box-shadow:0 0 0 1px rgba(46,230,107,.2), 0 0 18px rgba(46,230,107,.22); }
+.ss-status.st-watch{ border-color:var(--st-watch); background:var(--st-watch-bg); box-shadow:0 0 0 1px rgba(255,230,0,.2), 0 0 18px rgba(255,230,0,.2); }
+.ss-status.st-off{ border-color:var(--st-bad); background:var(--st-bad-bg); box-shadow:0 0 0 1.5px rgba(255,59,59,.45), 0 0 26px rgba(255,59,59,.5); }
 .ss-chks{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:8px; margin:8px 0; }
 .ss-chk{ display:flex; flex-direction:column; gap:2px; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,0.04); font-size:12px; } .ss-chk b{ font-size:12.5px; } .ss-chk small{ color:var(--text-lo); }
+.ss-chk.st-good{ border-color:var(--st-good); background:var(--st-good-bg); } .ss-chk.st-good b{ color:var(--st-good); }
+.ss-chk.st-watch{ border-color:var(--st-watch); background:var(--st-watch-bg); } .ss-chk.st-watch b{ color:var(--st-watch); }
+.ss-chk.st-off{ border-color:var(--st-bad); background:var(--st-bad-bg); } .ss-chk.st-off b{ color:var(--st-bad); }
 .ss-how summary{ cursor:pointer; font-size:12px; color:var(--text-lo); } .ss-how p{ margin:6px 0 0; font-size:11.5px; color:var(--text-lo); }
 .ss-hero{ display:flex; flex-wrap:wrap; align-items:center; gap:14px 28px; padding:14px 18px; border-radius:14px; border:1px solid var(--line); background:rgba(255,255,255,0.04); }
 .ss-ring{ position:relative; width:84px; height:84px; flex:none; } .ss-ring svg{ width:100%; height:100%; } .ss-ring circle{ fill:none; stroke-width:7; } .ss-ring .rg-bg{ stroke:rgba(255,255,255,0.12); } .ss-ring .rg-fg{ stroke:var(--amber); stroke-linecap:round; }
@@ -1867,6 +1910,13 @@ body.doc-open .badge-chip:hover{ border-color:var(--amber); }
 .cc-rost-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; } .cc-rost-head .field-label{ margin:0; }
 .cc-settings{ border:1px solid var(--line); border-radius:var(--radius-chip); padding:6px 10px; } .cc-settings summary{ cursor:pointer; font-size:12.5px; color:var(--text-lo); } .cc-settings[open] summary{ margin-bottom:8px; }
 
+/* Badges & Rewards tabs (v0.22.0) — Badges is read-only/automatic (default); Rewards is the catalog below, unchanged. */
+.rp-tabs{ display:flex; gap:6px; margin-bottom:10px; }
+.rp-tab{ font:inherit; font-size:13px; font-weight:600; color:var(--text-lo); background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:999px; padding:6px 14px; cursor:pointer; }
+.rp-tab:hover{ border-color:var(--amber); color:var(--text-hi); }
+.rp-tab.active{ background:rgba(232,163,61,0.18); border-color:var(--amber); color:var(--amber-hi); }
+.rp-pane{ max-height:100%; overflow:auto; }
+
 .rp-wrap{ container-type:inline-size; }
 .rp{ display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:16px; align-items:start; }
 .rp-add{ display:grid; grid-template-columns:1fr 92px; gap:6px; } .rp-add input{ min-width:0; box-sizing:border-box; } .rp-add #rp-desc,.rp-add #rp-add{ grid-column:1 / -1; }
@@ -1900,3 +1950,12 @@ body.doc-open .badge-chip:hover{ border-color:var(--amber); }
 
 /* anti-theft: shown only in a copy running under a different extension ID */
 .unofficial-build{position:fixed;top:0;left:0;right:0;z-index:2147483647;padding:8px 14px;background:#b91c1c;color:#fff;font:600 13px/1.3 system-ui,sans-serif;text-align:center}
+
+/* v0.27.0 (backend v2.8.0) — Scrapbook Review (Scrapdeck M3) */
+.srv-filter{margin:8px 0}
+.srv-list{display:flex;flex-direction:column;gap:8px}
+.srv-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px}
+.srv-thumb{width:64px;height:43px;object-fit:cover;border-radius:6px;background:#0002;flex:none}
+.srv-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.srv-meta b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srv-actions{display:flex;flex-direction:column;gap:4px;flex:none}

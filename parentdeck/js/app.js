@@ -4,7 +4,7 @@
    so the three apps stay visually and structurally consistent. All data comes from PD.* (js/data.js) —
    this file never touches localStorage for student data directly, only for its own UI layout, so the
    moment PD.* is backed by real Firebase instead of the demo store, nothing here has to change. */
-const VERSION = '0.21.5', UIKEY = 'pd_ui_v1';
+const VERSION = '0.22.0', UIKEY = 'pd_ui_v1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -105,6 +105,7 @@ const STRINGS = {
   pro_pitch:          { en:'Badge Display Case, Class Pulse, Weekly Digest, conversation starters, the rewards wishlist and homework insights — and StudentDeck Pro (games and language tools) for every child you link.', vi:'Tủ huy hiệu, Class Pulse, Tóm tắt tuần, gợi ý trò chuyện, danh sách phần thưởng mong muốn và phân tích bài tập — cùng StudentDeck Pro (trò chơi và công cụ ngôn ngữ) cho mọi học sinh bạn liên kết.' },
   pro_activate:       { en:'Activate', vi:'Kích hoạt' },
   pro_get:            { en:'Get ParentDeck Pro', vi:'Mua ParentDeck Pro' },
+  pro_price_line:     { en:'{monthly}/child/month or {annual}/child/year — 30% off the 2nd child, 50% off the 3rd+.', vi:'{monthly}/trẻ/tháng hoặc {annual}/trẻ/năm — giảm 30% cho trẻ thứ 2, giảm 50% từ trẻ thứ 3 trở đi.' },
   pro_activated:      { en:'ParentDeck Pro is active. {n} linked child(ren) now have StudentDeck Pro.', vi:'Đã kích hoạt ParentDeck Pro. {n} học sinh đã liên kết giờ có StudentDeck Pro.' },
   pro_signin_first:   { en:'Sign in first, then activate ParentDeck Pro from your account.', vi:'Hãy đăng nhập trước, rồi kích hoạt ParentDeck Pro trong tài khoản.' },
   acct_link_notfound: { en:'That code wasn\u2019t found. Check it with your child (StudentDeck \u2192 Class) or the teacher.', vi:'Không tìm thấy mã này. Hãy kiểm tra lại với con (StudentDeck \u2192 Lớp) hoặc giáo viên.' },
@@ -472,6 +473,10 @@ $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM
 const PRO_GATE_ENABLED = false;
 const PRO_WIDGETS = ['badges', 'hwc', 'wish', 'starters', 'digest', 'pulse'];
 const PD_ORDER_FORM_URL = 'https://forms.gle/SGUgGpgLyEjNu5iS8';   // where a family asks for a ParentDeck Pro key (change to your own form)
+// v2.3.0: real subscription pricing (official pricing sheet), per child. Sibling discount
+// (2nd child 30% off, 3rd+ 50% off) is shown as copy only here — see
+// backend/functions/src/license.js for the matching billingCycle/expiresAt fields.
+const PD_PRICING_VND = { monthly: 30000, annual: 300000 };
 ProGate.configure({
   enabled: PRO_GATE_ENABLED, ids: PRO_WIDGETS,
   title: '⭐ A ParentDeck Pro widget',
@@ -514,7 +519,9 @@ function renderAcct() {
 function proSectionHtml() {
   const p = PD.getPro ? PD.getPro() : { active: false };
   if (p.active) return `<h4>⭐ ${t('pro_title')}</h4><p class="pro-on">${t('pro_active')}</p>`;
+  const priceLine = t('pro_price_line', { monthly: `${PD_PRICING_VND.monthly.toLocaleString('vi-VN')}₫`, annual: `${PD_PRICING_VND.annual.toLocaleString('vi-VN')}₫` });
   return `<h4>⭐ ${t('pro_title')}</h4><p class="muted">${t('pro_pitch')}</p>
+    <p class="muted">${priceLine}</p>
     <div class="row"><input type="text" id="pro-key" placeholder="PDPRO-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false"><button class="btn primary" id="pro-go">${t('pro_activate')}</button></div>
     <p class="muted"><a href="${PD_ORDER_FORM_URL}" target="_blank" rel="noopener">${t('pro_get')}</a></p>`;
 }
@@ -843,7 +850,7 @@ function weeklyTileLevels(s) {
 }
 function stoplightLegend() {
   const R = STATUS_RULES;
-  return `<div class="sl-legend">${['good', 'watch', 'off'].map(k => `<span class="sl-key" data-sl="${k}">${esc(t('st_' + k))}</span>`).join('')}
+  return `<div class="sl-legend">${['good', 'watch', 'off'].map(k => `<span class="sl-key" data-st="${k === 'off' ? 'bad' : k}">${esc(t('st_' + k))}</span>`).join('')}
     <details><summary>${t('sl_how')}</summary><p>${t('sl_rule_hw', { g: R.hwGood, w: R.hwWatch })}</p><p>${t('sl_rule_read', { g: R.readGood, w: R.readWatch })}</p><p>${t('sl_rule_streak', { g: R.streakGood, w: R.streakWatch })}</p><p class="muted">${t('sl_rule_neutral')}</p></details></div>`;
 }
 // like cnt(), but the words around the number ("min", "days") are wrapped so a tile can show them smaller than the digits
@@ -880,7 +887,7 @@ function renderSummary(body) {
       const w = s.weekly;
       const L = weeklyTileLevels(s);
       const tiles = [['points', t('weekly_points'), cnt(w.pointsEarned)], ['homework', t('weekly_hw'), cnt(w.homeworkDone)], ['reading', t('weekly_reading'), cntU(w.readingMinutes, 'min_short')], ['streak', t('weekly_streak'), cntU(s.practice.streak, s.practice.streak === 1 ? 'day_count' : 'days_count')]];
-      setHtml($('#sm-head', body), `<p class=\"muted\" style=\"margin:0\">${t('weekly_this_week', { name: esc(s.displayName) })} · ${esc(s.className)}</p>${stoplightLegend()}<div class=\"tiles sm-tiles\">${tiles.map(([k, l, v], n) => `<div class=\"tile\" style=\"--i:${n}\"${isLit(L[k]) ? ` data-sl=\"${L[k]}\" title=\"${esc(l)} — ${esc(t('st_' + L[k]))}\"` : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`, play);
+      setHtml($('#sm-head', body), `<p class=\"muted\" style=\"margin:0\">${t('weekly_this_week', { name: esc(s.displayName) })} · ${esc(s.className)}</p>${stoplightLegend()}<div class=\"tiles sm-tiles\">${tiles.map(([k, l, v], n) => `<div class=\"tile\" style=\"--i:${n}\"${isLit(L[k]) ? ` data-st=\"${L[k] === 'off' ? 'bad' : L[k]}\" title=\"${esc(l)} — ${esc(t('st_' + L[k]))}\"` : ''}><b>${v}</b><span>${l}</span></div>`).join('')}</div>`, play);
     });
     const subs = [
       subWidget($('#sm-notes', body), 'notes', 'w_notes', b => renderNotesBody(b, id)),
@@ -1437,7 +1444,9 @@ const WIDGETS = [
   { id: 'digest', cat: 'share', titleKey: 'w_digest', icon: I('<path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h3"/>'), w: 340, h: 520, render: renderWeeklyDigest },
   // ---- v0.15.0: Class Pulse (needs the getClassPulse Cloud Function; says so until it is deployed) and Attendance (needs TeachersDeck's attendance sync) ----
   { id: 'pulse', cat: 'overview', titleKey: 'w_pulse', icon: I('<path d="M3 12h4l2.5-6 4 12 2.5-6H21"/>'), w: 340, h: 480, render: renderClassPulse },
-  { id: 'attend', cat: 'overview', titleKey: 'w_attend', icon: I('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15.5l2 2 4-4"/>'), w: 340, h: 520, render: renderAttendance }
+  { id: 'attend', cat: 'overview', titleKey: 'w_attend', icon: I('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15.5l2 2 4-4"/>'), w: 340, h: 520, render: renderAttendance },
+  // v0.22.0 (backend v2.8.0): Scrapbook — approved Scrapdeck pages shared "to my family" (Scrapdeck sharing, M3)
+  { id: 'scrapbook', cat: 'share', titleKey: 'w_scrapbook', icon: I('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L8 19"/>'), w: 360, h: 520, render: renderScrapbook }
 ];
 
 /* ---------- Shell: panels, drag, resize, dock (same pattern as TeachersDeck/StudentDeck) ---------- */

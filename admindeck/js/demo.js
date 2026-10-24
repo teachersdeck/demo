@@ -8,7 +8,8 @@ const AD_DEMO_SCHOOL = {
 };
 function adDemoSchool(name, body) {
   const D = AD_DEMO_SCHOOL;
-  if (name === 'adminWhoAmI') return { role: 'owner', all: false, schoolId: 'demo', schoolName: 'Demo School', teacherJoinCode: 'DEMO-SCHL', pro: true };
+  if (name === 'adminSetSchoolPolicy') { D.policy = Object.assign({ studentPhotos: true, studentSharing: true, studentStore: false }, D.policy, body); D.policy.version = (D.policy.version || 0) + 1; return { policy: D.policy, classes: 9 }; }
+  if (name === 'adminWhoAmI') return { policy: D.policy || { studentPhotos: true, studentSharing: true, studentStore: false, version: 0 }, role: 'owner', all: false, schoolId: 'demo', schoolName: 'Demo School', teacherJoinCode: 'DEMO-SCHL', pro: true };
   if (name === 'adminListSchools') return { schools: [{ schoolId: 'demo', name: 'Demo School', teacherJoinCode: 'DEMO-SCHL', pro: true, classes: 9, teachers: 3 }] };
   if (name === 'adminListTeacherNotes') return { notes: D.notes.slice().sort((a, b) => b.createdAtMs - a.createdAtMs), teachers: D.teachers };
   if (name === 'adminSendTeacherNote') {
@@ -38,11 +39,11 @@ function adDemoSchool(name, body) {
    makes a little new activity arrive, so the numbers visibly change. */
 const AD_DEMO = (() => {
   const KEY = 'ad_demo';
-  try {
-    const q = new URLSearchParams(location.search).get('demo');
-    if (q === '1') localStorage.setItem(KEY, '1'); else if (q === '0') localStorage.removeItem(KEY);
-  } catch (e) {}
-  let on = false; try { on = localStorage.getItem(KEY) === '1'; } catch (e) {}
+  let q = null; try { q = new URLSearchParams(location.search).get('demo'); } catch (e) {}
+  try { if (q === '1') localStorage.setItem(KEY, '1'); else if (q === '0') localStorage.removeItem(KEY); } catch (e) {}
+  // ?demo=1 in the address always wins, even when the browser won't let the flag persist to localStorage
+  // (e.g. storage blocked for this origin) — otherwise "Try demo" just reloads into the same dead end.
+  let on = q === '1'; if (!on) { try { on = localStorage.getItem(KEY) === '1'; } catch (e) {} }
   const api = {
     active: on,
     enter() { try { localStorage.setItem(KEY, '1'); } catch (e) {} location.href = location.pathname + '?demo=1'; },
@@ -66,6 +67,18 @@ const AD_DEMO = (() => {
   const code = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const c = n => Array.from({ length: n }, () => A[ri(0, A.length - 1)]).join(''); return c(4) + '-' + c(4); };
 
   /* ---------- the school ---------- */
+  // v0.11.0: a sample timetable. Two clashes on purpose, so the Schedule tab has something to show: Ms. Hanh Pham teaches 5A and 5B at once on Friday,
+  // and Class 3B and Kindergarten Stars both want Room 7 on Tuesday (written "room 7" once, to show that case does not matter).
+  const sl = (day, start, end, room) => ({ day, start, end, room });
+  const DEMO_SCHEDULES = {
+    demo_5a: [sl(1, '08:00', '09:00', 'Room 12'), sl(3, '08:00', '09:00', 'Room 12'), sl(5, '10:00', '11:00', 'Room 12')],
+    demo_5b: [sl(1, '09:00', '10:00', 'Room 12'), sl(3, '10:00', '11:00', 'Room 12'), sl(5, '10:30', '11:30', 'Room 14')],
+    demo_3b: [sl(2, '08:00', '09:00', 'Room 7'), sl(4, '08:00', '09:00', 'Room 7')],
+    demo_ielts: [sl(2, '18:00', '19:30', 'Room 7'), sl(4, '18:00', '19:30', 'Room 7')],
+    demo_kids: [sl(2, '08:30', '09:30', 'room 7'), sl(4, '09:00', '10:00', 'Hall')],
+    demo_sat: [sl(6, '09:00', '11:00', 'Room 3')],
+  };
+  const demoSchedule = (id) => DEMO_SCHEDULES[id] ? { slots: DEMO_SCHEDULES[id], from: null, to: null } : null;
   const TEACHERS = {
     t1: { name: 'Ms. Hanh Pham', email: 'hanh.pham@demo-school.example' },
     t2: { name: 'Mr. David Clarke', email: 'david.clarke@demo-school.example' },
@@ -116,7 +129,7 @@ const AD_DEMO = (() => {
       { id: s.id + '_r2', name: 'Homework pass', cost: 300, description: '', active: s.id !== 'demo_ielts' }
     ] : [];
     const lastActiveAt = s.active === null ? null : now - s.active * 36e5;
-    classes.push({ id: s.id, className: s.name, teacherUid: s.teacher ? 'uid_' + s.teacher : null, teacherName: teacher ? teacher.name : null, teacherEmail: teacher ? teacher.email : null, rankingVisibility: s.rank, lastActiveAt });
+    classes.push({ id: s.id, className: s.name, teacherUid: s.teacher ? 'uid_' + s.teacher : null, teacherName: teacher ? teacher.name : null, teacherEmail: teacher ? teacher.email : null, rankingVisibility: s.rank, classPulse: true, parentLinking: 'family-code', managedBy: null, schedule: demoSchedule(s.id), lastActiveAt });
     details[s.id] = { studentJoinCode: code(), parentJoinCode: code(), roster, rewards, calendarEvents: cal, homework: hw };
   });
 
@@ -125,7 +138,7 @@ const AD_DEMO = (() => {
   const detailResponse = id => {
     const c = classes.find(x => x.id === id), d = details[id];
     if (!c) throw new Error('No such class');
-    return { class: { id: c.id, className: c.className, teacherName: c.teacherName, teacherEmail: c.teacherEmail, studentJoinCode: d.studentJoinCode, parentJoinCode: d.parentJoinCode, rankingVisibility: c.rankingVisibility, lastActiveAt: c.lastActiveAt },
+    return { class: { id: c.id, className: c.className, teacherName: c.teacherName, teacherEmail: c.teacherEmail, studentJoinCode: d.studentJoinCode, parentJoinCode: d.parentJoinCode, rankingVisibility: c.rankingVisibility, classPulse: c.classPulse, parentLinking: c.parentLinking, managedBy: c.managedBy, teacherUid: c.teacherUid, lastActiveAt: c.lastActiveAt },
       roster: d.roster, rewards: d.rewards, calendarEvents: d.calendarEvents, homework: d.homework };
   };
 
@@ -214,13 +227,15 @@ const AD_DEMO = (() => {
     constructor() { this.cols = {}; this.n = 0; }
     col(name) { return this.cols[name] || (this.cols[name] = new Map()); }
     collection(name) {
-      const self = this; let order = null, lim = null;
+      const self = this; let order = null, lim = null, filters = [];
       return {
         select() { return this; },
+        where(f, op, v) { filters = [...filters, [f, op, v]]; return this; },
         orderBy(f, dir) { order = [f, dir]; return this; },
         limit(n) { lim = n; return this; },
         async get() {
           let docs = Array.from(self.col(name).entries()).map(([id, v]) => ({ id, data: () => ({ ...v }) }));
+          docs = docs.filter(d => filters.every(([f, op, v]) => op === 'array-contains' ? Array.isArray(d.data()[f]) && d.data()[f].includes(v) : d.data()[f] === v));
           if (order) docs.sort((a, b) => (order[1] === 'desc' ? -1 : 1) * ((a.data()[order[0]] || 0) - (b.data()[order[0]] || 0)));
           if (lim != null) docs = docs.slice(0, lim);
           return { docs };
@@ -229,14 +244,16 @@ const AD_DEMO = (() => {
           id = id || 'demo' + (++self.n);
           return { id,
             async get() { const v = self.col(name).get(id); return { exists: !!v, id, data: () => ({ ...v }) }; },
-            async set(data, opts) { const prev = self.col(name).get(id); self.col(name).set(id, opts && opts.merge ? { ...(prev || {}), ...data } : { ...data }); } };
+            async set(data, opts) { const prev = self.col(name).get(id); self.col(name).set(id, opts && opts.merge ? { ...(prev || {}), ...data } : { ...data }); },
+            async update(data) { const prev = self.col(name).get(id); if (!prev) throw new Error('No such document'); self.col(name).set(id, { ...prev, ...data }); },
+            collection(sub) { return self.collection(name + '/' + id + '/' + sub); } };
         }
       };
     }
     batch() { const ops = []; return { set(ref, data, opts) { ops.push([ref, data, opts]); }, async commit() { for (const [r, v, o] of ops) await r.set(v, o); } }; }
   }
   const demoDb = new MemDb();
-  classes.forEach(c => demoDb.col('classes').set(c.id, { className: c.className, teacherUid: c.teacherUid }));
+  classes.forEach(c => demoDb.col('classes').set(c.id, { className: c.className, teacherUid: c.teacherUid, rankingVisibility: c.rankingVisibility, classPulse: c.classPulse, parentLinking: c.parentLinking, schedule: c.schedule, studentJoinCode: details[c.id].studentJoinCode, parentJoinCode: details[c.id].parentJoinCode }));
   classes.forEach(c => details[c.id].roster.forEach(st => demoDb.col('students').set(st.id, { classId: c.id, displayName: st.name })));
   Object.keys(TEACHERS).forEach(k => demoDb.col('users').set('uid_' + k, { role: 'teacher', displayName: TEACHERS[k].name, email: TEACHERS[k].email }));
   const nameOfStudent = {}; classes.forEach(c => details[c.id].roster.forEach(st => { nameOfStudent[st.id] = st.name; }));
@@ -273,6 +290,25 @@ const AD_DEMO = (() => {
   // SchoolDeck (v0.8.0): the real functions again, over the same in-memory database.
   const SDF = AdminSchoolDeckFns;
   Object.assign(dirFns, { adminSchoolDeckLink: SDF.makeAdminSchoolDeckLink(dirDeps), adminSchoolDeckImportRoster: SDF.makeAdminSchoolDeckImportRoster(dirDeps), adminSchoolDeckActivity: SDF.makeAdminSchoolDeckActivity(dirDeps) });
+  // ClassDeck (v0.10.0): the real functions once more. Teachers are named from the demo school; join codes come from the function's own browser generator.
+  const lookupDemoTeacher = async (uid) => { const x = TEACHERS[String(uid || '').replace(/^uid_/, '')]; return x ? { teacherName: x.name, teacherEmail: x.email } : { teacherName: null, teacherEmail: null }; };
+  const CDF = AdminClassDeckFns, cdDeps = { ...dirDeps, rawDb: demoDb, lookupTeacher: lookupDemoTeacher };
+  Object.assign(dirFns, { adminCreateClass: CDF.makeAdminCreateClass(cdDeps), adminAssignTeacher: CDF.makeAdminAssignTeacher(cdDeps), adminUpdateClass: CDF.makeAdminUpdateClass(cdDeps), adminRegenerateJoinCode: CDF.makeAdminRegenerateJoinCode(cdDeps), adminSetSchedule: CDF.makeAdminSetSchedule(cdDeps),
+    adminClassHistory: CDF.makeAdminClassHistory(cdDeps), adminArchiveClass: CDF.makeAdminArchiveClass(cdDeps) });
+  // The Class Health / Calendar / stats widgets read the demo's own `classes` and `details`; after a ClassDeck call, copy what the database now says into them.
+  function syncDemoClasses() {
+    demoDb.col('classes').forEach((v, id) => {
+      let c = classes.find(x => x.id === id);
+      if (!c) { c = { id, lastActiveAt: null }; classes.push(c); details[id] = { studentJoinCode: '', parentJoinCode: '', roster: [], rewards: [], calendarEvents: [], homework: [] }; }
+      const tr = TEACHERS[String(v.teacherUid || '').replace(/^uid_/, '')] || null;
+      Object.assign(c, { className: v.className, teacherUid: v.teacherUid || null, teacherName: tr ? tr.name : null, teacherEmail: tr ? tr.email : null, rankingVisibility: v.rankingVisibility || 'anonymized',
+        classPulse: v.classPulse !== false, parentLinking: v.parentLinking || 'class-code', managedBy: v.managedBy || null, schedule: v.schedule || null,
+        grade: v.grade || '', homeroom: v.homeroom || '', year: v.year || '', archived: !!v.archived });
+      if (v.studentJoinCode) details[id].studentJoinCode = v.studentJoinCode;
+      if (v.parentJoinCode) details[id].parentJoinCode = v.parentJoinCode;
+    });
+    classesP = null; detailP = {}; allP = null;
+  }
   async function dirInvoke(name, body) {
     await new Promise(r => setTimeout(r, 220));
     let code = 200, out;
@@ -298,6 +334,7 @@ const AD_DEMO = (() => {
     isConfigured: () => true,
     async callFn(name, { body } = {}) { if (name === 'adminListClasses') return { classes: await getClasses() }; if (name === 'adminGetClass') return detailResponse(body && body.classId); const ds = adDemoSchool(name, body || {}); if (ds !== undefined) return ds; throw new Error('Unknown demo function ' + name); },
     getClasses, getClassDetail, getAllDetails,
+    getClassHistory(classId) { return dirInvoke('adminClassHistory', { classId }); },
     refreshAll() { classesP = null; detailP = {}; allP = null; activityP = null; drift(); },
     // Wave 1 (v0.6.0): the activity summary, computed by the real aggregation over the demo school (see above).
     getSchoolActivity(force) {
@@ -308,6 +345,7 @@ const AD_DEMO = (() => {
     // People Directory (v0.7.0): the real functions over the in-memory database above.
     directoryList() { return dirInvoke('adminDirectoryList', {}); },
     directoryCall(name, body) { return dirInvoke(name, body); },
+    async classDeckCall(name, body) { try { return await dirInvoke(name, body); } finally { syncDemoClasses(); } },
     schoolDeckCall(name, body) { return dirInvoke(name, body); },
     // Push to TeachersDeck (v0.5.0): nothing is sent in the demo — it just reports what would have happened, for the classes asked for.
     async pushTheme(classIds, theme) {

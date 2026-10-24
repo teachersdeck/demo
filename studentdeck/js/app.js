@@ -2,7 +2,7 @@
 /* StudentDeck v0.3.0 — laptop shell, 5 study widgets, XP engine and a Stats & XP dashboard.
    Widget contract: { id, title, icon, w, h, render(body) -> optional cleanup fn }.
    awardXP() is the M2 seam: M1 widgets already call it, it just does nothing yet. */
-const VERSION = '0.11.4', KEY = 'sd_state_v1';
+const VERSION = '0.17.0', KEY = 'sd_state_v1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -14,13 +14,13 @@ function fresh() {
   return { active: {}, layout: {}, todo: [], hwDone: {}, hwPending: {}, theme: 'dusk',
     timer: { dur: 1500, left: 1500, endsAt: 0, doneDate: '', doneCount: 0 },
     reading: { entries: [], startedAt: 0 },
-    games: { plays: {}, scores: {} }, idiom: { learned: [], awardDate: '' }, journal: { entries: [] }, notes: { pages: [], current: '', lastAward: 0 }, badges: { earned: {}, init: false, bestStreak: 0 }, fsBar: false, docTime: {}, filesSort: 'recent', hwLinks: {}, hwCache: [], docToReading: true, pdfTools: false, docFocus: true, words: [], tr: { from: 'en', to: 'vi', hist: [] }, cardsBonusDate: '',
+    games: { plays: {}, scores: {} }, idiom: { learned: [], awardDate: '' }, journal: { entries: [] }, notes: { pages: [], current: '', lastAward: 0 }, scrap: { books: [], lastOpen: '', lastItemDay: '' }, badges: { earned: {}, init: false, bestStreak: 0 }, fsBar: false, docTime: {}, filesSort: 'recent', hwLinks: {}, hwCache: [], docToReading: true, pdfTools: false, docFocus: true, words: [], tr: { from: 'en', to: 'vi', hist: [] }, cardsBonusDate: '',
     layoutMode: 'cozy', showEmojisCustom: true, edgeDock: { left: { visible: true }, right: { visible: true } }, dockAutoHide: false, dockPlacement: {},
     xp: { total: 0, streak: 0, last: '', log: [] }, stats: { daily: {}, syncedThrough: '' } };
 }
 function load() {
   let s = {}; try { s = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
-  const f = fresh(); return { ...f, ...s, hwDone: { ...f.hwDone, ...s.hwDone }, hwPending: { ...f.hwPending, ...s.hwPending }, timer: { ...f.timer, ...s.timer }, reading: { ...f.reading, ...s.reading }, games: { ...f.games, ...s.games }, idiom: { ...f.idiom, ...s.idiom }, journal: { ...f.journal, ...s.journal }, notes: { ...f.notes, ...s.notes }, badges: { ...f.badges, ...s.badges, earned: { ...((s.badges || {}).earned || {}) } }, xp: { ...f.xp, ...s.xp }, stats: { ...f.stats, ...s.stats } };
+  const f = fresh(); return { ...f, ...s, hwDone: { ...f.hwDone, ...s.hwDone }, hwPending: { ...f.hwPending, ...s.hwPending }, timer: { ...f.timer, ...s.timer }, reading: { ...f.reading, ...s.reading }, games: { ...f.games, ...s.games }, idiom: { ...f.idiom, ...s.idiom }, journal: { ...f.journal, ...s.journal }, notes: { ...f.notes, ...s.notes }, scrap: { ...f.scrap, ...s.scrap }, badges: { ...f.badges, ...s.badges, earned: { ...((s.badges || {}).earned || {}) } }, xp: { ...f.xp, ...s.xp }, stats: { ...f.stats, ...s.stats } };
 }
 if (typeof SD_DEMO !== 'undefined') SD_DEMO.install();     // v0.9.2 demo mode (js/demo.js): swaps in the pretend class connection; does nothing when the demo is off
 const state = load();
@@ -53,6 +53,7 @@ const XP_RULES = {
   cards:   { label: 'Flashcards',       cap: 30 },    // 1 XP per card answered right in a scheduled review + a 3 XP bonus for the day's first finished session
   journal: { label: 'Journal',          cap: 10 },
   notes:   { label: 'Notepad',          cap: 15 },    // 1 XP per timestamped line of 4+ words (a repeat of a line earns once a day, and rewarded lines are at least 20 s apart) + 2 for the day's first one — see noteXpFor()
+  scrap:   { label: 'Scrapbooking',     cap: 15 },    // Scrapdeck: 2 XP the first time each day something new is added + 3 XP the first time a page reaches 3 items — never for moving, resizing, duplicating or deleting (js/scrapdeck-core.js xpForItemAdded)
   daily:   { label: 'Daily visit',      cap: 5 },
   docs:    { label: 'Reading documents', cap: 20 }     // 1 XP per DOC_XP_SECS of active time with a document open (Files widget), at most DOC_XP_PER_DOC per document per day
 };
@@ -111,7 +112,7 @@ const BADGES = [
   { id: 'mix_4', group: 'mix', tier: 2, icon: '\ud83e\udde9', name: 'All-rounder', desc: 'Earn XP from 4 different things in one day', need: 4, unit: ' things', val: c => c.maxSources },
   { id: 'mix_7', group: 'mix', tier: 3, icon: '\ud83c\udf08', name: 'Whole toolbox', desc: 'Earn XP from 7 different things in one day', need: 7, unit: ' things', val: c => c.maxSources },
   ...[['reading', '\ud83d\udc1b', 'Bookworm', 150, 2], ['focus', '\ud83d\udd2d', 'Laser focus', 150, 2], ['todo', '\ud83e\uddb8', 'Homework hero', 60, 2], ['game', '\ud83c\udfae', 'Game on', 120, 2], ['idiom', '\ud83d\udde3\ufe0f', 'Idiom ace', 25, 1],
-     ['words', '\ud83d\udd24', 'Word collector', 40, 1], ['cards', '\ud83c\udccf', 'Card shark', 60, 2], ['journal', '\ud83d\udcd4', 'Dear diary', 30, 1], ['notes', '\ud83d\uddd2\ufe0f', 'Note taker', 45, 1], ['docs', '\ud83d\udcc4', 'Document diver', 40, 1]]
+     ['words', '\ud83d\udd24', 'Word collector', 40, 1], ['cards', '\ud83c\udccf', 'Card shark', 60, 2], ['journal', '\ud83d\udcd4', 'Dear diary', 30, 1], ['notes', '\ud83d\uddd2\ufe0f', 'Note taker', 45, 1], ['scrap', '\ud83d\uddbc\ufe0f', 'Memory maker', 60, 2], ['docs', '\ud83d\udcc4', 'Document diver', 40, 1]]
     .map(([src, icon, name, n, t]) => ({ id: 'sk_' + src, group: 'skill', tier: t, icon, name, desc: `Earn ${n} XP from ${(XP_RULES[src] || {}).label ? XP_RULES[src].label.toLowerCase() : src}`, need: n, unit: ' XP', val: c => c.by[src] || 0 })),
   ...[[7, '\ud83c\udf3f', 'First week', 1], [30, '\ud83d\udcc5', 'Month of learning', 2], [100, '\ud83c\udfdb\ufe0f', '100 days', 3]]
     .map(([n, icon, name, t]) => ({ id: 'hab_' + n, group: 'habit', tier: t, icon, name, desc: `Be active on ${n} different days`, need: n, unit: ' days', val: c => c.activeDays }))
@@ -233,19 +234,25 @@ function raiseFull(id) {                                             // full-scr
    A full-screen widget (like Stats & XP) holding the whole badge display: how many you have, Next up, the All / Earned / Locked filter, then every badge by group.
    It moved here from a card in Stats & XP; Stats & XP keeps the small medal strip. Click a tile for the full-size badge. Display only — nothing new is stored or synced. */
 let badgeFilter = 'all';
-function badgeGallery() {                                                   // the Badges card: next up, filters, then every badge by group
+function badgeGallery() {                                                   // the Badges card: a display case (hero + shelves), next up, filters, then every badge by group
   const B = state.badges, C = badgeCtx(), n = BADGES.filter(x => B.earned[x.id]).length, pct = Math.round(n / BADGES.length * 100);
   const prog = x => Math.min(1, x.val(C) / x.need), nf = v => Math.round(v).toLocaleString();
   const next = BADGES.filter(x => !B.earned[x.id]).sort((a, c) => prog(c) - prog(a)).slice(0, 3);
+  const spot = BADGES.filter(x => B.earned[x.id]).sort((a, c) => (B.earned[c.id].t || 0) - (B.earned[a.id].t || 0))[0];
   let k = 0;
   const tile = x => { const on = !!B.earned[x.id], e = B.earned[x.id], i = k++;
     return `<div class="bd t${x.tier}${on ? ' on' : ''}" data-on="${on ? 1 : 0}" data-bid="${x.id}" role="button" tabindex="0" style="--n:${i}" title="${esc(x.desc)}">${medalHtml(x, on)}<b>${esc(x.name)}</b><small>${esc(x.desc)}</small>${on
       ? `<em>${e.old ? 'Earned before badges began' : 'Earned ' + new Date(e.t).toLocaleDateString([], { month: 'short', day: 'numeric' })}</em>`
       : `<div class="bd-bar"><i style="width:${Math.round(prog(x) * 100)}%"></i></div><em>${nf(Math.min(x.val(C), x.need))} / ${nf(x.need)}${x.unit}</em>`}</div>`; };
-  return `<div class="bd-sum"><div><b>${n}</b> of ${BADGES.length} earned</div><div class="xpbar wide"><i style="width:${pct}%"></i></div>
-    <div class="row" role="group" aria-label="Show badges">${[['all', 'All'], ['on', 'Earned'], ['off', 'Locked']].map(([f, l]) => `<button class="chip${badgeFilter === f ? ' on' : ''}" data-bf="${f}">${l}</button>`).join('')}</div></div>
+  return `<div class="bc-hero">
+      ${spot ? `<button type="button" class="bc-spot" data-bid="${spot.id}" aria-label="${esc(spot.name)}">${medalHtml(spot, true)}</button>
+        <div class="bc-hero-t"><p class="bc-count"><b>${n}</b> of ${BADGES.length} earned</p><div class="xpbar wide"><i style="width:${pct}%"></i></div>
+        <p class="muted bc-last">Latest: <b>${esc(spot.name)}</b>${B.earned[spot.id].old ? '' : ' · ' + new Date(B.earned[spot.id].t).toLocaleDateString([], { month: 'short', day: 'numeric' })}</p></div>`
+      : `<span class="bc-spot empty" aria-hidden="true">🏅</span><div class="bc-hero-t"><p class="muted">No badges yet — keep practicing to earn your first one!</p></div>`}
+    </div>
+    <div class="row" role="group" aria-label="Show badges">${[['all', 'All'], ['on', 'Earned'], ['off', 'Locked']].map(([f, l]) => `<button class="chip${badgeFilter === f ? ' on' : ''}" data-bf="${f}">${l}</button>`).join('')}</div>
     ${next.length ? `<p class="bd-next-h">Next up</p><div class="bd-next">${next.map(x => `<div class="bd-nx t${x.tier}">${medalHtml(x, false)}<div><b>${esc(x.name)}</b><small>${esc(x.desc)}</small><div class="bd-bar"><i style="width:${Math.round(prog(x) * 100)}%"></i></div><em>${nf(Math.min(x.val(C), x.need))} / ${nf(x.need)}${x.unit}</em></div></div>`).join('')}</div>` : '<p class="muted">Every badge earned. Legend.</p>'}
-    <div class="bgal" data-f="${badgeFilter}">${BADGE_GROUPS.map(([g, label]) => `<h5>${label}</h5><div class="bd-grid">${BADGES.filter(x => x.group === g).map(tile).join('')}</div>`).join('')}</div>`;
+    <div class="bgal bc-cabinet" data-f="${badgeFilter}">${BADGE_GROUPS.map(([g, label]) => `<section class="bc-shelf"><h5>${label}</h5><div class="bd-grid">${BADGES.filter(x => x.group === g).map(tile).join('')}</div><div class="bc-ledge" aria-hidden="true"></div></section>`).join('')}</div>`;
 }
 function renderBadges(b) {
   b.innerHTML = '<div class="bdw"><div class="bdw-head"><h3>Your badges</h3><span class="muted">Click a badge to see it full size.</span></div><div id="bdw-body"></div></div>';
@@ -259,7 +266,7 @@ function renderBadges(b) {
   }
   badgesRedraw = () => { if (b.isConnected && signature() !== sig && !b.matches(':hover')) draw(); };   // only when something changed, and not under the pointer (a redraw would restart a tile's hover)
   b.addEventListener('click', e => {
-    const tl = e.target.closest('.bd[data-bid]'); if (tl) { showBadge(tl.dataset.bid); return; }
+    const tl = e.target.closest('[data-bid]'); if (tl) { showBadge(tl.dataset.bid); return; }
     const f = e.target.closest('[data-bf]')?.dataset.bf; if (f) { badgeFilter = f; draw(); }
   });
   b.addEventListener('keydown', e => { const tl = e.target.closest('.bd[data-bid]'); if (tl && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); showBadge(tl.dataset.bid); } });
@@ -771,6 +778,20 @@ function renderStats(b) {
   let ci = 0, fx = true;                                                    // ci: card number (for the staggered entrance); fx: play the entrance this time (first draw, and when the range changes)
   const card = (title, html, cls = '') => `<section class="sx-card ${cls}" style="--i:${ci++}"><h4>${title}</h4>${html}</section>`;
   const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;      // everything below respects the system "reduce motion" setting (CSS does too)
+  // Same stoplight formula/colours as AdminDeck's School Stats, ParentDeck's Student Summary and TeachersDeck's My Stats & XP.
+  // 'trend' (every raw-count tile below) judges % change vs the period right before it, same as AdminDeck's Homework/Reading/Focus/Active-time tiles.
+  const STOPLIGHT = { days:{ good:4, watch:2 }, share:{ good:70, watch:40 }, trend:{ good:0, watch:-10 } };
+  const stoplight = (kind, v) => { const r = STOPLIGHT[kind]; if (!r || v == null) return null;
+    if (v >= r.good) return 'good'; if (v >= r.watch) return 'watch'; return 'bad'; };
+  const stPct = (cur, prev) => (prev > 0 ? Math.round((cur - prev) / prev * 100) : null);
+  const prevDayKeys = () => { if (range === 'all') return null;
+    return range === 'today' ? [back(1)] : range === 'week' ? Array.from({ length:7 }, (_, i) => back(7 + i)) : Array.from({ length:30 }, (_, i) => back(30 + i)); };
+  const sumBasic = ks => { const s = { xp:0, hw:0, readEntries:0, readMin:0, focus:0, games:0, gamesStarted:0, idioms:0, wordsSaved:0, cardsReviewed:0, translations:0, lookups:0, notes:0, totalT:0, docT:0, activeDays:0 };
+    ks.forEach(k => { const r = D()[k]; if (!r) return;
+      ['xp', 'hw', 'readEntries', 'readMin', 'focus', 'games', 'gamesStarted', 'idioms', 'wordsSaved', 'cardsReviewed', 'translations', 'lookups', 'notes'].forEach(f => { s[f] += r[f] || 0; });
+      Object.entries(r.timeBy || {}).forEach(([w, n]) => { if (w !== DOC_KEY) s.totalT += n; else s.docT += n; });
+      if ((r.xp || 0) > 0) s.activeDays++; });
+    return s; };
   function countUp(el, delay = 0) {                                          // 0 -> its own number, easing out; text after the number (units, dates) stays put
     if (!el || still()) return;
     const raw = el.dataset.raw || (el.dataset.raw = el.textContent), m = /^(\d+(?:\.\d+)?)(.*)$/s.exec(raw); if (!m || +m[1] === 0) return;
@@ -812,9 +833,15 @@ function renderStats(b) {
       <p class="muted" style="margin:6px 0">🔥 Streak: ${X.streak} day${X.streak === 1 ? '' : 's'} · best ${Math.max(bestStreak(), X.streak)}${m > 1 ? ` · ×${m.toFixed(1)} XP bonus` : ''}</p>`;
     b.querySelectorAll('[data-r]').forEach(c => c.classList.toggle('on', c.dataset.r === range));
     const active = ks.filter(k => (D()[k].xp || 0) > 0), best = active.reduce((a, k) => (D()[k].xp > (a ? D()[a].xp : 0) ? k : a), '');
-    const tiles = [['XP earned', T.xp], ['Active days', active.length], ['Average XP / active day', active.length ? Math.round(T.xp / active.length) : 0], ['Best day', best ? `${D()[best].xp} XP · ${new Date(best + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}` : '—'],
-      ['Homework done', T.hw], ['Reading', `${T.readEntries} entr${T.readEntries === 1 ? 'y' : 'ies'} · ${T.readMin} min`], ['Games played', `${T.gamesStarted} (${T.games} finished)`], ['Focus sessions', T.focus],
-      ['Active time', fmtT(totalT)], ['Time with documents', fmtT(docT)], ['Words saved', T.wordsSaved], ['Cards reviewed', T.cardsReviewed], ['Translations', T.translations], ['Dictionary look-ups', T.lookups], ['Notepad lines', T.notes], ['Idioms learned', T.idioms], ['Badges earned', `${Object.keys(state.badges.earned).length} / ${BADGES.length}`]];
+    const daysSt = range === 'week' ? stoplight('days', active.length) : null;       // day-count thresholds assume a 7-day week
+    const badgesEarnedN = Object.keys(state.badges.earned).length;
+    const badgesSt = stoplight('share', Math.round(badgesEarnedN / BADGES.length * 100)); // % of a fixed total — valid at any range
+    const prevKeys = prevDayKeys(), P = prevKeys ? sumBasic(prevKeys) : null;         // null on "all time" — no equal-length period before it
+    const trendSt = (cur, prevVal) => P ? stoplight('trend', stPct(cur, prevVal)) : null;
+    const avgXp = active.length ? Math.round(T.xp / active.length) : 0, prevAvgXp = P && P.activeDays ? Math.round(P.xp / P.activeDays) : null;
+    const tiles = [['XP earned', T.xp, trendSt(T.xp, P && P.xp)], ['Active days', active.length, daysSt], ['Average XP / active day', avgXp, trendSt(avgXp, prevAvgXp)], ['Best day', best ? `${D()[best].xp} XP · ${new Date(best + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}` : '—'],
+      ['Homework done', T.hw, trendSt(T.hw, P && P.hw)], ['Reading', `${T.readEntries} entr${T.readEntries === 1 ? 'y' : 'ies'} · ${T.readMin} min`, trendSt(T.readMin, P && P.readMin)], ['Games played', `${T.gamesStarted} (${T.games} finished)`, trendSt(T.games, P && P.games)], ['Focus sessions', T.focus, trendSt(T.focus, P && P.focus)],
+      ['Active time', fmtT(totalT), trendSt(totalT, P && P.totalT)], ['Time with documents', fmtT(docT), trendSt(docT, P && P.docT)], ['Words saved', T.wordsSaved, trendSt(T.wordsSaved, P && P.wordsSaved)], ['Cards reviewed', T.cardsReviewed, trendSt(T.cardsReviewed, P && P.cardsReviewed)], ['Translations', T.translations, trendSt(T.translations, P && P.translations)], ['Dictionary look-ups', T.lookups, trendSt(T.lookups, P && P.lookups)], ['Notepad lines', T.notes, trendSt(T.notes, P && P.notes)], ['Idioms learned', T.idioms, trendSt(T.idioms, P && P.idioms)], ['Badges earned', `${badgesEarnedN} / ${BADGES.length}`, badgesSt]];
     const xpRows = Object.keys({ ...XP_RULES, ...xpBy }).map(s => ({ l: srcLabel(s), v: xpBy[s] || 0, t: (xpBy[s] || 0) + ' XP' })).filter(r => r.v).sort((a, c) => c.v - a.v);
     const timeRows = [...WIDGETS.map(w => ({ id: w.id, l: stripLeadingEmoji(w.title) })), { id: DOC_KEY, l: 'Open documents' }].map(w => ({ l: w.l, v: timeBy[w.id] || 0, t: fmtT(timeBy[w.id] || 0) })).filter(r => r.v).sort((a, c) => c.v - a.v);
     const docRows = Object.values(state.docTime).filter(e => e.secs).sort((a, c) => c.secs - a.secs).slice(0, 6).map(e => ({ l: (e.kind === 'pdf' ? '\ud83d\udcd5 ' : '\ud83d\udd17 ') + e.name, v: e.secs, t: fmtT(e.secs) }));
@@ -828,7 +855,9 @@ function renderStats(b) {
     const mood14 = Array.from({ length: 14 }, (_, i) => { const k = back(13 - i), mo = moodOn(k); return `<span class="mo" style="--n:${i}" title="${k}">${mo ? (MOODS.find(x => x[0] === mo) || [, '·'])[1] : '·'}</span>`; }).join('');
     const NP = state.notes.pages, noteLines = NP.reduce((n, p) => n + p.lines.length, 0), today = dayKey(Date.now()), linesToday = NP.reduce((n, p) => n + p.lines.filter(l => dayKey(l.t) === today).length, 0), xpNotesToday = ((D()[today] || {}).xpBy || {}).notes || 0;
     $('#sx-body', b).innerHTML = [
-      card('Highlights', `<div class="tiles wide">${tiles.map(([l, v], n) => `<div class="tile" style="--n:${n}"><b>${esc(v)}</b><span>${l}</span></div>`).join('')}</div>`, 'wide'),
+      card('Highlights', `<div class="ss-stlegend"><span class="ss-st ss-stkey" data-st="good">On track</span><span class="ss-st ss-stkey" data-st="watch">Monitor</span><span class="ss-st ss-stkey" data-st="bad">Needs attention</span>
+        <details><summary>How are these colours worked out?</summary><p>Active days this week: ${STOPLIGHT.days.good}+ is on track, ${STOPLIGHT.days.watch}–${STOPLIGHT.days.good} is worth monitoring, below ${STOPLIGHT.days.watch} needs attention.</p><p>Share of a total (e.g. badges): ${STOPLIGHT.share.good}%+ is on track, ${STOPLIGHT.share.watch}–${STOPLIGHT.share.good}% is worth monitoring, below ${STOPLIGHT.share.watch}% needs attention.</p><p>Everything else is judged against the period right before it of the same length: flat or up is on track, down to 10% is worth monitoring, down more than that needs attention.</p></details></div>
+        <div class="tiles wide">${tiles.map(([l, v, st], n) => `<div class="tile" style="--n:${n}"${st ? ` data-st="${st}"` : ''}><b>${esc(v)}</b><span>${l}</span></div>`).join('')}</div>`, 'wide'),
       card('XP by source', bars(xpRows)),
       card(`XP per day <span class="muted">(last ${nCols} days)</span>`, `<div class="cols big${nCols > 7 ? ' dense' : ''}">${colsD.map((d, n) => `<div class="col" style="--n:${n}" data-v="${d.v} XP" title="${d.k}: ${d.v} XP"><em>${nCols > 7 ? '' : (d.v || '')}</em><i style="height:${Math.round(d.v / mxc * 100)}%"></i><span>${nCols > 7 ? (new Date(d.k + 'T12:00').getDate() % 5 === 0 ? new Date(d.k + 'T12:00').getDate() : '') : new Date(d.k + 'T12:00').toLocaleDateString('en', { weekday: 'short' })}</span></div>`).join('')}</div>`),
       card('Activity <span class="muted">(last 16 weeks)</span>', heatmap()),
@@ -1039,6 +1068,28 @@ function renderNotes(b) {
    A SEPARATE, teacher-awarded points balance from the local XP engine above
    (see js/cloud.js header comment for why both exist). Nothing here touches
    state.xp or awardXP(). */
+// v0.14.0 (backend v2.7.0): the page a teacher is sharing live from TeachersDeck's DrawDeck
+// ("Share this page with the class"). Free widget — never gate the loop: this carries information
+// from teacher to student, same rule the Homework/Calendar sync already follows. Read-only, one
+// page at a time, no history (see DrawDeck_Scope_Document.pdf §8 for the scope decision).
+function renderSharedBoard(b) {
+  let unsub = null, data = null;
+  function draw() {
+    if (!SDCloud.isConfigured() || !SDCloud.getJoined()) {
+      b.innerHTML = `<p class="muted">Join your class first to see anything your teacher shares here.</p>`;
+      return;
+    }
+    if (!data || !data.imageDataUrl) {
+      b.innerHTML = `<div class="sb-empty"><p class="muted">Nothing shared right now — check back when your teacher shares a DrawDeck page.</p></div>`;
+      return;
+    }
+    b.innerHTML = `<div class="sb-wrap"><img class="sb-img" src="${esc(data.imageDataUrl)}" alt="Page shared by your teacher"></div>`;
+  }
+  draw();
+  unsub = SDCloud.subscribeSharedBoard(d => { data = d; draw(); });
+  return function cleanup() { if (unsub) unsub(); };
+}
+
 function renderClass(b) {
   let pinBanner = '';
   function draw() {
@@ -1712,6 +1763,9 @@ const WIDGETS = [
   { id: 'stats', title: '📈 Stats & XP', icon: I('<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>'), w: 400, h: 600, full: true, render: renderStats },   // full: true = fills the whole screen (v0.9.2); the other widgets float on top of it
   { id: 'badges', title: '🏅 Badges & Rewards', icon: I('<circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 22l5-3 5 3-1.5-8"/>'), w: 400, h: 600, full: true, render: renderBadges },   // v0.9.9: the full badge display (moved out of Stats & XP)
   { id: 'journey', title: '🗺️ Journey', icon: I('<circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c1.2 1.2 2.8 1.2 4 0"/>'), w: 360, h: 480, render: renderJourney },
+  { id: 'sharedboard', title: '🖥️ Shared Board', icon: I('<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'), w: 400, h: 600, full: true, render: renderSharedBoard },   // v0.14.0: live view of whatever the teacher is sharing from DrawDeck
+  { id: 'boardassign', title: '📋 Board Assignments', icon: I('<path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>'), w: 400, h: 600, full: true, render: renderBoardAssign },   // v0.17.0 (backend v2.9.0): draw an answer on a page the teacher pushed (DrawDeck scope step D)
+  { id: 'scrap', title: '🖼️ Scrapdeck', icon: I('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L8 19"/>'), w: 400, h: 600, full: true, render: renderScrapdeck },   // v0.12.0: scrapbook pages (js/scrapdeck.js); full-screen like Stats & XP
   { id: 'class', title: '🏫 Class', icon: I('<path d="M7 18a4.5 4.5 0 0 1-.6-8.96 5.5 5.5 0 0 1 10.7-1.6A4 4 0 0 1 17.5 18H7Z"/>'), w: 330, h: 460, render: renderClass }
 ];
 
@@ -1774,7 +1828,7 @@ document.addEventListener('keydown', e => {                      // Esc leaves a
    PRO_GATE_ENABLED stays false until launch: nothing is locked. ?progate=1 previews the gate. A locked widget
    tells the child to ask a grown-up — StudentDeck never shows children a price or a purchase link. */
 const PRO_GATE_ENABLED = false;
-const PRO_WIDGETS = ['games', 'translate', 'dict', 'cards', 'idiom'];
+const PRO_WIDGETS = ['games', 'translate', 'dict', 'cards', 'idiom', 'scrap'];
 ProGate.configure({
   enabled: PRO_GATE_ENABLED, ids: PRO_WIDGETS, pro: (() => { try { return localStorage.getItem('sd_pro') === '1'; } catch (e) { return false; } })(),
   title: '⭐ A Pro widget', text: 'This one opens when your family has ParentDeck Pro. Ask a grown-up at home!',
@@ -1832,8 +1886,8 @@ const LAYOUT_MODES = ['compact', 'cozy', 'custom'];
 const LAYOUT_TEXT = { compact: ['Compact', 'Just the bottom dock \u2014 tap the arrow above it for an app tray with every widget'], cozy: ['Cozy', 'Bottom, left and right docks all shown'], custom: ['Custom', 'Pick each widget\u2019s dock and toggle drawers yourself'] };
 const DOCK_CAPS = { bottom: 10, left: 5, right: 5 };
 const PLACE_LABEL = { bottom: 'Bottom dock', left: 'Left drawer', right: 'Right drawer', hidden: 'Hidden' };
-const DEFAULT_PLACEMENT = { clock: 'bottom', timer: 'bottom', todo: 'bottom', reading: 'bottom', notes: 'bottom', files: 'bottom', translate: 'bottom', dict: 'bottom', cards: 'bottom', games: 'left', idiom: 'left', journey: 'left', stats: 'right', badges: 'right', class: 'right' };
-const WIDGET_CAT = { timer: 'study', todo: 'study', reading: 'study', notes: 'study', files: 'study', translate: 'language', dict: 'language', cards: 'language', idiom: 'language', games: 'me', journey: 'me', stats: 'me', badges: 'me', class: 'cloud' };
+const DEFAULT_PLACEMENT = { clock: 'bottom', timer: 'bottom', todo: 'bottom', reading: 'bottom', notes: 'bottom', files: 'bottom', translate: 'bottom', dict: 'bottom', cards: 'bottom', games: 'left', idiom: 'left', journey: 'left', scrap: 'left', stats: 'right', badges: 'right', class: 'right' };
+const WIDGET_CAT = { timer: 'study', todo: 'study', reading: 'study', notes: 'study', files: 'study', translate: 'language', dict: 'language', cards: 'language', idiom: 'language', games: 'me', journey: 'me', scrap: 'me', stats: 'me', badges: 'me', class: 'cloud' };
 const CATEGORIES = [['study', 'Study'], ['language', 'Language'], ['me', 'Me & fun'], ['cloud', 'Class']];
 
 const widgetsFor = loc => WIDGETS.filter(w => state.dockPlacement[w.id] === loc).slice(0, DOCK_CAPS[loc] || 99);   // a dock never shows more than its cap; the rest stay reachable in the tray

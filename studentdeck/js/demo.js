@@ -15,8 +15,11 @@
    or add ?demo=1 to the address. Turn off: "Exit demo" in the panel or Settings, or ?demo=0. Dates are generated relative to today. */
 const SD_DEMO = (() => {
   const FLAG = 'sd_demo_flag', realLS = window.localStorage;
-  try { const q = new URLSearchParams(location.search).get('demo'); if (q === '1') realLS.setItem(FLAG, '1'); else if (q === '0') realLS.removeItem(FLAG); } catch (e) {}
-  let on = false; try { on = realLS.getItem(FLAG) === '1'; } catch (e) {}
+  let q = null; try { q = new URLSearchParams(location.search).get('demo'); } catch (e) {}
+  try { if (q === '1') realLS.setItem(FLAG, '1'); else if (q === '0') realLS.removeItem(FLAG); } catch (e) {}
+  // ?demo=1 in the address always wins, even when the browser won't let the flag persist to localStorage
+  // (e.g. storage blocked for this origin) — otherwise "Try the demo" just reloads into the same dead end.
+  let on = q === '1'; if (!on) { try { on = realLS.getItem(FLAG) === '1'; } catch (e) {} }
   const api = {
     active: on,
     enter() { try { realLS.setItem(FLAG, '1'); } catch (e) {} location.href = location.pathname + '?demo=1'; },
@@ -133,6 +136,7 @@ const SD_DEMO = (() => {
       subscribeStudent: cb => subscribeTo(studentL, cb, stu), subscribeClassMeta: cb => { later(() => cb({ id: 'demo_5a', className: 'Class 5A' })); return () => {}; },
       subscribeRewards: cb => subscribeTo(rewardL, cb, () => cloud.rewards.filter(r => r.active !== false)),
       subscribeCalendar: cb => subscribeTo(calL, cb, calList), subscribeHomework: cb => subscribeTo(hwL, cb, hwList),
+      subscribePolicy: cb => { later(() => cb(null)); return () => {}; },   // v0.13.0: no policy document = the defaults
       subscribeHomeworkDone: cb => subscribeTo(doneL, cb, () => new Map(cloud.done)),
       async setHomeworkDone(a, done) { await lat(); if (done) cloud.done.set(a.id, { done: true, doneAt: Date.now() }); else cloud.done.delete(a.id); emit(doneL, () => new Map(cloud.done)); note(`Homework "${a.title}" marked ${done ? 'done' : 'not done'} \u2192 your parent is told in ParentDeck`); return true; },
       async redeemReward(id) { await lat(); const r = cloud.rewards.find(x => x.id === id); if (!r) throw new Error('That reward is no longer available.');

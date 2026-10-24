@@ -21,11 +21,11 @@
 const TD_DEMO = (() => {
   const KEY = 'td_demo_flag';
   const realLS = window.localStorage;                    // captured before anything can replace it
-  try {
-    const q = new URLSearchParams(location.search).get('demo');
-    if (q === '1') realLS.setItem(KEY, '1'); else if (q === '0') realLS.removeItem(KEY);
-  } catch (e) {}
-  let on = false; try { on = realLS.getItem(KEY) === '1'; } catch (e) {}
+  let q = null; try { q = new URLSearchParams(location.search).get('demo'); } catch (e) {}
+  try { if (q === '1') realLS.setItem(KEY, '1'); else if (q === '0') realLS.removeItem(KEY); } catch (e) {}
+  // ?demo=1 in the address always wins, even when the browser won't let the flag persist to localStorage
+  // (e.g. storage blocked for this origin) — otherwise "Try demo" just reloads into the same dead end.
+  let on = q === '1'; if (!on) { try { on = realLS.getItem(KEY) === '1'; } catch (e) {} }
   const api = {
     active: on,
     enter() { try { realLS.setItem(KEY, '1'); } catch (e) {} location.href = location.pathname + '?demo=1'; },
@@ -50,6 +50,10 @@ const TD_DEMO = (() => {
   if (window.localStorage !== mem) { try { realLS.removeItem(KEY); } catch (e2) {} api.active = false; api.blocked = true; return api; }
   // The demo class has its own id (not the default one), so its background image id is 'background::demo_5a' — never the real 'background'.
   mem.setItem('td_classes_v1', JSON.stringify({ active: 'demo_5a', list: [{ id: 'demo_5a', name: 'Class 5A' }] }));
+  // Mark widget curation as already done, so curateWidgetsOnce() doesn't re-deactivate the shelve-tier widgets (and
+  // pop the "Tidied up" toast) on every single demo reload — a fresh in-memory localStorage otherwise looks like a
+  // brand-new device every time.
+  mem.setItem('td_widgets_v1', JSON.stringify({ curated: true, off: {}, parked: {} }));
   document.title = 'TeachersDeck (demo)';
 
   /* ---------- 2. helpers ---------- */
@@ -65,6 +69,34 @@ const TD_DEMO = (() => {
   const lat = () => wait(220 + ri(0, 220));              // a believable round trip
   const code = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const c = n => Array.from({ length: n }, () => A[ri(0, A.length - 1)]).join(''); return c(4) + '-' + c(4); };
   const clone = o => JSON.parse(JSON.stringify(o));
+
+  /* ---------- 2b. the teacher's own "My Stats & XP" + badges ----------
+     This is local usage history (td_xp_v1), not a Cloud feature, so it isn't part of the pretend cloud below —
+     without this, a fresh demo shows it almost empty (just whatever you click while looking around). Seeding
+     tdx.stats.daily/xp directly and leaving badges.init=false lets app.js's own first-run badge backfill
+     (checkBadges()) silently award whatever this history qualifies for, exactly like a real device with history. */
+  (() => {
+    const ACTS = ['lesson', 'assignment', 'event', 'report', 'daily', 'attendance', 'pick', 'groups', 'score', 'poll', 'ticket', 'checklist', 'announce', 'instruct', 'timer', 'reading', 'file', 'game', 'music', 'video', 'tts', 'convo', 'idiom', 'qr'];
+    const XP_OF = { lesson:10, assignment:5, event:2, report:3, daily:5, attendance:5, pick:1, groups:2, score:1, poll:1, ticket:1, checklist:1, announce:2, instruct:1, timer:1, reading:1, file:1, game:2, music:1, video:1, tts:1, convo:1, idiom:1, qr:1 };
+    const TIME_WIDGETS = ['stats', 'classactivity', 'rewardpoints', 'noteshome', 'traffic', 'checklist', 'files', 'timer', 'docs'];   // 'docs' feeds the "Time with documents" tile
+    const daily = {}, log = []; let total = 0;
+    for (let d = 29; d >= 0; d--) {                        // a full month, so the 30-day/all-time ranges have real history too, not just the last week
+      if (rnd() < 0.1) continue;                           // a quiet day here and there, like a real term
+      const busy = rnd() > 0.45, r = { xp:0, xpBy:{}, timeBy:{}, readEntries:0, readMin:0, lessons:0, assignments:0, attendance:0, acts:{}, opens:{} };
+      const add = (k, n) => { r.acts[k] = (r.acts[k] || 0) + n; const xp = (XP_OF[k] || 1) * n; r.xp += xp; r.xpBy[k] = (r.xpBy[k] || 0) + xp; };
+      add('daily', 1);
+      ACTS.forEach(k => { if (rnd() < (busy ? 0.55 : 0.3)) add(k, ri(1, busy ? 4 : 2)); });
+      r.lessons = r.acts.lesson || 0; r.assignments = r.acts.assignment || 0; r.attendance = r.acts.attendance || 0;
+      r.readMin = r.acts.reading ? ri(5, 20) : 0; r.readEntries = r.acts.reading ? ri(1, 2) : 0;
+      TIME_WIDGETS.forEach(w => { if (rnd() < 0.5) r.timeBy[w] = ri(120, 1500); });
+      const key = dayKey(ago(d));
+      daily[key] = r; total += r.xp;
+      log.push({ t: ago(d) + ri(8, 20) * 36e5, s:'daily', n:r.xp });
+    }
+    const seed = { xp:{ total, streak:7, last:dayKey(now), log }, stats:{ daily }, totals:{}, feed:[],
+      badges:{ earned:{}, init:false, bestStreak:0 }, docTime:{}, filesSort:'recent', docToReading:false, pdfTools:false };
+    mem.setItem('td_xp_v1', JSON.stringify(seed));
+  })();
 
   /* ---------- 3. the pretend cloud ---------- */
   const NAMES_5A = ['Minh Nguyen', 'Lan Tran', 'Bao Le', 'An Pham', 'Chi Vo', 'Khoa Dang', 'Linh Do', 'Phuc Huynh', 'Mai Bui', 'Hieu Ngo', 'Thao Duong', 'Duc Ly'];

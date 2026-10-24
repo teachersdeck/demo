@@ -365,6 +365,67 @@ const TDCloud = (() => {
     return (await functions.httpsCallable('setClassPulse')({ classId, enabled })).data;
   }
 
+  // ---- v0.26.0 (backend v2.7.0): DrawDeck "share this page" -> StudentDeck's Shared Board ----
+  // Direct client write, same pattern as syncCalendar/syncHomework above — the only validation
+  // firestore.rules needs (shape, size cap) is something a rule can enforce on its own, so this
+  // skips a Cloud Function. One shared page per class at a time: writing classes/{id}/sharedBoards/current
+  // replaces whatever was there; stopSharingBoard deletes it.
+  async function shareBoard(classId, imageDataUrl){
+    if(!ready || !classId) throw new Error('not ready');
+    const u = firebase.auth().currentUser; if(!u) throw new Error('not signed in');
+    await db.collection('classes').doc(classId).collection('sharedBoards').doc('current').set({
+      imageDataUrl, sharedAt: Date.now(), sharedBy: u.uid
+    });
+  }
+  async function stopSharingBoard(classId){
+    if(!ready || !classId) throw new Error('not ready');
+    await db.collection('classes').doc(classId).collection('sharedBoards').doc('current').delete();
+  }
+
+  // ---- v0.27.0 (backend v2.8.0): Scrapdeck review (M3) ----
+  // A teacher's free review screen for pages students have shared from StudentDeck's Scrapdeck.
+  // listScrapPages/reviewScrapPage are Cloud Functions (see scrapdeck.js's header comment for why
+  // the list is a function, not a client collectionGroup query); setScrapGalleryOn is the
+  // teacher's own per-class switch for the classmates' gallery (M3b), off by default.
+  async function listScrapPages(classId){
+    return (await functions.httpsCallable('listScrapPages')({ classId })).data.rows;
+  }
+  async function reviewScrapPage(studentId, pageId, action){
+    return (await functions.httpsCallable('reviewScrapPage')({ studentId, pageId, action })).data;
+  }
+  async function setScrapGalleryOn(classId, enabled){
+    return (await functions.httpsCallable('setScrapGalleryOn')({ classId, enabled })).data;
+  }
+  async function getScrapImage(studentId, pageId){
+    const d = await db.collection('students').doc(studentId).collection('scrapImages').doc(pageId).get();
+    return d.exists ? d.data().imageDataUrl : null;
+  }
+
+  // ---- v0.29.0 (backend v2.9.0): Board Assignments (DrawDeck scope step D) ----
+  async function assignBoard(classId, title, thumbDataUrl, imageDataUrl){
+    return (await functions.httpsCallable('assignBoard')({ classId, title, thumbDataUrl, imageDataUrl })).data;
+  }
+  async function closeAssignment(classId, assignmentId, open){
+    return (await functions.httpsCallable('closeAssignment')({ classId, assignmentId, open })).data;
+  }
+  async function listBoardAnswers(classId, assignmentId){
+    return (await functions.httpsCallable('listBoardAnswers')({ classId, assignmentId })).data.rows;
+  }
+  async function awardBoardAnswer(classId, studentId, assignmentId, amount, reason){
+    return (await functions.httpsCallable('awardBoardAnswer')({ classId, studentId, assignmentId, amount, reason })).data;
+  }
+  function subscribeBoardAssignments(classId, cb){
+    if(!ready || !classId) return ()=>{};
+    return db.collection('classes').doc(classId).collection('boardAssignments').onSnapshot(
+      snap=> cb(snap.docs.map(d=> ({ id:d.id, ...d.data() })).sort((a,b)=> (b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0) - (a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0))),
+      ()=> cb([])
+    );
+  }
+  async function getBoardAnswerImage(studentId, assignmentId){
+    const d = await db.collection('students').doc(studentId).collection('boardAnswerImages').doc(assignmentId).get();
+    return d.exists ? d.data().imageDataUrl : null;
+  }
+
   return {
     isConfigured, init, watchAuth, onAuthChanged, signIn, signOut: signOutCloud, getSession,
     myClasses, createClass, regenerateJoinCode, setRankingVisibility,
@@ -375,7 +436,10 @@ const TDCloud = (() => {
     syncCalendar, resetCalendarSyncCache,
     syncHomework, resetHomeworkSyncCache,
     syncAttendance, getFamilyCodes, regenerateFamilyCode, setClassPulse,
-    joinSchool, subscribeMySchool, subscribeAdminNotes, markAdminNoteRead
+    joinSchool, subscribeMySchool, subscribeAdminNotes, markAdminNoteRead,
+    shareBoard, stopSharingBoard,
+    listScrapPages, reviewScrapPage, setScrapGalleryOn, getScrapImage,
+    assignBoard, closeAssignment, listBoardAnswers, awardBoardAnswer, subscribeBoardAssignments, getBoardAnswerImage
   };
 })();
 TDCloud.watchAuth();

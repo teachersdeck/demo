@@ -285,6 +285,31 @@ body.fs-open .widget.full{top:0;border-top:0}
 .sx-card.wide{grid-column:1/-1}
 .sx-card h4{margin:0 0 8px;font-size:13px}
 .sx-card .tiles{margin:0}.sx-card .tiles.wide{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+/* Stoplight tiles on the Highlights card only — same formula/colours as AdminDeck's School Stats, ParentDeck's Student Summary and TeachersDeck's My Stats & XP. Scoped to .tiles.wide so it can't bleed into other .tile grids (e.g. Notepad). */
+.tiles.wide .tile[data-st]{ position:relative; border-width:2px;
+  --st-good:#2EE66B; --st-watch:#FFE600; --st-bad:#FF3B3B;
+  --st-good-bg:rgba(46,230,107,.22); --st-watch-bg:rgba(255,230,0,.20); --st-bad-bg:rgba(255,59,59,.24); }
+.tiles.wide .tile[data-st="good"]{ border-color:var(--st-good); background:var(--st-good-bg); box-shadow:0 0 0 1px rgba(46,230,107,.25), 0 0 18px rgba(46,230,107,.30); }
+.tiles.wide .tile[data-st="watch"]{ border-color:var(--st-watch); background:var(--st-watch-bg); box-shadow:0 0 0 1px rgba(255,230,0,.25), 0 0 18px rgba(255,230,0,.28); }
+.tiles.wide .tile[data-st="bad"]{ border-color:var(--st-bad); background:var(--st-bad-bg); box-shadow:0 0 0 1.5px rgba(255,59,59,.55), 0 0 28px rgba(255,59,59,.6), 0 0 46px rgba(255,59,59,.22); }
+.tiles.wide .tile[data-st="good"]:hover{ box-shadow:0 0 0 1px rgba(46,230,107,.4), 0 8px 26px rgba(46,230,107,.45); }
+.tiles.wide .tile[data-st="watch"]:hover{ box-shadow:0 0 0 1px rgba(255,230,0,.4), 0 8px 26px rgba(255,230,0,.42); }
+.tiles.wide .tile[data-st="bad"]:hover{ box-shadow:0 0 0 1.5px rgba(255,59,59,.7), 0 10px 32px rgba(255,59,59,.65), 0 0 50px rgba(255,59,59,.28); }
+.tiles.wide .tile[data-st="good"]{ color:var(--st-good); } .tiles.wide .tile[data-st="watch"]{ color:var(--st-watch); } .tiles.wide .tile[data-st="bad"]{ color:var(--st-bad); }
+.tiles.wide .tile[data-st] b, .tiles.wide .tile[data-st] > span{ color:inherit; }
+.tiles.wide .tile[data-st]::after{ position:absolute; top:8px; right:11px; font-size:14px; line-height:1; }
+.tiles.wide .tile[data-st="good"]::after{ content:'●'; } .tiles.wide .tile[data-st="watch"]::after{ content:'▲'; } .tiles.wide .tile[data-st="bad"]::after{ content:'■'; }
+/* the colour key above the Highlights tile grid — same pill pattern as AdminDeck's School Stats legend */
+.ss-st[data-st]{ display:inline-block; padding:1px 9px; border-radius:999px; border:1.5px solid currentColor; font-weight:700; line-height:1.5; }
+.ss-st[data-st="good"]{ color:#2EE66B; background:rgba(46,230,107,.22); }
+.ss-st[data-st="watch"]{ color:#FFE600; background:rgba(255,230,0,.20); }
+.ss-st[data-st="bad"]{ color:#FF3B3B; background:rgba(255,59,59,.24); }
+.ss-st[data-st]::before{ font-size:.7em; margin-right:5px; vertical-align:.1em; }
+.ss-st[data-st="good"]::before{ content:'●'; } .ss-st[data-st="watch"]::before{ content:'▲'; } .ss-st[data-st="bad"]::before{ content:'■'; }
+.ss-stlegend{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 12px; margin:2px 0 10px; font-size:13px; font-weight:600; }
+.ss-stlegend details{ flex:1 1 260px; color:var(--lo); font-weight:500; font-size:12.5px; margin-left:6px; }
+.ss-stlegend summary{ cursor:pointer; width:max-content; padding-top:3px; }
+.ss-stlegend details p{ margin:5px 0 0; }
 .sx-card .bar{grid-template-columns:150px 1fr 70px}
 .cols.big{height:150px}.cols.dense{gap:2px}.cols.dense .col span{font-size:9px}
 .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,15px);grid-auto-columns:15px;gap:3px;overflow-x:auto;padding-bottom:2px}
@@ -451,7 +476,18 @@ body.fs-open .widget.full{top:0;border-top:0}
 .badge-chip{display:flex;align-items:center;gap:5px;font:inherit;font-size:12px;color:var(--hi);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer}
 .badge-chip:hover{border-color:var(--gold)}.badge-chip b{color:var(--gold-hi)}.badge-chip.pulse{animation:bdChip .9s ease-in-out}
 
-/* the Badges card */
+/* the Badges card: a display case — hero spot for the latest badge, then shelves by group. Same visual language as ParentDeck's Badge Display Case. */
+.bc-hero{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 18px;margin-bottom:10px;border:1px solid rgba(224,169,59,.35);border-radius:18px;background:radial-gradient(120% 140% at 10% 0%,rgba(224,169,59,.12),transparent 60%)}
+.bc-spot{font:inherit;border:0;background:none;padding:0;cursor:pointer}
+.bc-spot .medal{width:84px;height:84px}.bc-spot .medal .mi{width:64px;height:64px;font-size:35px}
+.bc-spot:hover .medal::after{animation:bdShine .9s ease-out}
+.bc-spot.empty{width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:36px;border-radius:50%;border:2px dashed var(--line);opacity:.6}
+.bc-hero-t{flex:1;min-width:200px}
+.bc-count{margin:0 0 6px;font-size:15px;color:var(--gold-hi)}.bc-last{margin:8px 0 0}
+.bc-cabinet{padding:10px 14px 2px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.12)}
+.bc-shelf{padding-top:4px}.bc-shelf:first-child{padding-top:0}
+.bc-ledge{height:9px;margin:8px -6px 10px;border-radius:3px;background:linear-gradient(180deg,rgba(224,169,59,.35),rgba(224,169,59,.08) 55%,rgba(0,0,0,.25));box-shadow:0 5px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.2)}
+.bc-shelf:last-child .bc-ledge{display:none}
 .bd-sum{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px}.bd-sum .xpbar{flex:1;min-width:140px}
 .bd-next-h,.bgal h5{margin:12px 0 6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--lo)}
 .bd-next{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
@@ -540,3 +576,127 @@ body.fs-open .widget.full{top:0;border-top:0}
 .pg-lock .pg-cta{margin-top:4px;padding:8px 16px;border-radius:999px;border:0;cursor:pointer;font-weight:600;background:linear-gradient(135deg,#ffcb5c,#f59e0b);color:#3b2600}
 .pg-lock .pg-note{font-size:12px;opacity:.6}
 .cl-pro{margin:4px 0;color:var(--gold-hi);font-weight:600}
+
+/* ---------- Scrapdeck (v0.12.0) ---------- */
+.widget[data-wid="scrap"] .body{display:flex;flex-direction:column;padding:8px 12px 76px;overflow:hidden}   /* the dock floats over the bottom edge */
+.sc-ed,.sc-gal{flex:1;min-height:0;display:flex;flex-direction:column}
+.sc-gal{overflow:auto;padding:0 104px}   /* the left and right drawers float over a full-screen widget; keep cards and buttons clear of them */
+.sc-galhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 2px 12px}
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.sc-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.sc-cover{display:block;width:100%;aspect-ratio:3/2;border:0;padding:0;background:rgba(0,0,0,.25);cursor:pointer;color:inherit}
+.sc-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.sc-nocover{font-size:42px;display:flex;align-items:center;justify-content:center;height:100%}
+.sc-cardmeta{padding:8px 10px 2px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.sc-cardmeta b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-acts{display:flex;gap:6px;padding:6px 10px 10px}.sc-acts .btn{padding:4px 9px;font-size:12px}
+.sc-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 6px}
+.sc-bar .grow{flex:1}
+.sc-bar .btn{padding:5px 10px;font-size:12.5px}
+.sc-bar .btn:disabled{opacity:.45;cursor:not-allowed}
+.sc-bar select,.sc-bar input[type=number],.sc-bar input[type=text]{font:inherit;font-size:12.5px;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:8px;padding:5px 8px;min-width:0}
+.sc-bar select{background:var(--panel2)}
+.sc-title{width:220px}
+.sc-bar input[type=color]{width:34px;height:28px;padding:0;border:1px solid var(--line);border-radius:6px;background:transparent;cursor:pointer}
+.sc-ctx{padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.18)}
+.sc-ctx input[type=text]{min-width:200px}
+.sc-snap{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--lo)}
+.sc-sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+.sc-meter,.sc-saved,.sc-pg{font-size:12px}
+.sc-pop{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 10px;margin:0 0 6px;max-height:150px;overflow:auto}
+.sc-pop p{margin:0 0 6px}
+.sc-pgrid{display:flex;flex-wrap:wrap;gap:6px}
+.sc-pbtn{width:44px;height:44px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.2);font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:4px;color:inherit}
+.sc-pbtn:hover{border-color:var(--gold)}.sc-pbtn svg{width:100%;height:100%}
+.sc-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,0,0,.22);border-radius:12px}
+.sc-pagewrap{position:relative;flex:none;box-shadow:0 8px 28px rgba(0,0,0,.45)}
+.sc-page{position:absolute;left:0;top:0;width:1200px;height:800px;transform-origin:0 0;touch-action:none;user-select:none;outline:none;--inv:1}
+.sc-clip{position:absolute;inset:0;overflow:hidden}
+.sc-bg-white{background:#fff}.sc-bg-cream{background:#fbf5e6}.sc-bg-kraft{background:#cdaa7d}.sc-bg-mint{background:#dff3e6}.sc-bg-sky{background:#dcecff}.sc-bg-blush{background:#ffe3ea}
+.sc-bg-dots{background:radial-gradient(circle,#c9c2a8 1.6px,transparent 1.7px) 0 0/24px 24px,#fffdf5}
+.sc-bg-grid{background:linear-gradient(to right,#cfd8e8 1px,transparent 1px) 0 0/32px 32px,linear-gradient(to bottom,#cfd8e8 1px,transparent 1px) 0 0/32px 32px,#fff}
+.sc-bg-lined{background:repeating-linear-gradient(to bottom,transparent 0 39px,#bcd0ea 39px 40px),#fffef8}
+.sc-it{position:absolute;box-sizing:border-box;cursor:move;outline:none;touch-action:none}
+.sc-it:focus-visible{outline:2px dashed var(--gold);outline-offset:2px}
+.sc-photo{color:#556}.sc-photo img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;user-select:none}
+.sc-photo.sc-f-plain img{border-radius:4px}
+.sc-f-polaroid{background:#fff;padding:10px 10px 34px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.sc-f-taped::before,.sc-f-taped::after{content:'';position:absolute;top:-6px;width:56px;height:18px;background:rgba(244,200,120,.78)}
+.sc-f-taped::before{left:-10px;transform:rotate(-35deg)}.sc-f-taped::after{right:-10px;transform:rotate(35deg)}
+.sc-text{padding:6px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.25;overflow:hidden}
+.sc-text.editing{cursor:text;outline:2px solid var(--gold);user-select:text;-webkit-user-select:text;overflow:auto;background:rgba(255,255,255,.55)}
+.sc-sticker{display:flex;align-items:center;justify-content:center;line-height:1;font-family:system-ui,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.sc-sticker svg,.sc-shape svg{width:100%;height:100%;display:block;pointer-events:none}
+.sc-sel{position:absolute;border:calc(2px*var(--inv,1)) solid var(--gold);pointer-events:none;box-sizing:border-box;z-index:100000}
+.sc-h{position:absolute;display:block;width:calc(14px*var(--inv,1));height:calc(14px*var(--inv,1));margin:calc(-7px*var(--inv,1)) 0 0 calc(-7px*var(--inv,1));background:var(--gold);border:calc(2px*var(--inv,1)) solid #231604;border-radius:50%;pointer-events:auto;box-sizing:border-box;cursor:nwse-resize}
+.sc-h[data-h="nw"]{left:0;top:0}.sc-h[data-h="ne"]{left:100%;top:0;cursor:nesw-resize}.sc-h[data-h="se"]{left:100%;top:100%}.sc-h[data-h="sw"]{left:0;top:100%;cursor:nesw-resize}
+.sc-h.sc-rot{left:50%;top:calc(-34px*var(--inv,1));cursor:grab}
+.sc-rotline{position:absolute;left:50%;top:calc(-34px*var(--inv,1));height:calc(34px*var(--inv,1));width:0;border-left:calc(1.5px*var(--inv,1)) solid var(--gold)}
+.widget.full[data-wid="scrap"]{background:#1f2a44}   /* opaque, so a full-screen widget left open behind (Stats, for example) does not ghost through the toolbars */
+
+/* v0.13.0 — Scrapdeck M2: tape, notes, pen, stamps, cutouts, crop, multi-select */
+.sc-it.sc-tape{opacity:.85;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.sc-it.sc-note{box-sizing:border-box;padding:14px;line-height:1.25;color:#333;white-space:pre-wrap;overflow:hidden;box-shadow:0 3px 8px rgba(0,0,0,.18)}
+.sc-it.sc-pen svg,.sc-it.sc-stamp svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.sc-it.sc-stamp{mix-blend-mode:multiply}
+.sc-it.sc-photo.sc-f-plain{overflow:hidden}
+.sc-it.sc-masked{background:none !important;box-shadow:none !important;padding:0 !important}
+.sc-mwrap{position:absolute;inset:0;overflow:hidden}
+.sc-it img.sc-crop{position:absolute;max-width:none;max-height:none;object-fit:fill}
+.sc-defs{position:absolute;width:0;height:0}
+.sc-edgeline{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.sc-edgeline path{fill:none;stroke:#fff;stroke-width:8;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.sc-it.sc-edge{filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))}
+.sc-it.cropping{outline:3px dashed #ffb703;outline-offset:2px;cursor:move}
+.sc-page.sc-drawing,.sc-page.sc-drawing .sc-it{cursor:crosshair}
+.sc-ink{position:absolute;left:0;top:0;width:1200px;height:800px;pointer-events:none;z-index:99998}
+.sc-band{position:absolute;border:1.5px dashed #3a86ff;background:rgba(58,134,255,.08);pointer-events:none;z-index:99999}
+.sc-sel.multi{border-style:dashed}.sc-sel.multi .sc-h{display:none}
+.sc-bar .btn.on{outline:2px solid #ffb703;outline-offset:1px}
+.sc-layouts{display:flex;gap:8px;flex-wrap:wrap}
+.sc-pbtn svg{width:34px;height:34px}
+
+/* ===== v0.15.0 — Scrapdeck sharing (M3, backend v2.8.0): "Share this page" modal ===== */
+.sc-modal{position:absolute;inset:0;background:rgba(10,14,24,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.sc-mcard{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;width:min(420px,100%);max-height:85%;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.sc-mcard h3{margin:0 0 10px}
+.sc-mcard h4{margin:14px 0 6px;font-size:13px;color:var(--lo)}
+.sc-mlabel{display:block;margin:0 0 10px;font-size:12.5px}
+.sc-mlabel input,.sc-mlabel textarea{display:block;width:100%;margin-top:4px;box-sizing:border-box}
+.sc-maud{display:flex;gap:14px;margin:0 0 8px;font-size:13px}
+.sc-mhint{font-size:11.5px;margin:0 0 10px}
+.sc-mbtns{display:flex;justify-content:flex-end;gap:8px;margin-bottom:4px}
+.sc-sharelist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:160px;overflow:auto}
+.sc-sharelist li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;border-top:1px solid var(--line);padding-top:6px}
+.sc-sharelist li:first-child{border-top:0;padding-top:0}
+.sc-sharelist .btn{margin-left:auto;padding:3px 9px;font-size:11.5px}
+
+/* ===== v0.14.0 — Shared Board (live view of a DrawDeck page the teacher is sharing) ===== */
+.widget[data-wid="sharedboard"] .body{padding:14px 18px 110px;display:flex}
+.sb-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.sb-img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.35);background:#fff}
+.sb-empty{flex:1;display:flex;align-items:center;justify-content:center;text-align:center}
+
+/* v0.16.0 — Scrapdeck's class gallery tab (M3b, read side) */
+.sc-galtabs{display:flex;gap:6px;margin:0 0 8px}
+.sc-cover-view{cursor:default}
+
+/* v0.17.0 (backend v2.9.0) — Board Assignments (DrawDeck scope step D) */
+.widget[data-wid="boardassign"] .body{padding:14px 18px 110px;display:flex;flex-direction:column}
+.ba-wrap{flex:1;display:flex;flex-direction:column;min-height:0}
+.ba-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;overflow:auto}
+.ba-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;text-align:left;padding:0;cursor:pointer;color:inherit}
+.ba-card:disabled{opacity:.6;cursor:default}
+.ba-card img{width:100%;aspect-ratio:4/3;object-fit:cover;background:#0002;display:block}
+.ba-meta{padding:8px 10px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.ba-meta b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ba-status{font-size:11.5px;color:var(--lo)}
+.ba-status.ba-graded{color:var(--gold-hi,#ffcb5c);font-weight:600}
+.ba-draw{flex:1;display:flex;flex-direction:column;min-height:0}
+.ba-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:8px}
+.ba-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ba-swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer}
+.ba-swatch.on{border-color:var(--gold-hi,#ffcb5c)}
+.ba-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto}
+.ba-canwrap{position:relative;width:100%;max-width:900px;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);margin:auto}
+.ba-canvas{display:block;width:100%;height:100%;touch-action:none;border-radius:8px}

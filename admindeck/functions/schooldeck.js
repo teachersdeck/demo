@@ -97,7 +97,8 @@
     add('staff_no_contact', open.filter((p) => p.type === 'staff' && !p.email && !p.phone).map((p) => p.personId));
     return q;
   }
-  // classes: the list response's classes [{id, className, hasTeacher, studentCount}]. The last step is a placeholder until the class builder ships.
+  // classes: the list response's classes [{id, className, hasTeacher, studentCount}]. v0.10.0 (ClassDeck): giving a class a teacher IS pushing it to them, so the last
+  // step counts the same classes as 'assign' — it is a separate line only so the checklist still ends on "the teacher has their classes".
   function setupChecklist(enriched, classes) {
     const open = (enriched || []).filter(isOpen), cl = classes || [];
     const T = open.filter((p) => p.type === 'teacher'), S = open.filter((p) => p.type === 'student');
@@ -110,9 +111,9 @@
       step('parents', S.length, S.filter(hasParent).length),
       step('classes', cl.length, cl.filter((c) => c.studentCount > 0).length),
       step('assign', cl.length, cl.filter((c) => c.hasTeacher).length),
-      { key: 'push', have: 0, done: 0, state: 'later' },
+      step('push', cl.length, cl.filter((c) => c.hasTeacher).length),
     ];
-    if (!reported) { steps[3].state = 'unknown'; steps[4].state = 'unknown'; }
+    if (!reported) { steps[3].state = 'unknown'; steps[4].state = 'unknown'; steps[5].state = 'unknown'; }
     return { steps, complete: steps.slice(0, 5).every((s) => s.state === 'done'), classesReported: reported };
   }
 
