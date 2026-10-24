@@ -110,7 +110,18 @@
       <div class="actions"><span class="play" aria-disabled="true">Coming later</span></div></li>
   </ul>
 
-  <footer><span>Updated 24 Oct 2026, 19:34 UTC (build 496e894)</span><a href="https://myteachersdeck.com/">myteachersdeck.com</a></footer>
+  <h2>Platform editions</h2>
+  <p>TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.</p>
+  <ul class="apps">
+    <li class="app" data-path="../teachersdeck-classin/" data-check="index.html"><span class="lamp" data-s="checking"></span>
+      <div><p class="name">TeachersDeck for ClassIn<span class="ver"></span></p><p class="who">Classroom tools that open inside a ClassIn lesson</p><p class="state" role="status">Checking…</p></div>
+      <div class="actions"><a class="play" href="../teachersdeck-classin/?edition=classin&amp;demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-classin/?edition=classin&amp;demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+    <li class="app" data-path="../teachersdeck-canvas/"><span class="lamp" data-s="checking"></span>
+      <div><p class="name">TeachersDeck for Canvas<span class="ver"></span></p><p class="who">Classroom tools for Canvas courses. Canvas mode starts from inside a course; this demo shows the deck with example data.</p><p class="state" role="status">Checking…</p></div>
+      <div class="actions"><a class="play" href="../teachersdeck-canvas/?edition=default&amp;demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-canvas/?edition=default&amp;demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+  </ul>
+
+  <footer><span>Updated 24 Oct 2026, 19:38 UTC (build a18ecc1)</span><a href="https://myteachersdeck.com/">myteachersdeck.com</a></footer>
 </main>
 <script>
 (function () {
@@ -127,9 +138,11 @@
     set(row, 'checking');
     var t0 = performance.now(), ctl = 'AbortController' in window ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, TIMEOUT_MS);
-    fetch(row.getAttribute('data-path') + 'manifest.json?t=' + Date.now(), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (m) { clearTimeout(timer); var ms = performance.now() - t0; set(row, m && m.version && ms < SLOW_MS ? 'ok' : 'slow', m && m.version); })
+    // data-check names another file to fetch for builds that ship no manifest.json; those get no version label.
+    var page = row.getAttribute('data-check');
+    fetch(row.getAttribute('data-path') + (page || 'manifest.json') + '?t=' + Date.now(), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return page ? { version: null, page: true } : r.json(); })
+      .then(function (m) { clearTimeout(timer); var ms = performance.now() - t0; set(row, m && (m.version || m.page) && ms < SLOW_MS ? 'ok' : 'slow', m && m.version); })
       .catch(function () { clearTimeout(timer); set(row, 'down'); });
   }
   function checkAll() { rows.forEach(check); }
