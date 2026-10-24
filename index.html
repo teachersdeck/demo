@@ -116,15 +116,15 @@
   <h2>Platform editions</h2>
   <p>TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.</p>
   <ul class="apps">
-    <li class="app" data-path="../teachersdeck-classin/" data-check="index.html"><span class="lamp" data-s="checking"></span>
+    <li class="app" data-path="../teachersdeck-classin/" data-check="build-info.json"><span class="lamp" data-s="checking"></span>
       <div><p class="name">TeachersDeck for ClassIn<span class="ver"></span></p><p class="who">Classroom tools that open inside a ClassIn lesson</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="../teachersdeck-classin/?edition=classin&amp;demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-classin/?edition=classin&amp;demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="../teachersdeck-canvas/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">TeachersDeck for Canvas<span class="ver"></span></p><p class="who">Classroom tools for Canvas courses. Canvas mode starts from inside a course; this demo shows the deck with example data.</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="../teachersdeck-canvas/?edition=default&amp;demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-canvas/?edition=default&amp;demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+      <div class="actions"><a class="play" href="../teachersdeck-classin/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-classin/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+    <li class="app" data-path="../teachersdeck-canvas/" data-check="build-info.json"><span class="lamp" data-s="checking"></span>
+      <div><p class="name">TeachersDeck for Canvas<span class="ver"></span></p><p class="who">Classroom tools for Canvas courses. The real thing starts from inside a course; this demo shows the same widgets with example data.</p><p class="state" role="status">Checking…</p></div>
+      <div class="actions"><a class="play" href="../teachersdeck-canvas/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-canvas/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
   </ul>
 
-  <footer><span>Updated 24 Oct 2026, 20:56 UTC (build 00b5f1b)</span><a href="https://myteachersdeck.com/">myteachersdeck.com</a></footer>
+  <footer><span>Updated 24 Oct 2026, 23:51 UTC (build a098066)</span><a href="https://myteachersdeck.com/">myteachersdeck.com</a></footer>
 </main>
 <script>
 (function () {
@@ -141,10 +141,17 @@
     set(row, 'checking');
     var t0 = performance.now(), ctl = 'AbortController' in window ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, TIMEOUT_MS);
-    // data-check names another file to fetch for builds that ship no manifest.json; those get no version label.
-    var page = row.getAttribute('data-check');
-    fetch(row.getAttribute('data-path') + (page || 'manifest.json') + '?t=' + Date.now(), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return page ? { version: null, page: true } : r.json(); })
+    // data-check names another file to fetch for builds that ship no manifest.json: a .json file is read for its "version"
+    // (the ClassIn and Canvas builds' build-info.json); a page only says the site answers. A build-info.json that isn't
+    // there yet (a site not yet published by the suite) falls back to index.html, so the row still shows online.
+    var base = row.getAttribute('data-path'), page = row.getAttribute('data-check'), opts = { cache: 'no-store', signal: ctl ? ctl.signal : undefined };
+    var get = function (file) { return fetch(base + file + '?t=' + Date.now(), opts); };
+    get(page || 'manifest.json')
+      .then(function (r) {
+        if (r.ok) return (!page || /\.json$/.test(page)) ? r.json() : { version: null, page: true };
+        if (page && /\.json$/.test(page)) return get('index.html').then(function (r2) { if (!r2.ok) throw new Error('HTTP ' + r2.status); return { version: null, page: true }; });
+        throw new Error('HTTP ' + r.status);
+      })
       .then(function (m) { clearTimeout(timer); var ms = performance.now() - t0; set(row, m && (m.version || m.page) && ms < SLOW_MS ? 'ok' : 'slow', m && m.version); })
       .catch(function () { clearTimeout(timer); set(row, 'down'); });
   }

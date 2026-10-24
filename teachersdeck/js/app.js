@@ -7,6 +7,12 @@
 
 const LS_KEY = 'ww_state_v1';
 
+/* Platform builds — TeachersDeck for ClassIn and TeachersDeck for Canvas (PLATFORMS.md). tools/build_platform.py puts
+   the platform's own js/platform.js first on the page, and that file sets window.TD_PLATFORM. The extension, the web
+   version and UniDeck have no such file, so PF is null there and every "platform:" hook in this file does nothing. */
+const PF = window.TD_PLATFORM || null;
+const pfPreset = id => (PF && PF.presetFor) ? PF.presetFor(id) : null;   // a ClassIn link's preset for this widget, or null
+
 // Feature flag for enterprise-tier-only UI (school/company logo upload,
 // "open drawers on hover"). Off for now — hidden from index.html and gated
 // off here; flip to true (and restore the hidden markup) to re-enable.
@@ -155,6 +161,8 @@ if(!state.scoreboard){
   ];
 }
 if(!state.lang) state.lang = 'en';
+if(PF && PF.lang) state.lang = PF.lang;   // platform: ?lang= on a ClassIn link, or the Canvas launch's locale
+if(!state.school) state.school = null;   // platform (Canvas): { schoolId, schoolName, pro }, kept by watchMySchool()
 if(!state.langPair) state.langPair = ['en','vi'];
 if(!state.dockVisible) state.dockVisible = {};
 if(!state.calendarEvents) state.calendarEvents = [];
@@ -369,7 +377,7 @@ const PRO_WIDGETS_DECIDED = [
   'drawdeck'   // decided 2026-10-24, per the DrawDeck scope doc's decision #1
 ];
 const PRO_WIDGET_IDS = PRO_GATE ? PRO_WIDGETS_DECIDED : [];
-function isPro(){ return !PRO_GATE || !!(state.license && state.license.pro); }
+function isPro(){ return !PRO_GATE || !!(state.license && state.license.pro) || !!(PF && PF.schoolPro && state.school && state.school.pro); }   // platform (Canvas): school-level Pro
 function isProWidget(id){ return PRO_WIDGET_IDS.includes(id); }
 
 // ---- License key format: TDPRO-AAAA-BBBB-CCCC ----------------------------
@@ -1540,7 +1548,7 @@ const widgetEls = {}; // id -> {el, cleanup}
 const WPREF_KEY = 'td_widgets_v1';
 const wprefs = (() => { let s = null; try{ s = JSON.parse(localStorage.getItem(WPREF_KEY)); }catch(e){} s = (s && typeof s === 'object') ? s : {}; return { curated:!!s.curated, off:{ ...(s.off || {}) }, parked:{ ...(s.parked || {}) } }; })();
 const saveWprefs = () => { try{ localStorage.setItem(WPREF_KEY, JSON.stringify(wprefs)); }catch(e){} };
-const isOff = id => !!wprefs.off[id];
+const isOff = id => !!wprefs.off[id] || !!(PF && PF.hides(id));   // platform: the widgets this platform leaves out
 const WIDGET_TIERS = {
   core:   ['classbuilder', 'clock', 'timer', 'namepicker', 'groupmaker', 'scoreboard', 'poll', 'attendance', 'traffic', 'noise', 'agenda', 'files', 'calendar', 'assignments', 'progressreports', 'lessonplanner', 'cloudclass', 'rewardpoints', 'noteshome'],
   keep:   ['checklist', 'games', 'music', 'hallpass', 'qrcode', 'ttsreader', 'convocards', 'idiomday', 'grammarref', 'instructions', 'classactivity', 'stats', 'badgecase', 'drawdeck', 'scrapreview', 'boardreview'],
@@ -1553,7 +1561,7 @@ function widgetUsage(id){                         // what the teacher has actual
   return { opens, secs, o30, s30, last, any: opens > 0 || secs >= 30 || !!state.active[id] };
 }
 function curateWidgetsOnce(){                     // first launch of this version: tidy away the recommended widgets the teacher has never touched
-  if(wprefs.curated) return 0;
+  if(wprefs.curated || (PF && PF.fixedWidgets)) return 0;   // platform: its own widget list is the curation
   let n = 0; WIDGET_TIERS.shelve.forEach(id => { if(WIDGETS.some(w => w.id === id) && !widgetUsage(id).any){ wprefs.off[id] = true; n++; } });
   wprefs.curated = true; saveWprefs(); return n;
 }
@@ -2064,7 +2072,7 @@ function rerenderWidget(id){
   if(typeof rec.cleanup === 'function') rec.cleanup();
   const body = rec.el.querySelector('.widget-body');
   body.innerHTML = '';
-  rec.cleanup = def.render(body, { id, toast });
+  rec.cleanup = def.render(body, { id, toast, preset: pfPreset(id) });
 }
 
 const CAL_SYSTEM_OPTIONS = [
@@ -2162,7 +2170,7 @@ function openWidget(id){
   });
 
   const body = el.querySelector('.widget-body');
-  const cleanup = def.render(body, { id, toast });
+  const cleanup = def.render(body, { id, toast, preset: pfPreset(id) });
   widgetEls[id].cleanup = cleanup;
 }
 
@@ -2385,7 +2393,7 @@ function renderClock(body){
   return ()=>clearInterval(iv);
 }
 
-function renderTimer(body){
+function renderTimer(body, ctx){
   body.innerHTML = `
     <div class="big-readout">05:00</div>
     <div class="btn-row" style="margin-bottom:10px">
@@ -2399,6 +2407,8 @@ function renderTimer(body){
     </div>
   `;
   let total = 300, remaining = 300, running=false, iv=null;
+  const pre = ctx && ctx.preset; if(pre){ total = remaining = pre.seconds; }   // platform (ClassIn): ?min=&sec=
+  if(window.TD_BOARD) TD_BOARD.audioHint();   // platform (ClassIn): the one-time "Share audio" reminder
   const readout = body.querySelector('.big-readout');
   function render(){
     const m = Math.floor(remaining/60), s = remaining%60;
@@ -2428,7 +2438,7 @@ function renderTimer(body){
       track('timer', fmtDur(remaining));
       iv = setInterval(()=>{
         remaining--;
-        if(remaining<=0){ remaining=0; setRunning(false); clearInterval(iv); toast(t('time_up')); }
+        if(remaining<=0){ remaining=0; setRunning(false); clearInterval(iv); toast(t('time_up')); if(window.TD_BOARD) TD_BOARD.timerDone(); }   // platform (ClassIn): chime + full-window cue
         render();
       },1000);
     } else clearInterval(iv);
@@ -2440,10 +2450,11 @@ function renderTimer(body){
     clearInterval(iv); setRunning(false); total = 0; remaining = 0; render();
   });
   render();
+  if(pre && pre.go) startBtn.click();   // platform (ClassIn): ?go=1
   return ()=>clearInterval(iv);
 }
 
-function renderStopwatch(body){
+function renderStopwatch(body, ctx){
   body.innerHTML = `
     <div class="big-readout">00:00.0</div>
     <div class="btn-row">
@@ -2499,10 +2510,11 @@ function renderStopwatch(body){
   setRunning(false);
   render();
   renderLaps();
+  if(ctx && ctx.preset && ctx.preset.go) startBtn.click();   // platform (ClassIn): ?go=1
   return ()=>clearInterval(iv);
 }
 
-function renderTraffic(body){
+function renderTraffic(body, ctx){
   body.innerHTML = `
     <div class="traffic-housing">
       <div class="traffic-hood"></div>
@@ -2521,6 +2533,7 @@ function renderTraffic(body){
       track('traffic', l.dataset.c);
     });
   });
+  { const pl = ctx && ctx.preset && ctx.preset.light; const lamp = pl && body.querySelector('.traffic-lamp.' + pl); if(lamp) lamp.classList.add('on'); }   // platform (ClassIn): ?light=
   return null;
 }
 
@@ -4278,7 +4291,8 @@ window.addEventListener('storage', e=>{
   if(e.key === SB_TRANSFER_KEY && e.newValue) checkScoreboardTransfer();
 });
 
-function renderScoreboard(body){
+function renderScoreboard(body, ctx){
+  if(ctx && ctx.preset){ const pre = ctx.preset; state.scoreboard = pre.teams.map((name, i) => ({ name, score: (pre.keep && state.scoreboard[i]) ? state.scoreboard[i].score : 0 })); saveState(); }   // platform (ClassIn): ?teams=
   body.innerHTML = `
     <div class="sb">
       <p class="sb-sub" data-i18n="sb_sub">${t('sb_sub')}</p>
@@ -5817,11 +5831,12 @@ function noiseFmtTime(ms){
   return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
 }
 
-function renderNoise(body){
+function renderNoise(body, ctx){
   let audioCtx = null, analyser = null, source = null, stream = null, rafId = null, running = false;
   let held = 0, holdUntil = 0, lastFrame = 0, lastSample = 0, bucketMax = 0;
   let ro = null;
   const hist = noiseHistory;
+  if(ctx && ctx.preset && ctx.preset.go) setTimeout(()=>{ const b = body.querySelector('#noise-toggle'); if(b && !running) b.click(); }, 300);   // platform (ClassIn): ?go=1
 
   function styleKey(){
     const s = state.noiseMeter && state.noiseMeter.style;
@@ -5968,6 +5983,7 @@ function renderNoise(body){
       // Extension page + not explicitly blocked in Chrome settings = the prompt
       // was dismissed/suppressed, not refused: offer the setup page.
       if(inExtension && !blocked) showGrantHelp(msgEl);
+      else if(window.TD_BOARD && TD_BOARD.micHelp(msgEl, start)) { /* platform (ClassIn): ClassIn may be using the mic */ }
       else msgEl.textContent = t('noise_denied');
       return;
     }
@@ -6878,7 +6894,8 @@ function renderExitTicket(body){
   return null;
 }
 
-function renderAgenda(body){
+function renderAgenda(body, ctx){
+  if(ctx && ctx.preset){ Object.assign(state.agenda, ctx.preset); saveState(); }   // platform (ClassIn): ?schedule=&objective=&donow=
   function draw(){
     const ag = state.agenda;
     body.innerHTML = `
@@ -7499,8 +7516,9 @@ async function translateToVietnamese(text){
 // translator echoed back) is dropped — otherwise you'd see "1. 2. Talk about…".
 function stripLeadNum(s){ return String(s == null ? '' : s).replace(/^\s*\d{1,2}\s*[.)]\s+/, '').trim(); }
 
-function renderInstructions(body){
+function renderInstructions(body, ctx){
   const ib = state.instructionsBoard;
+  if(ctx && ctx.preset){ const p = ctx.preset; ib.title = p.title; ib.titleVi = p.titleVi; ib.steps = p.steps.map(s => ({ id:cid(), text:s.text, vi:s.vi })); ib.current = 0; saveState(); }   // platform (ClassIn): ?title=&steps=
   if(ib.showVi === undefined) ib.showVi = true;
   if(ib.autoVi === undefined) ib.autoVi = true;
   if(ib.viewAll === undefined) ib.viewAll = false;
@@ -8110,6 +8128,18 @@ function watchAdminTheme(){
   if(want) adminThemeUnsub = TDCloud.subscribeAdminTheme(want, th=>{ if(th) applyAdminTheme(want, th); });
 }
 TDCloud.onAuthChanged(watchAdminTheme);
+
+/* platform (Canvas): keep state.school, and so isPro(), in step with the signed-in teacher's school — joined with a code
+   or assigned by a Canvas launch. schools/* has no client rule, so the pro flag comes from the getMySchoolPro callable
+   (js/cloud.js), not a direct read. Off unless the platform asks for school-level Pro. */
+let schoolUnsub = null;
+function watchMySchool(){
+  if(!(PF && PF.schoolPro)) return;
+  if(schoolUnsub){ schoolUnsub(); schoolUnsub = null; }
+  if(!(TDCloud.isConfigured() && TDCloud.getSession() && TDCloud.subscribeMySchool)){ state.school = null; return; }
+  schoolUnsub = TDCloud.subscribeMySchool(s=>{ state.school = (s && s.schoolId) ? s : null; buildProStatus(); });
+}
+TDCloud.onAuthChanged(watchMySchool);
 setInterval(watchAdminTheme, 4000);                      // picks up a class switch / Cloud Class link without touching those code paths
 {
   const acc = document.getElementById('accept-admin-theme');
@@ -10238,4 +10268,7 @@ function init(){
   checkReminders();
   setInterval(checkReminders, 30000);
 }
-init();
+// platform (Canvas): the launch's one-time code exchange (js/canvas.js) is async and decides whether this visitor is a
+// teacher at all, so init() waits for canvas.js to call it. Everywhere else it runs straight away.
+if(PF && PF.deferInit) window.__tdInit = init;
+else init();

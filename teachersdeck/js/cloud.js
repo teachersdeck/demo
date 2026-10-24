@@ -349,9 +349,24 @@ const TDCloud = (() => {
   async function joinSchool(code){
     return (await functions.httpsCallable('joinSchool')({ code })).data;
   }
+  // platform (Canvas, backend v2.11.0): with school-level Pro on (TD_PLATFORM.schoolPro), also asks getMySchoolPro whether
+  // the school is Pro, since schools/* has no client rule. Cached per schoolId, so a snapshot that doesn't change the school
+  // doesn't call it again, and a passing error keeps the last answer instead of flashing the teacher back to Free.
+  let proCacheSchoolId = null, proCacheValue = false;
   function subscribeMySchool(cb){
     const u = firebase.auth().currentUser; if(!u){ cb({}); return ()=>{}; }
-    return db.collection('users').doc(u.uid).onSnapshot(d=> cb(d.exists ? { schoolId: d.data().schoolId || null, schoolName: d.data().schoolName || null } : {}), ()=> cb({}));
+    const wantPro = !!(window.TD_PLATFORM && window.TD_PLATFORM.schoolPro);
+    if(!wantPro) return db.collection('users').doc(u.uid).onSnapshot(d=> cb(d.exists ? { schoolId: d.data().schoolId || null, schoolName: d.data().schoolName || null } : {}), ()=> cb({}));
+    return db.collection('users').doc(u.uid).onSnapshot(async d=>{
+      const schoolId = d.exists ? (d.data().schoolId || null) : null;
+      const schoolName = d.exists ? (d.data().schoolName || null) : null;
+      if(!schoolId){ proCacheSchoolId = null; cb({ schoolId:null, schoolName:null, pro:false }); return; }
+      if(schoolId !== proCacheSchoolId){
+        try{ proCacheValue = !!(await functions.httpsCallable('getMySchoolPro')()).data.pro; proCacheSchoolId = schoolId; }
+        catch(e){ /* keep the last known value on a passing error */ }
+      }
+      cb({ schoolId, schoolName, pro: proCacheValue });
+    }, ()=> cb({}));
   }
   function subscribeAdminNotes(cb){
     const u = firebase.auth().currentUser; if(!u){ cb([]); return ()=>{}; }
