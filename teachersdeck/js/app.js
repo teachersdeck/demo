@@ -228,7 +228,13 @@ Object.keys(state.pillPlacement).forEach(id=>{
   if(state.pillPlacement[id] !== 'hidden') state.pillPlacement[id] = 'top'; // collapse old topLeft/topRight values
 });
 
-const APP_VERSION = '0.31.0';
+/* Which app this is: this app's own js/edition.js (the first script on the page) sets window.DECK_EDITION — the app's
+   name, its version and the edition. UNI = the university edition (UniDeck); U(schoolText, uniText) picks the wording
+   for the current edition; APP = the app's name for anything shown to the user. This file is shared with UniDeck's copy
+   of the app (teachersdeck/unideck, tools/sync_shared.py): edit it here, keep one-app-only behaviour behind UNI or U(). */
+const ED = window.DECK_EDITION || { name: 'TeachersDeck', version: '0.0.0', uni: false };
+const UNI = !!ED.uni, APP = ED.name || 'TeachersDeck', U = (school, uni) => (UNI ? uni : school);
+const APP_VERSION = ED.version;
 
 /* ---------------- Students with Vietnamese-format names (v0.19.0) ----------------
    state.students = [{ id, fam, mid, giv, en }] — family name (Họ), middle name (Tên đệm), given name (Tên) and an OPTIONAL English name.

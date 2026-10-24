@@ -4,7 +4,13 @@
    so the three apps stay visually and structurally consistent. All data comes from PD.* (js/data.js) —
    this file never touches localStorage for student data directly, only for its own UI layout, so the
    moment PD.* is backed by real Firebase instead of the demo store, nothing here has to change. */
-const VERSION = '0.24.0', UIKEY = 'pd_ui_v1';
+/* Which app this is: this app's own js/edition.js (the first script on the page) sets window.DECK_EDITION — the app's
+   name, its version and the edition. UNI = the university edition (UniDeck); U(schoolText, uniText) picks the wording
+   for the current edition; APP = the app's name for anything shown to the user. This file is shared with UniDeck's copy
+   of the app (teachersdeck/unideck, tools/sync_shared.py): edit it here, keep one-app-only behaviour behind UNI or U(). */
+const ED = window.DECK_EDITION || { name: 'ParentDeck', version: '0.0.0', uni: false };
+const UNI = !!ED.uni, APP = ED.name || 'ParentDeck', U = (school, uni) => (UNI ? uni : school);
+const VERSION = ED.version, UIKEY = 'pd_ui_v1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));

@@ -21,7 +21,13 @@
    Product Scope (v2) §7 — all read-only, all built from data that
    already exists via adminListClasses/adminGetClass (js/data.js).
    ============================================================ */
-const APP_VERSION = '0.13.0';
+/* Which app this is: this app's own js/edition.js (the first script on the page) sets window.DECK_EDITION — the app's
+   name, its version and the edition. UNI = the university edition (UniDeck); U(schoolText, uniText) picks the wording
+   for the current edition; APP = the app's name for anything shown to the user. This file is shared with UniDeck's copy
+   of the app (teachersdeck/unideck, tools/sync_shared.py): edit it here, keep one-app-only behaviour behind UNI or U(). */
+const ED = window.DECK_EDITION || { name: 'AdminDeck', version: '0.0.0', uni: false };
+const UNI = !!ED.uni, APP = ED.name || 'AdminDeck', U = (school, uni) => (UNI ? uni : school);
+const APP_VERSION = ED.version;
 const $ = (sel, root) => (root || document).querySelector(sel);
 
 /* ---------------- i18n ----------------
@@ -1273,7 +1279,7 @@ function wireSettingsDrawer(){
     location.reload();
   });
 
-  document.getElementById('app-version').textContent = `AdminDeck ${APP_VERSION}`;
+  document.getElementById('app-version').textContent = `${APP} ${APP_VERSION}`;
 }
 
 /* ---------------- Theme drawer: background image + push to TeachersDeck ---------------- */
