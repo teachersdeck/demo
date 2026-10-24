@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>🎓 UniStudentDeck</title>
-<script src="js/edition.js?v=0.1.0"></script>   <!-- first: sets the university edition before anything paints -->
-<link rel="stylesheet" href="css/style.css?v=0.1.0">
+<script src="js/edition.js?v=0.1.1"></script>   <!-- first: sets the university edition before anything paints -->
+<link rel="stylesheet" href="css/style.css?v=0.1.1">
+<link rel="stylesheet" href="css/uni.css?v=0.1.1">   <!-- UniStudentDeck only; css/style.css is shared with StudentDeck -->
 </head>
 <body>
   <header class="top">
@@ -76,21 +77,21 @@
     <div class="sbar"><button class="btn" id="s-back">← Back to <span class="app-name">UniStudentDeck</span></button><b id="s-title"></b><span class="grow"></span><button class="btn" id="s-help">How to play</button></div>
     <iframe id="s-frame" sandbox="allow-scripts allow-popups allow-modals allow-forms" title="Game"></iframe>
   </div>
-  <script src="js/idioms.js?v=0.1.0"></script>
-  <script src="js/games.js?v=0.1.0"></script>
+  <script src="js/idioms.js?v=0.1.1"></script>
+  <script src="js/games.js?v=0.1.1"></script>
   <!-- Class sync (optional): see js/firebase-config.js to enable -->
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=0.1.0"></script>
-  <script src="js/demo.js?v=0.1.0"></script>   <!-- demo mode: must come BEFORE cloud.js (it swaps in throw-away storage first) -->
-  <script src="js/cloud.js?v=0.1.0"></script>
-  <script src="js/progate.js?v=0.1.0"></script>
-  <script src="js/scrapdeck-core.js?v=0.1.0"></script>
-  <script src="js/watermark.js?v=0.1.0"></script>   <!-- the shared export watermark (identical to the other apps' copy) -->
-  <script src="js/scrapdeck.js?v=0.1.0"></script>   <!-- Scrapdeck widget: must come BEFORE app.js, which lists it in WIDGETS -->
-  <script src="js/boardassign.js?v=0.1.0"></script>   <!-- Board Assignments widget: must come BEFORE app.js, which lists it in WIDGETS -->
-  <script src="js/app.js?v=0.1.0"></script>
+  <script src="js/firebase-config.js?v=0.1.1"></script>
+  <script src="js/demo.js?v=0.1.1"></script>   <!-- demo mode: must come BEFORE cloud.js (it swaps in throw-away storage first) -->
+  <script src="js/cloud.js?v=0.1.1"></script>
+  <script src="js/progate.js?v=0.1.1"></script>
+  <script src="js/scrapdeck-core.js?v=0.1.1"></script>
+  <script src="js/watermark.js?v=0.1.1"></script>   <!-- the shared export watermark (identical to the other apps' copy) -->
+  <script src="js/scrapdeck.js?v=0.1.1"></script>   <!-- Scrapdeck widget: must come BEFORE app.js, which lists it in WIDGETS -->
+  <script src="js/boardassign.js?v=0.1.1"></script>   <!-- Board Assignments widget: must come BEFORE app.js, which lists it in WIDGETS -->
+  <script src="js/app.js?v=0.1.1"></script>
 </body>
 </html>

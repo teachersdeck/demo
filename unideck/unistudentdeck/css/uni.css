@@ -1,0 +1,7 @@
+/* UniStudentDeck's own styles, loaded after css/style.css. css/style.css is shared with StudentDeck (tools/sync_shared.py);
+   anything only UniStudentDeck needs goes here. */
+html:not(.uni) .bn-uni,html.uni .bn-sd{display:none}
+html.no-xp .xp-wrap{display:none}                                  /* XP and levels are off by default in UniStudentDeck */
+html.uni .sx-medals,html.no-xp .sx-top .lvl{display:none}   /* no badges at all in UniStudentDeck */
+.uni-note{font-size:11.5px;margin:6px 0 0}
+html.uni .dock-item>span:last-child{letter-spacing:-.3px;hyphens:auto;-webkit-hyphens:auto}   /* "Assignments" fits a 74 px dock button instead of breaking as "Assignment s" */

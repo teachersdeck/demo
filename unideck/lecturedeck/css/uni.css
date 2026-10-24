@@ -1,0 +1,2 @@
+/* LectureDeck's own styles, loaded after the shared stylesheets (which come from TeachersDeck through tools/sync_shared.py).
+   Anything only LectureDeck needs goes here, scoped under html.uni. Empty for now: the shell looks like TeachersDeck. */

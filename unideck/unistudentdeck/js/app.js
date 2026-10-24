@@ -1,13 +1,16 @@
 'use strict';
-/* UniStudentDeck (UniDeck v0.1.0), forked from StudentDeck v0.18.0. Original header: StudentDeck v0.3.0 — laptop shell, 5 study widgets, XP engine and a Stats & XP dashboard.
+/* StudentDeck and UniStudentDeck — one shared file. StudentDeck (teachersdeck/teachersdeck-suite, studentdeck/js/app.js) is the copy to edit;
+   UniStudentDeck (teachersdeck/unideck) takes it unchanged through tools/sync_shared.py, so a fix made here reaches both apps.
+   Original header: StudentDeck v0.3.0 — laptop shell, 5 study widgets, XP engine and a Stats & XP dashboard.
    Widget contract: { id, title, icon, w, h, render(body) -> optional cleanup fn }.
    awardXP() is the M2 seam: M1 widgets already call it, it just does nothing yet. */
-const VERSION = '0.1.0', KEY = 'sd_state_v1';
-/* UniStudentDeck edition (v0.18.0): js/edition.js decides the edition before this file runs. UNI = the university edition;
-   XP_ON = XP, levels and badges are shown (always in StudentDeck; off by default in UniStudentDeck). XP keeps being COUNTED
-   either way, so switching back loses nothing. U(studentText, uniText) picks the wording for the current edition. */
-const ED = window.SD_EDITION || { uni: true, xpOn: false, name: 'UniStudentDeck', setUni() {}, setXp() {} };
-const UNI = ED.uni, XP_ON = ED.xpOn, APP = ED.name, U = (sd, uni) => (UNI ? uni : sd);
+/* Which app this is: each app's own js/edition.js (the first script on the page) sets window.SD_EDITION — the app's name,
+   its version, and the edition. UNI = the university edition (UniStudentDeck); XP_ON = XP, levels and badges are shown
+   (always in StudentDeck; off by default in UniStudentDeck, where XP keeps being COUNTED either way). U(studentText, uniText)
+   picks the wording for the current edition. Without an edition file this is StudentDeck. */
+const ED = window.SD_EDITION || { uni: false, xpOn: true, name: 'StudentDeck', version: '0.0.0', setXp() {} };
+const UNI = !!ED.uni, XP_ON = ED.xpOn !== false, APP = ED.name || 'StudentDeck', U = (sd, uni) => (UNI ? uni : sd);
+const VERSION = ED.version, KEY = 'sd_state_v1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -859,7 +862,7 @@ function renderStats(b) {
       return `<tr style="--n:${n}"><td>${l}</td><td>${a}</td><td>${c}</td><td class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '▲ +' + d : d < 0 ? '▼ −' + Math.abs(d) : '—'}</td></tr>`; }).join('');
     const rowsN = range === 'all' ? 21 : range === 'month' ? 14 : 7;
     const daily = Array.from({ length: rowsN }, (_, i) => { const k = back(i), r = D()[k] || {}, mo = moodOn(k), emo = mo ? (MOODS.find(x => x[0] === mo) || [, '·'])[1] : '·';
-      return `<tr style="--n:${i}"><td>${new Date(k + 'T12:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</td>${XP_ON ? `<td>${r.xp || 0}</td>` : ''}<td>${fmtT(dayActive(r))}</td><td>${r.readMin || 0}</td><td>${r.hw || 0}</td><td>${r.focus || 0}</td>${UNI ? '' : `<td>${r.games || 0}</td>`}<td>${r.notes || 0}</td><td>${emo}</td></tr>`; }).join('');
+      return `<tr style="--n:${i}"><td>${new Date(k + 'T12:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</td>${XP_ON ? `<td>${r.xp || 0}</td>` : ''}${UNI ? `<td>${fmtT(dayActive(r))}</td>` : ''}<td>${r.readMin || 0}</td><td>${r.hw || 0}</td><td>${r.focus || 0}</td>${UNI ? '' : `<td>${r.games || 0}</td>`}<td>${r.notes || 0}</td><td>${emo}</td></tr>`; }).join('');
     const mood14 = Array.from({ length: 14 }, (_, i) => { const k = back(13 - i), mo = moodOn(k); return `<span class="mo" style="--n:${i}" title="${k}">${mo ? (MOODS.find(x => x[0] === mo) || [, '·'])[1] : '·'}</span>`; }).join('');
     const NP = state.notes.pages, noteLines = NP.reduce((n, p) => n + p.lines.length, 0), today = dayKey(Date.now()), linesToday = NP.reduce((n, p) => n + p.lines.filter(l => dayKey(l.t) === today).length, 0), xpNotesToday = ((D()[today] || {}).xpBy || {}).notes || 0;
     $('#sx-body', b).innerHTML = [
@@ -877,7 +880,7 @@ function renderStats(b) {
       UNI ? '' : card('Game scores <span class="muted">(all time)</span>', GAMES.map((g, n) => { const S = state.games.scores[g.folder];
         return `<div class="srow" style="--n:${n}"><span>${esc(g.name)}</span><span class="muted">played ${state.games.plays[g.folder] || 0}× · ${S && S.best !== null && S.best !== undefined ? `best ${S.best}, last ${S.last} ${esc(g.scoreLabel || '')}` : 'no score yet'}</span></div>`; }).join('')),
       !XP_ON ? '' : card('Recent XP', X.log.slice(-25).reverse().map((e, n) => `<div class="srow" style="--n:${n}"><span>${new Date(e.t).toLocaleDateString([], { month: 'short', day: 'numeric' })} ${new Date(e.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · ${esc(srcLabel(e.s))}</span><b>+${e.n}</b></div>`).join('') || '<p class="muted">Nothing yet.</p>'),
-      card(`Day by day <span class="muted">(last ${rowsN} days)</span>`, `<div class="tbl-scroll"><table class="sx-tbl"><thead><tr><th>Day</th>${XP_ON ? '<th>XP</th>' : ''}<th>Active</th><th>Reading min</th><th>${U('Homework', 'Assignments')}</th><th>Focus</th>${UNI ? '' : '<th>Games</th>'}<th>Notes</th><th>Mood</th></tr></thead><tbody>${daily}</tbody></table></div>`, 'wide')
+      card(`Day by day <span class="muted">(last ${rowsN} days)</span>`, `<div class="tbl-scroll"><table class="sx-tbl"><thead><tr><th>Day</th>${XP_ON ? '<th>XP</th>' : ''}${UNI ? '<th>Active</th>' : ''}<th>Reading min</th><th>${U('Homework', 'Assignments')}</th><th>Focus</th>${UNI ? '' : '<th>Games</th>'}<th>Notes</th><th>Mood</th></tr></thead><tbody>${daily}</tbody></table></div>`, 'wide')
     ].join('');
     const body = $('#sx-body', b), lvl = $('#sx-lvl', b);
     body.classList.toggle('fx-in', fx); lvl.classList.toggle('fx-lvl', fx);
@@ -1241,7 +1244,7 @@ const idb = (() => {
     q.onupgradeneeded = e => { const d = e.target.result; if (!d.objectStoreNames.contains('files')) d.createObjectStore('files', { keyPath: 'id' }); };
     q.onsuccess = e => { db = e.target.result; db.onversionchange = () => { db.close(); db = null; }; res(db); };
     q.onerror = e => rej(e.target.error);
-    q.onblocked = () => rej(new Error('Another UniStudentDeck tab is blocking an update \u2014 close it and reload'));
+    q.onblocked = () => rej(new Error(`Another ${APP} tab is blocking an update \u2014 close it and reload`));
   });
   const run = (mode, fn) => open().then(d => new Promise((res, rej) => {
     const tx = d.transaction('files', mode), r = fn(tx.objectStore('files'));
@@ -1308,7 +1311,7 @@ function buildDocStage() {
     <button type="button" class="doc-handle" hidden aria-label="Show toolbar" title="Show toolbar">\u25be</button>
     <div class="doc-frame-wrap"></div>
     <div class="doc-idle" role="alertdialog" aria-label="Still reading?" hidden><p>\ud83d\udcd6 Still reading? The document timer is paused.</p><button type="button" class="btn primary doc-idle-yes">Yes, keep counting</button></div>
-    <div class="doc-fallback" hidden><p>This page didn\u2019t load inside UniStudentDeck \u2014 Google may not allow it to be shown here.</p><button type="button" class="btn primary doc-fallback-tab">Open in a new tab</button></div>`;
+    <div class="doc-fallback" hidden><p>This page didn\u2019t load inside ${APP} \u2014 Google may not allow it to be shown here.</p><button type="button" class="btn primary doc-fallback-tab">Open in a new tab</button></div>`;
   wall.appendChild(el);
   const q = sel => el.querySelector(sel);
   docStage = { el, title: q('.doc-title'), time: q('.doc-time'), hint: q('.doc-hint'), wrap: q('.doc-frame-wrap'), menu: q('.doc-menu:not(.doc-track-menu)'), menuBtn: q('.doc-widgets-btn'),
@@ -1603,7 +1606,7 @@ async function trRun(text, from, to, onProgress) {
   return { out: await tr.translate(text), from };
 }
 function trErr(e, from, to) {
-  if (e && e.code === 'noapi') return 'Translating inside UniStudentDeck needs Chrome 138 or later on a computer. Use Google Translate below.';
+  if (e && e.code === 'noapi') return `Translating inside ${APP} needs Chrome 138 or later on a computer. Use Google Translate below.`;
   if (e && e.code === 'pair') return 'Chrome can’t translate ' + trName(e.from) + ' → ' + trName(e.to) + ' on this device yet. Use Google Translate below.';
   if (e && e.code === 'detect') return 'I couldn’t tell which language that is — pick it from the list.';
   console.warn('translate failed', e); return 'That didn’t work this time. Try again, or use Google Translate below.';
@@ -1778,7 +1781,7 @@ const WIDGETS = [
 ];
 /* UniStudentDeck edition: the scope doc's "From StudentDeck to UniDeck" table, as far as it goes without the new course backend.
    Dropped: Games Hub, Idiom of the Day, Scrapdeck, and Badges & Rewards (lighter gamification). Renamed for an adult tone.
-   Saved layouts, panels and dock placements of a dropped widget are kept untouched, so switching back restores them. */
+   Saved layouts, panels and dock placements of a dropped widget are kept untouched. */
 const UNI_DROP = ['games', 'idiom', 'scrap', 'badges'];
 const UNI_TITLES = { todo: '📝 Assignments', reading: '📚 Reading List', notes: '🗒️ Notes', stats: '📈 Study Stats', journey: '📓 Journal', class: '🏛️ Course' };
 if (UNI) {
@@ -2002,8 +2005,8 @@ function closeSettings() { settingsDrawer.hidden = true; $('#btn-settings').setA
   dt.addEventListener('click', () => SD_DEMO.active ? SD_DEMO.exit() : SD_DEMO.enter());
   rg.addEventListener('click', () => location.reload()); }                                      // the demo lives in memory, so a reload regenerates it
 document.addEventListener('click', e => { if (e.target.closest('[data-demo-start]')) SD_DEMO.enter(); });
-{ const xt = $('#edition-xp-toggle');                              // the XP and levels switch (js/edition.js)
-  xt.checked = XP_ON; xt.addEventListener('change', () => ED.setXp(xt.checked)); }
+{ const xt = $('#edition-xp-toggle');                              // UniStudentDeck's XP and levels switch (js/edition.js); StudentDeck has none
+  if (xt) { xt.checked = XP_ON; xt.addEventListener('change', () => ED.setXp(xt.checked)); } }
 document.querySelectorAll('.app-name').forEach(el => { el.textContent = APP; });
 $('#btn-settings').addEventListener('click', openSettings); $('#settings-close').addEventListener('click', closeSettings);
 $('#app-tray-tab').addEventListener('click', () => $('#app-tray-backdrop').hidden ? openAppTray() : closeAppTray());

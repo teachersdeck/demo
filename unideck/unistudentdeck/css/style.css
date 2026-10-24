@@ -700,10 +700,3 @@ body.fs-open .widget.full{top:0;border-top:0}
 .ba-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto}
 .ba-canwrap{position:relative;width:100%;max-width:900px;background-size:contain;background-repeat:no-repeat;background-position:center;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.3);margin:auto}
 .ba-canvas{display:block;width:100%;height:100%;touch-action:none;border-radius:8px}
-
-/* ---------- UniStudentDeck edition (v0.18.0) — js/edition.js sets html.uni / html.no-xp before the first paint ---------- */
-html:not(.uni) .bn-uni,html.uni .bn-sd{display:none}
-html.no-xp .xp-wrap{display:none}                                  /* XP and levels are off by default in UniStudentDeck */
-html.uni .sx-medals,html.no-xp .sx-top .lvl{display:none}   /* no badges at all in UniStudentDeck */
-.uni-note{font-size:11.5px;margin:6px 0 0}
-html.uni .dock-item>span:last-child{letter-spacing:-.3px;hyphens:auto;-webkit-hyphens:auto}   /* "Assignments" fits a 74 px dock button instead of breaking as "Assignment s" */

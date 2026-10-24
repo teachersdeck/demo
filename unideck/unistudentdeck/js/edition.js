@@ -1,5 +1,7 @@
 'use strict';
-/* UniStudentDeck edition (UniDeck v0.1.0). UniStudentDeck began as StudentDeck v0.18.0's "Edition" switch; in UniDeck it is
+/* UniStudentDeck edition (UniDeck). VERSION lives here: tools/release.py checks it against manifest.json, index.html and the README.
+   js/app.js and the other shared files come unchanged from StudentDeck (tools/sync_shared.py); this file says which app this is.
+   History: UniStudentDeck began as StudentDeck v0.18.0's "Edition" switch; in UniDeck it is
    its own app, always the university edition. This file is the first script on the page, so the brand, page title and
    top-bar XP pill are right from the first paint.
 
@@ -15,8 +17,7 @@
 
   const xpOn = get('sd_uni_xp') === '1';
   window.SD_EDITION = Object.freeze({
-    uni: true, xpOn, name: 'UniStudentDeck',
-    setUni() {},                                        // kept so js/app.js needs no special case; the edition is fixed here
+    name: 'UniStudentDeck', version: '0.1.1', uni: true, xpOn,
     setXp(on) { put('sd_uni_xp', on ? '1' : '0'); location.reload(); }
   });
 
