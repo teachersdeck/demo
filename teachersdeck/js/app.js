@@ -228,7 +228,7 @@ Object.keys(state.pillPlacement).forEach(id=>{
   if(state.pillPlacement[id] !== 'hidden') state.pillPlacement[id] = 'top'; // collapse old topLeft/topRight values
 });
 
-const APP_VERSION = '0.30.0';
+const APP_VERSION = '0.31.0';
 
 /* ---------------- Students with Vietnamese-format names (v0.19.0) ----------------
    state.students = [{ id, fam, mid, giv, en }] — family name (Họ), middle name (Tên đệm), given name (Tên) and an OPTIONAL English name.

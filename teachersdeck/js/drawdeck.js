@@ -11,6 +11,12 @@
    Storage: boards are saved in IndexedDB ("boards" store of the TeachersDeck database), pages as plain JSON.
    Used by app.js:  Object.assign(STRINGS, DrawDeck.strings);  DrawDeck.mount(bodyEl, host) -> cleanup()
    host = { t, toast, close, idb, lang, download(blob, name), watermark }
+   Optional capabilities, each off unless the host sets it (same pattern as share/assignBoard below):
+     kidMode             simplifies the toolbar to pen/highlighter/eraser/shape/undo only (no mind map, no
+                          flowchart, no math tools, no image/template/outline), for KeepDeck's Home board.
+     kidModeUnlock()     only used when kidMode is on. Called before a multi-object delete, a whole-board or
+                          whole-page delete, or an export/import — return a (possibly async) truthy value to
+                          allow it. No host.kidModeUnlock = the action is simply refused (toast only).
    ========================================================= */
 (function (root) {
   'use strict';
@@ -20,6 +26,7 @@
     drawdeck:        { en: '🎨 DrawDeck', vi: '🎨 DrawDeck' },
     wc_drawdeck:     { en: 'Full-screen whiteboard with pens, shapes, mind maps and flowcharts.', vi: 'Bảng trắng toàn màn hình: bút, hình khối, sơ đồ tư duy và lưu đồ.' },
     dd_board:        { en: 'Boards', vi: 'Bảng vẽ' },
+    dd_kid_locked:   { en: 'Ask a parent to unlock this', vi: 'Nhờ bố mẹ mở khóa' },
     dd_new_board:    { en: '＋ New board', vi: '＋ Bảng mới' },
     dd_rename:       { en: 'Rename board', vi: 'Đổi tên bảng' },
     dd_rename_ask:   { en: 'Board name:', vi: 'Tên bảng:' },
@@ -1473,6 +1480,12 @@
   /* ---------------- mount ---------------- */
   function mount(body, host) {
     var t = host.t, toast = host.toast || function () { };
+    var kidMode = !!host.kidMode;
+    function requireUnlock(cb) {
+      if (!kidMode) { cb(); return; }
+      if (!host.kidModeUnlock) { toast(t('dd_kid_locked')); return; }
+      Promise.resolve(host.kidModeUnlock()).then(function (ok) { if (ok) cb(); }, function () { });
+    }
     var widgetEl = body.closest ? body.closest('.widget') : null;
     if (widgetEl) widgetEl.classList.add('dd-widget');
     var alive = true;
@@ -2118,12 +2131,12 @@
       if (ctrl && (k === 'a' || k === 'A')) { e.preventDefault(); sel = new Set(page.objs.filter(function (o) { return o.t !== 'conn' && !hidden().has(o.id); }).map(function (o) { return o.id; })); renderChrome(); need(); return; }
       if (ctrl) return;
       if (k === 'Escape') { if (pop) closePop(); else if (sel.size) { sel.clear(); renderChrome(); need(); } else if (focusMode) setFocus(false); else if (tool !== 'select') setTool('select'); else host.close && host.close(); return; }
-      if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); deleteSel(); return; }
+      if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); if (sel.size > 1) requireUnlock(deleteSel); else deleteSel(); return; }
       if (k === 'Tab' && sel.size) { e.preventDefault(); if (hasNodeSel()) addChild(); return; }
       if (k === 'Enter' && sel.size) { e.preventDefault(); if (hasNodeSel()) addSibling(); else if (sel.size === 1) { var eo = byId().get(Array.from(sel)[0]); if (eo && MATH[eo.t]) openProps(eo.id); else startEdit(Array.from(sel)[0], false); } return; }
       if (k === 'F2' && sel.size === 1) { e.preventDefault(); startEdit(Array.from(sel)[0], false); return; }
       if (k.indexOf('Arrow') === 0 && sel.size) { e.preventDefault(); var st = e.shiftKey ? 24 : 4, dx = k === 'ArrowLeft' ? -st : k === 'ArrowRight' ? st : 0, dy = k === 'ArrowUp' ? -st : k === 'ArrowDown' ? st : 0; var ids = new Set(sel); sel.forEach(function (id) { var o = byId().get(id); if (o && o.t === 'node') descendants(page.objs, id).forEach(function (d) { ids.add(d); }); }); change(page.objs.map(function (o) { return ids.has(o.id) ? translate(o, dx, dy) : o; })); return; }
-      var map = { v: 'select', p: 'pen', h: 'hl', e: 'eraser', t: 'text', s: 'shape', c: 'conn' };
+      var map = kidMode ? { v: 'select', p: 'pen', h: 'hl', e: 'eraser', s: 'shape' } : { v: 'select', p: 'pen', h: 'hl', e: 'eraser', t: 'text', s: 'shape', c: 'conn' };
       if (map[k.toLowerCase()] && !e.altKey) { setTool(map[k.toLowerCase()]); return; }
       if (k === 'f' || k === 'F') { setFocus(!focusMode); return; }
       if (k === '=' || k === '+') { zoomAt(W / 2, Hh / 2, view.z * 1.2); return; }
@@ -2173,15 +2186,16 @@
         '<span class="dd-pageno" title="' + esc(t('dd_page', { n: pi + 1, total: nPages })) + '">' + (pi + 1) + ' / ' + nPages + '</span>' +
         '<button type="button" class="dd-btn" data-act="nextpage" title="' + esc(t('dd_next_page')) + '"' + (pi < nPages - 1 ? '' : ' disabled') + '>▶</button>' +
         '<button type="button" class="dd-btn" data-act="addpage" title="' + esc(t('dd_add_page')) + '">' + icon(IC.plus) + '</button></div>' +
-        '<div class="dd-tabs" role="tablist">' + ['draw', 'mind', 'flow'].map(function (m) { return '<button type="button" role="tab" class="dd-tab' + (mode === m ? ' on' : '') + '" aria-selected="' + (mode === m) + '" data-act="mode" data-v="' + m + '">' + esc(t('dd_mode_' + m)) + '</button>'; }).join('') + '</div>' +
+        (kidMode ? '' : '<div class="dd-tabs" role="tablist">' + ['draw', 'mind', 'flow'].map(function (m) { return '<button type="button" role="tab" class="dd-tab' + (mode === m ? ' on' : '') + '" aria-selected="' + (mode === m) + '" data-act="mode" data-v="' + m + '">' + esc(t('dd_mode_' + m)) + '</button>'; }).join('') + '</div>') +
         '<div class="dd-grp">' + btn('undo', null, 'undo', t('dd_undo'), false, h.u.length ? '' : 'dis') + btn('redo', null, 'redo', t('dd_redo'), false, h.r.length ? '' : 'dis') + '</div>' +
         '<div class="dd-grp">' + btn('zout', null, 'minus', t('dd_zoom_out')) + '<button type="button" class="dd-btn dd-zoom" data-act="zreset" title="' + esc(t('dd_zoom_reset')) + '">' + Math.round(view.z * 100) + '%</button>' + btn('zin', null, 'plus', t('dd_zoom_in')) + btn('zfit', null, 'fit', t('dd_zoom_fit')) + '</div>' +
-        '<div class="dd-grp dd-right">' + btn('tpl', null, 'tpl', t('dd_tpl')) + btn('bgmenu', null, 'bg', t('dd_bg')) + (mode === 'mind' ? btn('outline', null, 'outline', t('dd_outline')) : '') + btn('more', null, 'more', '⋯') + btn('focus', null, 'focus', t('dd_focus')) + btn('fullscreen', null, 'full', t('doc_fullscreen')) + '</div>';
+        '<div class="dd-grp dd-right">' + (kidMode ? '' : btn('tpl', null, 'tpl', t('dd_tpl'))) + btn('bgmenu', null, 'bg', t('dd_bg')) + (!kidMode && mode === 'mind' ? btn('outline', null, 'outline', t('dd_outline')) : '') + btn('more', null, 'more', '⋯') + btn('focus', null, 'focus', t('dd_focus')) + btn('fullscreen', null, 'full', t('doc_fullscreen')) + '</div>';
       var rail = btn('tool', 'select', 'select', t('dd_t_select'), tool === 'select') + btn('tool', 'hand', 'hand', t('dd_t_hand'), tool === 'hand') +
-        btn('tool', 'pen', 'pen', t('dd_t_pen'), tool === 'pen') + btn('tool', 'hl', 'hl', t('dd_t_hl'), tool === 'hl') + btn('tool', 'eraser', 'eraser', t('dd_t_eraser'), tool === 'eraser') + btn('tool', 'text', 'text', t('dd_t_text'), tool === 'text') + btn('image', null, 'image', t('dd_t_image')) + btn('math', null, 'math', t('dd_t_math'));
+        btn('tool', 'pen', 'pen', t('dd_t_pen'), tool === 'pen') + btn('tool', 'hl', 'hl', t('dd_t_hl'), tool === 'hl') + btn('tool', 'eraser', 'eraser', t('dd_t_eraser'), tool === 'eraser');
+      if (!kidMode) rail += btn('tool', 'text', 'text', t('dd_t_text'), tool === 'text') + btn('image', null, 'image', t('dd_t_image')) + btn('math', null, 'math', t('dd_t_math'));
       if (mode !== 'mind') rail += '<span class="dd-sep"></span>' + btn('tool', 'shape', 'shape', t('dd_t_shape'), tool === 'shape');
-      if (mode === 'flow') rail += btn('tool', 'conn', 'conn', t('dd_t_conn'), tool === 'conn');
-      if (mode === 'mind') rail += '<span class="dd-sep"></span>' + btn('topic', null, 'topic', t('dd_add_topic')) + btn('child', null, 'child', t('dd_add_child')) + btn('sibling', null, 'sib', t('dd_add_sib')) + btn('collapse', null, 'collapse', t('dd_collapse')) + btn('tidy', null, 'layout', t('dd_layout'));
+      if (!kidMode && mode === 'flow') rail += btn('tool', 'conn', 'conn', t('dd_t_conn'), tool === 'conn');
+      if (!kidMode && mode === 'mind') rail += '<span class="dd-sep"></span>' + btn('topic', null, 'topic', t('dd_add_topic')) + btn('child', null, 'child', t('dd_add_child')) + btn('sibling', null, 'sib', t('dd_add_sib')) + btn('collapse', null, 'collapse', t('dd_collapse')) + btn('tidy', null, 'layout', t('dd_layout'));
       rail += '<span class="dd-sep"></span>' + btn('dup', null, 'dup', t('dd_dup')) + btn('del', null, 'trash', t('dd_delete'));
       railEl.innerHTML = rail;
       var cc = curColor(), cs = curSize(), pal = PALETTE.map(function (c) { return '<button type="button" class="dd-sw' + (c.toLowerCase() === String(cc).toLowerCase() ? ' on' : '') + '" data-act="color" data-v="' + c + '" style="background:' + c + '" title="' + c + '" aria-label="' + t('dd_color') + ' ' + c + '"></button>'; }).join('');
@@ -2461,12 +2475,12 @@
         case 'topic': { var c = toWorld(W / 2, Hh / 2); var by = byId(), anyRoot = page.objs.filter(function (o) { return o.t === 'node'; }).length; if (anyRoot) { var b2 = contentBounds(page.objs); c = { x: b2[2] + 200, y: (b2[1] + b2[3]) / 2 }; } addRoot(c.x, c.y); break; }
         case 'child': addChild(); break; case 'sibling': addSibling(); break;
         case 'collapse': toggleCollapse(); break; case 'tidy': tidy(); break;
-        case 'dup': dupSel(); break; case 'del': deleteSel(); break;
+        case 'dup': dupSel(); break; case 'del': if (sel.size > 1) requireUnlock(deleteSel); else deleteSel(); break;
         case 'prevpage': gotoPage(pi - 1); break; case 'nextpage': gotoPage(pi + 1); break;
         case 'addpage': { var np = newPage(); board.pages.splice(pi + 1, 0, np); gotoPage(pi + 1); view = { x: W / 2, y: Hh / 2, z: 1 }; syncView(); dirty(); break; }
         case 'duppage': { var cp = JSON.parse(JSON.stringify(page)); cp.id = uid(); board.pages.splice(pi + 1, 0, cp); gotoPage(pi + 1); dirty(); break; }
-        case 'delpage': if (board.pages.length > 1 && confirm(t('dd_del_page_q'))) { board.pages.splice(pi, 1); hist.delete(page.id); gotoPage(Math.min(pi, board.pages.length - 1)); dirty(); } break;
-        case 'clearpage': if (page.objs.length && confirm(t('dd_clear_q'))) { sel.clear(); change([]); } break;
+        case 'delpage': if (board.pages.length > 1) requireUnlock(function () { if (confirm(t('dd_del_page_q'))) { board.pages.splice(pi, 1); hist.delete(page.id); gotoPage(Math.min(pi, board.pages.length - 1)); dirty(); } }); break;
+        case 'clearpage': if (page.objs.length) requireUnlock(function () { if (confirm(t('dd_clear_q'))) { sel.clear(); change([]); } }); break;
         case 'boards': {
           if (pop === el) { closePop(); break; }
           openPop(el, '<div class="dd-menu">' + boards.map(function (b) { return menuItem('openboard', b.id, (b.id === board.id ? '✓ ' : '') + b.name); }).join('') + '<hr>' + menuItem('newboard', null, t('dd_new_board')) + menuItem('renameboard', null, t('dd_rename')) + menuItem('delboard', null, t('dd_del_board'), true) + '</div>'); break;
@@ -2474,10 +2488,10 @@
         case 'openboard': { var nb = boards.find(function (b) { return b.id === v; }); if (nb) { persist(); pi = 0; openBoard(nb); } break; }
         case 'newboard': { persist(); var b3 = newBoard(); boards.unshift(b3); host.idb.put(STORE, b3).catch(failSave); pi = 0; openBoard(b3); break; }
         case 'renameboard': { var nn = prompt(t('dd_rename_ask'), board.name); if (nn && nn.trim()) { board.name = nn.trim().slice(0, 60); dirty(); renderChrome(); } break; }
-        case 'delboard': if (confirm(t('dd_del_board_q'))) { var gone = board; host.idb.delete(STORE, gone.id).catch(failSave); boards = boards.filter(function (b) { return b.id !== gone.id; }); if (!boards.length) { var nb2 = newBoard(); boards.push(nb2); host.idb.put(STORE, nb2).catch(failSave); } pi = 0; openBoard(boards[0]); } break;
+        case 'delboard': requireUnlock(function () { if (confirm(t('dd_del_board_q'))) { var gone = board; host.idb.delete(STORE, gone.id).catch(failSave); boards = boards.filter(function (b) { return b.id !== gone.id; }); if (!boards.length) { var nb2 = newBoard(); boards.push(nb2); host.idb.put(STORE, nb2).catch(failSave); } pi = 0; openBoard(boards[0]); } }); break;
         case 'bgmenu': if (pop === el) { closePop(); break; } openPop(el, '<div class="dd-menu">' + BGS.map(function (b) { return menuItem('bg', b, (board.bg === b ? '✓ ' : '') + t('dd_bg_' + b)); }).join('') + '</div>'); break;
         case 'bg': { var was = board.bg; board.bg = v; if (v === 'chalk' && prefs.color === '#1a1a1a') prefs.color = '#ffffff'; else if (was === 'chalk' && v !== 'chalk' && prefs.color === '#ffffff') prefs.color = '#1a1a1a'; savePrefs(); dirty(); need(); renderChrome(); break; }
-        case 'more': if (pop === el) { closePop(); break; } openPop(el, '<div class="dd-menu">' + menuItem('png', null, t('dd_png')) + menuItem('pdf', null, t('dd_pdf')) + menuItem('exportboard', null, t('dd_export')) + menuItem('importboard', null, t('dd_import')) + (canShare() ? '<hr>' + (sharing ? menuItem('stopshare', null, t('dd_share_stop')) : menuItem('share', null, t('dd_share_start'))) : '') + (canAssign() ? '<hr>' + menuItem('assign', null, t('dd_assign_start')) : '') + '<hr>' + menuItem('duppage', null, t('dd_dup_page')) + menuItem('clearpage', null, t('dd_clear_page')) + menuItem('delpage', null, t('dd_del_page'), true) + '</div>'); break;
+        case 'more': if (pop === el) { closePop(); break; } openPop(el, '<div class="dd-menu">' + menuItem('png', null, t('dd_png')) + menuItem('pdf', null, t('dd_pdf')) + (kidMode ? '' : menuItem('exportboard', null, t('dd_export')) + menuItem('importboard', null, t('dd_import'))) + (canShare() ? '<hr>' + (sharing ? menuItem('stopshare', null, t('dd_share_stop')) : menuItem('share', null, t('dd_share_start'))) : '') + (canAssign() ? '<hr>' + menuItem('assign', null, t('dd_assign_start')) : '') + '<hr>' + menuItem('duppage', null, t('dd_dup_page')) + menuItem('clearpage', null, t('dd_clear_page')) + menuItem('delpage', null, t('dd_del_page'), true) + '</div>'); break;
         case 'png': exportPng(); break; case 'pdf': exportPdf(); break;
         case 'share': shareBoard(); break; case 'stopshare': stopShareBoard(); break;
         case 'assign': assignToStudents(); break;

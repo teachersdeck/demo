@@ -4,7 +4,7 @@
    so the three apps stay visually and structurally consistent. All data comes from PD.* (js/data.js) —
    this file never touches localStorage for student data directly, only for its own UI layout, so the
    moment PD.* is backed by real Firebase instead of the demo store, nothing here has to change. */
-const VERSION = '0.22.0', UIKEY = 'pd_ui_v1';
+const VERSION = '0.24.0', UIKEY = 'pd_ui_v1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -303,6 +303,8 @@ const STRINGS = {
 };
 Object.assign(STRINGS, BADGE_STRINGS);   // js/badges.js (loaded first) — Badge Display Case strings, v0.15.0
 Object.assign(STRINGS, T1_STRINGS);   // js/tier1.js (loaded first) — titles, tray labels and every Tier 1 widget string
+Object.assign(STRINGS, DrawDeck.strings);   // js/drawdeck-engine.js (loaded first) — toolbar/menu strings
+Object.assign(STRINGS, KD_STRINGS);   // js/keepdeck.js (loaded first) — KeepDeck's own strings, v0.23.0
 function t(key, vars) {
   let s = (STRINGS[key] && (STRINGS[key][ui.lang] || STRINGS[key].en)) || key;
   if (vars) for (const k in vars) s = s.replace('{' + k + '}', vars[k]);
@@ -680,6 +682,14 @@ function renderNotesWidget(body) {
   body.addEventListener('click', async e => {
     const chip = e.target.closest('[data-who]'); if (chip) { who = chip.dataset.who; draw(); return; }
     const f = e.target.closest('[data-only]'); if (f) { only = f.dataset.only; draw(); return; }
+    const snap = e.target.closest('[data-kdnote]');
+    if (snap) {
+      const kid = snap.dataset.kid, s = snaps[kid], n = ((s || {}).notes || []).find(x => x.id === snap.dataset.kdnote);
+      if (!s || !n) return;
+      KeepDeckRender.save('note', kid, s, { t: msOf(n), lines: [n.mood === 'frowny' ? t('notes_concern') : t('notes_good'), n.text || ''] })
+        .then(() => toast(t('kd_saved_scrap'))).catch(() => toast(t('kd_snapshot_fail')));
+      return;
+    }
     const card = e.target.closest('[data-note]'); if (!card) return;
     const kid = card.dataset.kid, n = ((snaps[kid] || {}).notes || []).find(x => x.id === card.dataset.note); if (!n) return;
     open.add(n.id); draw();                       // open it straight away; the read receipt follows
@@ -699,7 +709,11 @@ function renderNotesWidget(body) {
     if (!setHtml(body, `
       ${many ? `<div class="nfilters" role="group" aria-label="${esc(t('notes_who_all'))}">${chip('data-who', 'all', t('notes_who_all'), total, who === 'all')}${kids.map(k => chip('data-who', k.studentId, k.displayName, unreadOf(k.studentId), who === k.studentId)).join('')}</div>` : ''}
       <div class="nfilters" role="group">${chip('data-only', 'all', t('notes_f_all'), 0, only === 'all')}${chip('data-only', 'unread', t('notes_f_unread'), who === 'all' ? total : unreadOf(who), only === 'unread')}</div>
-      ${shown.length ? shown.map(r => noteCard(r.n, open.has(r.n.id) || r.n.read, r.who).replace('class="note-card', `style="--i:${cardN++}" class="note-card`)).join('') : emptyState(t(rows.length ? 'notes_none_unread' : 'notes_empty'))}`, play)) return;
+      ${shown.length ? shown.map(r => {
+        const isOpen = open.has(r.n.id) || r.n.read;
+        const card = noteCard(r.n, isOpen, r.who).replace('class="note-card', `style="--i:${cardN++}" class="note-card`);
+        return card + (isOpen ? `<button type="button" class="btn sm kd-note-snap" data-kdnote="${esc(r.n.id)}" data-kid="${esc(r.who.id)}">${esc(t('kd_snapshot'))}</button>` : '');
+      }).join('') : emptyState(t(rows.length ? 'notes_none_unread' : 'notes_empty'))}`, play)) return;
     if (scEl) scEl.scrollTop = sc;
   }
   kids.forEach(k => unsubs.push(PD.subscribeChild(k.studentId, s => { snaps[k.studentId] = s; draw(); })));
@@ -707,17 +721,26 @@ function renderNotesWidget(body) {
 }
 
 function renderPointsBody(body, id) {
-  let first = true;
-  return PD.subscribeChild(id, s => {
+  let first = true, latest = null;
+  const ac = new AbortController();
+  body.addEventListener('click', e => {
+    if (!e.target.closest('[data-kdsnap]') || !latest) return;
+    KeepDeckRender.save('rewardsSummary', id, latest, { points: latest.points, pointsLog: latest.pointsLog })
+      .then(() => toast(t('kd_saved_scrap'))).catch(() => toast(t('kd_snapshot_fail')));
+  }, { signal: ac.signal });
+  const unsub = PD.subscribeChild(id, s => {
     if (!s) return;
+    latest = s;
     const play = first && !reduceMotion() && !!body.closest('.sm-anim'); first = false;   // v0.17.0: count-up + bar on the Summary's first draw only
     setHtml(body, `
       <div class="lvl"><div class="big">Lv ${s.level}</div><div style="flex:1"><b style="font-size:20px;color:var(--gold-hi)">${cnt(s.points)} pts</b>
         <div class="muted">${esc(s.displayName)} · ${esc(s.className)}</div></div></div>
       <h4>${t('pts_recent')}</h4>
-      ${s.pointsLog.slice(0, 8).map(p => `<div class="srow"><span>${fmtDate(p.t)} · ${esc(p.reason || p.from)} <span class="muted">— ${p.from === 'Redeemed' ? t('pts_redeemed') : t('pts_teacher')}</span></span><b>${p.amount >= 0 ? '+' : ''}${p.amount}</b></div>`).join('') || emptyState(t('empty_no_points'))}`, play);
+      ${s.pointsLog.slice(0, 8).map(p => `<div class="srow"><span>${fmtDate(p.t)} · ${esc(p.reason || p.from)} <span class="muted">— ${p.from === 'Redeemed' ? t('pts_redeemed') : t('pts_teacher')}</span></span><b>${p.amount >= 0 ? '+' : ''}${p.amount}</b></div>`).join('') || emptyState(t('empty_no_points'))}
+      <button type="button" class="btn sm" data-kdsnap="1">${esc(t('kd_snapshot'))}</button>`, play);
     if (play) setTimeout(() => { if (body.isConnected) burstAt(body, body.querySelector('.lvl .big'), 12); }, 520);   // v0.20.0
   });
+  return () => { ac.abort(); unsub(); };
 }
 /* ---------- Nested "widget in a widget" chrome ----------
    Used by Student Summary to embed Reward Points, Student Stats and XP, Class Ranking and
@@ -1446,7 +1469,10 @@ const WIDGETS = [
   { id: 'pulse', cat: 'overview', titleKey: 'w_pulse', icon: I('<path d="M3 12h4l2.5-6 4 12 2.5-6H21"/>'), w: 340, h: 480, render: renderClassPulse },
   { id: 'attend', cat: 'overview', titleKey: 'w_attend', icon: I('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15.5l2 2 4-4"/>'), w: 340, h: 520, render: renderAttendance },
   // v0.22.0 (backend v2.8.0): Scrapbook — approved Scrapdeck pages shared "to my family" (Scrapdeck sharing, M3)
-  { id: 'scrapbook', cat: 'share', titleKey: 'w_scrapbook', icon: I('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L8 19"/>'), w: 360, h: 520, render: renderScrapbook }
+  { id: 'scrapbook', cat: 'share', titleKey: 'w_scrapbook', icon: I('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L8 19"/>'), w: 360, h: 520, render: renderScrapbook },
+  // v0.23.0: KeepDeck — Home board (js/keepdeck.js). Full-screen, like Summary/Badge Display Case. No school
+  // data: boards live in this device's own IndexedDB, never Firestore.
+  { id: 'keepdeck', cat: 'share', titleKey: 'w_keepdeck', icon: I('<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>'), w: 380, h: 640, full: true, render: renderKeepDeck }
 ];
 
 /* ---------- Shell: panels, drag, resize, dock (same pattern as TeachersDeck/StudentDeck) ---------- */

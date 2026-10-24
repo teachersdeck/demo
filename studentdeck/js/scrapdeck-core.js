@@ -160,6 +160,22 @@
     return items.reduce(function (m, it) { return Math.max(m, num(it.z, 0)); }, 0) + 1;
   }
 
+  /* Automatic grid layout (KeepDeck's "Tidy"): arranges items into rows, left to right, top to bottom, in
+   * their current z order, wrapping each item's own actual width (nothing is resized or rotated). Returns
+   * {id, x, y} patches only; the caller applies them the same way it applies any other geometry change. */
+  function tidyGrid(items, opts) {
+    opts = opts || {};
+    var gap = num(opts.gap, 24), pad = num(opts.pad, gap);
+    var ordered = items.slice().sort(function (a, b) { return num(a.z, 0) - num(b.z, 0); });
+    var x = pad, y = pad, rowH = 0, out = [];
+    ordered.forEach(function (it) {
+      if (x > pad && x + it.w > PAGE_W - pad) { x = pad; y += rowH + gap; rowH = 0; }
+      out.push({ id: it.id, x: round(x), y: round(y) });
+      x += it.w + gap; rowH = Math.max(rowH, it.h);
+    });
+    return out;
+  }
+
   /* ---------- undo / redo (snapshot based, JSON-cloneable states) ---------- */
   function createHistory(initial, limit) {
     limit = limit || LIMITS.undoSteps;
@@ -184,7 +200,9 @@
   }
 
   /* ---------- model: books, pages, items ---------- */
-  function newPage(bg, rng) { return { id: uid('pg', rng), bg: BACKGROUNDS.indexOf(bg) >= 0 ? bg : 'white', items: [], xp3: false }; }
+  // `title` is optional (StudentDeck's own Scrapdeck never sets one — only the book itself is named there;
+  // KeepDeck's free pages are, so a page can carry a title the same way a book already does).
+  function newPage(bg, rng, title) { var p = { id: uid('pg', rng), bg: BACKGROUNDS.indexOf(bg) >= 0 ? bg : 'white', items: [], xp3: false }; var ct = cleanTitle(title); if (ct) p.title = ct; return p; }
 
   function newBook(title, now, rng) {
     var p = newPage('cream', rng);
@@ -274,6 +292,7 @@
         if (s) items.push(s); else problems.push('dropped invalid item on ' + pid);
       });
       book.pages[pid] = { id: pid, bg: oneOf(pg.bg, BACKGROUNDS, 'white'), items: items, xp3: !!pg.xp3 };
+      var pt = cleanTitle(pg.title); if (pt) book.pages[pid].title = pt;
       book.pageOrder.push(pid);
     });
     if (!book.pageOrder.length) { var p = newPage('cream'); book.pageOrder.push(p.id); book.pages[p.id] = p; problems.push('no pages; added a blank one'); }
@@ -567,7 +586,7 @@
     clamp: clamp, normDeg: normDeg, round: round, snap: snap, uid: uid,
     center: center, rotatePoint: rotatePoint, corners: corners, bounds: bounds, hitTest: hitTest, topItemAt: topItemAt,
     resizeFromCorner: resizeFromCorner, rotationFromPointer: rotationFromPointer, keepInPage: keepInPage, nudge: nudge,
-    reorderZ: reorderZ, nextZ: nextZ, createHistory: createHistory,
+    reorderZ: reorderZ, nextZ: nextZ, tidyGrid: tidyGrid, createHistory: createHistory,
     newPage: newPage, newBook: newBook, sanitizeItem: sanitizeItem, validateBook: validateBook,
     fitLongEdge: fitLongEdge, fitInto: fitInto, photoCount: photoCount, assetsInUse: assetsInUse,
     unreferencedAssets: unreferencedAssets, canAddPhoto: canAddPhoto,

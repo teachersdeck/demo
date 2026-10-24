@@ -417,6 +417,13 @@ function renderRewardsWishlist(body) {
   return widgetGate(body, id => {
     let latest = null;
     const ac = T1.listen(body, e => {
+      if (e.target.closest('[data-kdsnap]')) {
+        if (!latest) return;
+        const pinId = (ui.wishlist || {})[id], wishGoal = pinId ? (latest.rewards || []).find(r => r.id === pinId) : null;
+        KeepDeckRender.save('rewardsSummary', id, latest, { points: latest.points, pointsLog: latest.pointsLog, wishGoal })
+          .then(() => toast(t('kd_saved_scrap'))).catch(() => toast(t('kd_snapshot_fail')));
+        return;
+      }
       const b = e.target.closest('[data-pin]'); if (!b) return;
       ui.wishlist = ui.wishlist || {};
       if (ui.wishlist[id] === b.dataset.pin) delete ui.wishlist[id]; else ui.wishlist[id] = b.dataset.pin;
@@ -440,6 +447,7 @@ function renderRewardsWishlist(body) {
           </div>`).join('') : emptyState(t('wl_none'))}
         <h4>${esc(t('wl_redeemed'))}</h4>
         ${redeemed.length ? redeemed.map(p => `<div class="srow"><span>${esc(fmtDate(p.t))} · ${esc(p.reason || '')}</span><b>${p.amount}</b></div>`).join('') : `<p class="muted">${esc(t('wl_no_redeemed'))}</p>`}
+        <button type="button" class="btn sm" data-kdsnap="1">${esc(t('kd_snapshot'))}</button>
         <p class="muted" style="margin-top:12px">${esc(t('wl_note', { name: s.displayName }))}</p>`;
     }
     return () => { ac.abort(); unsub(); };
@@ -596,6 +604,10 @@ function renderWeeklyDigest(body) {
       else if (e.target.closest('[data-act="print"]')) {
         document.body.classList.add('print-digest'); body.closest('.widget').classList.add('print-target');
         setTimeout(() => window.print(), 50);
+      } else if (e.target.closest('[data-kdsnap]')) {
+        const d = digestData(latest);
+        KeepDeckRender.save('digest', id, latest, { t: Date.now(), lines: DIGEST_ROWS.map(([lk, f]) => t(lk) + ': ' + d[f]) })
+          .then(() => toast(t('kd_saved_scrap'))).catch(() => toast(t('kd_snapshot_fail')));
       }
     });
     body.addEventListener('change', async e => {
@@ -616,7 +628,7 @@ function renderWeeklyDigest(body) {
         </div>
         <label class="row nochrome"><input type="checkbox" id="dg-rank" ${withRank ? 'checked' : ''}> <span>${esc(t('dg_rank_opt'))}</span></label>
         ${withRank && rank && rank.hidden ? `<p class="muted">${esc(t('dg_rank_hidden'))}</p>` : ''}
-        <div class="row nochrome"><button class="btn primary" data-act="copy">${esc(t('dg_copy'))}</button><button class="btn" data-act="print">${esc(t('dg_print'))}</button></div>`;
+        <div class="row nochrome"><button class="btn primary" data-act="copy">${esc(t('dg_copy'))}</button><button class="btn" data-act="print">${esc(t('dg_print'))}</button><button type="button" class="btn sm" data-kdsnap="1">${esc(t('kd_snapshot'))}</button></div>`;
     }
     return () => { ac.abort(); unsub(); };
   });
@@ -631,9 +643,18 @@ function renderProgressReports(body) {
   return widgetGate(body, id => {
     let latest = undefined; const open = new Set();
     const ac = T1.listen(body, e => {
+      const snap = e.target.closest('[data-kdsnap]');
+      if (snap) {
+        const r = latest && (latest.progressReports || []).find(x => x.id === snap.dataset.kdsnap); if (!r) return;
+        const lines = [line(r)].concat(sectLines('pr_skills', r.skills), sectLines('pr_improve', r.improve), sectLines('pr_strengths', r.strengths), sectLines('pr_next', r.nextFocus));
+        KeepDeckRender.save('report', id, latest, { t: r.t, lines }).then(() => toast(t('kd_saved_scrap'))).catch(() => toast(t('kd_snapshot_fail')));
+        return;
+      }
       const row = e.target.closest('[data-rid]'); if (!row || !latest) return;
       const rid = row.dataset.rid; open.has(rid) ? open.delete(rid) : open.add(rid); draw();
     });
+    const line = r => [r.t ? fmtDate(r.t) : '', freqLabel(r.frequency), r.score != null ? `${t('pr_score')} ${r.score}` : ''].filter(Boolean).join(' · ');
+    const sectLines = (key, items) => (items && items.length) ? [t(key) + ':'].concat(items.map(x => '• ' + x)) : [];
     const freqLabel = f => { const k = 'pr_freq_' + String(f).toLowerCase(); return STRINGS[k] ? t(k) : (f ? f.charAt(0).toUpperCase() + f.slice(1) : ''); };
     const sect = (key, items) => items.length ? `<h4>${esc(t(key))}</h4><ul class="prlist">${items.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
     function draw() {
@@ -642,9 +663,9 @@ function renderProgressReports(body) {
       const s = latest, reps = s.progressReports || [], sc = body.closest('.body'), top = sc ? sc.scrollTop : 0;
       if (!reps.length) { body.innerHTML = emptyState(t('pr_empty', { name: s.displayName })); return; }
       body.innerHTML = `<p class="muted" style="margin:0 0 8px">${esc(t('pr_count', { n: reps.length, name: s.displayName }))}</p>` + reps.map(r => {
-        const isOpen = open.has(r.id), line = [r.t ? fmtDate(r.t) : '', freqLabel(r.frequency), r.score != null ? `${t('pr_score')} ${r.score}` : ''].filter(Boolean).join(' · ');
+        const isOpen = open.has(r.id), lineText = line(r);
         const detail = sect('pr_skills', r.skills) + sect('pr_improve', r.improve) + sect('pr_strengths', r.strengths) + sect('pr_next', r.nextFocus);
-        return `<div class="prrep${isOpen ? ' on' : ''}"><button class="prline" data-rid="${esc(r.id)}" aria-expanded="${isOpen}"><span>${esc(line || r.id)}</span><b>${isOpen ? '▾' : '▸'}</b></button>${isOpen ? `<div class="prbody">${detail || `<p class="muted">${esc(t('pr_nodetail'))}</p>`}</div>` : ''}</div>`;
+        return `<div class="prrep${isOpen ? ' on' : ''}"><button class="prline" data-rid="${esc(r.id)}" aria-expanded="${isOpen}"><span>${esc(lineText || r.id)}</span><b>${isOpen ? '▾' : '▸'}</b></button>${isOpen ? `<div class="prbody">${detail || `<p class="muted">${esc(t('pr_nodetail'))}</p>`}<button type="button" class="btn sm" data-kdsnap="${esc(r.id)}">${esc(t('kd_snapshot'))}</button></div>` : ''}</div>`;
       }).join('');
       if (sc) sc.scrollTop = top;
     }

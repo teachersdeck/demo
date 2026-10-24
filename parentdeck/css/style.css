@@ -1,4 +1,10 @@
 :root{--bg:#141a2e;--bg2:#25335f;--panel:#1f2a44;--panel2:#26335a;--line:rgba(255,255,255,.12);--hi:#f4f1e8;--lo:#a9b1c9;--gold:#e0a93b;--gold-hi:#f3c765;--r:14px}
+/* KeepDeck's Home board shares js/drawdeck-engine.js + css/drawdeck-engine.css with TeachersDeck's DrawDeck
+   (tools/check_shared.py keeps both byte-identical to teachersdeck/js/drawdeck.js and css/drawdeck.css).
+   The engine's CSS never defines these itself — it only reads them — so each deck supplies its own palette;
+   these map to ParentDeck's own --bg/--panel/--panel2/--bg2/--hi/--lo/--gold/--gold-hi scale above. --danger,
+   --radius-chip, --shadow-panel and --teal have no ParentDeck equivalent, so they keep DrawDeck's own values. */
+:root{--amber:var(--gold);--amber-hi:var(--gold-hi);--danger:#E06565;--ink-0:var(--bg);--ink-1:var(--panel);--ink-2:var(--panel2);--ink-3:var(--bg2);--radius-chip:10px;--shadow-panel:0 12px 30px rgba(0,0,0,0.35),0 2px 6px rgba(0,0,0,0.25);--teal:#47C9B6;--text-hi:var(--hi);--text-lo:var(--lo)}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--hi);background:radial-gradient(1200px 700px at 20% 0%,var(--bg2) 0%,var(--bg) 60%);overflow:hidden}
@@ -44,6 +50,56 @@ h4{margin:14px 0 6px;font-size:13px}
 .avatar{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#231604;font-weight:800;font-size:11px}
 .sev{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:2px}
 .sev-low{background:#f3c765}.sev-medium{background:#e8863a}.sev-high{background:#e05353}
+
+/* ---- KeepDeck's own tab shell (js/keepdeck.js): .body gets .kd-body added once KeepDeck mounts, which
+   establishes the flex-column chain .kd-pane fills — whatever's mounted inside it (DrawDeck's .dd-root for
+   the Home board, or keepdeck-scrap.js's own markup for Scrapbook) sizes against .kd-pane the same way it
+   would size against a full widget .body. ---- */
+.kd-body{ display:flex; flex-direction:column; padding:0; overflow:hidden; }
+.kd-tabs{ display:flex; gap:8px; padding:10px 12px; flex:0 0 auto; border-bottom:1px solid var(--line); }
+.kd-tab{ font:inherit; border:1px solid var(--line); background:var(--panel2); color:var(--hi); border-radius:10px; padding:6px 14px; cursor:pointer; }
+.kd-tab:hover{ border-color:var(--gold); }
+.kd-tab.on{ background:var(--gold); border-color:var(--gold); color:#231604; font-weight:700; }
+.kd-pane{ flex:1; min-height:0; position:relative; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ---- KeepDeck's Scrapbook tab (js/keepdeck-scrap.js) ---- */
+.kd-scrap-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px; border-bottom:1px solid var(--line); flex:0 0 auto; }
+.kd-scrap-bar select{ font:inherit; border:1px solid var(--line); background:var(--panel2); color:var(--hi); border-radius:10px; padding:6px 10px; max-width:160px; }
+.kd-scrap-sp{ flex:1 1 auto; }
+.kd-scrap-wrap{ flex:1; min-height:0; overflow:auto; display:flex; align-items:flex-start; justify-content:center; padding:12px; }
+.kd-scrap-page{ position:relative; transform-origin:top center; flex:none; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; }
+.kd-scrap-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:40px; pointer-events:none; }
+.kd-scrap-it{ position:absolute; display:flex; align-items:center; justify-content:center; cursor:grab; overflow:hidden; outline:none; }
+.kd-scrap-it.picked{ outline:2px dashed var(--gold); outline-offset:2px; }
+.kd-scrap-it img{ width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+.kd-scrap-it.kd-scrap-photo.kd-scrap-f-polaroid{ background:#fff; padding:10px 10px 28px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+.kd-scrap-it.kd-scrap-sticker{ font-size:48px; line-height:1; background:none; }
+.kd-scrap-it.kd-scrap-text{ white-space:pre-wrap; word-break:break-word; cursor:text; background:none; }
+.kd-scrap-it.kd-scrap-shape svg{ width:100%; height:100%; }
+.kd-scrap-handles{ position:absolute; pointer-events:none; outline:1px solid var(--gold); }
+.kd-scrap-h{ position:absolute; width:14px; height:14px; margin:-7px; border-radius:50%; background:var(--gold); border:2px solid #231604; pointer-events:all; cursor:pointer; }
+.kd-scrap-h-nw{ left:0; top:0; cursor:nwse-resize; } .kd-scrap-h-se{ left:100%; top:100%; cursor:nwse-resize; }
+.kd-scrap-h-ne{ left:100%; top:0; cursor:nesw-resize; } .kd-scrap-h-sw{ left:0; top:100%; cursor:nesw-resize; }
+.kd-scrap-h-rot{ left:50%; top:-28px; cursor:grab; background:var(--panel2); }
+.kd-scrap-menu{ position:fixed; z-index:9999; display:grid; grid-template-columns:repeat(6,1fr); gap:2px; background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,.4); padding:6px; max-width:260px; }
+.kd-scrap-menu button{ border:none; background:none; font-size:22px; padding:6px; cursor:pointer; border-radius:8px; }
+.kd-scrap-menu button:hover{ background:var(--panel2); }
+.kd-scrap-yearwrap{ flex:1; min-height:0; overflow:auto; padding:14px; }
+.kd-scrap-yearwrap h4{ margin:14px 0 8px; }
+.kd-scrap-year{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+.kd-scrap-cover{ font:inherit; text-align:left; border:1px solid var(--line); background:var(--panel2); color:var(--hi); border-radius:10px; padding:14px 10px; cursor:pointer; aspect-ratio:3/2; display:flex; flex-direction:column; justify-content:flex-end; gap:4px; }
+.kd-scrap-cover:hover{ border-color:var(--gold); }
+.kd-scrap-cover span{ font-size:12px; color:var(--lo); }
+
+/* ---- KeepDeck's parent-unlock challenge (js/keepdeck.js) — its own overlay, separate from .modal above,
+   since it must sit on top of DrawDeck's own full-screen widget and that widget's own internal modal. ---- */
+.kd-unlock-ov{position:fixed;inset:0;background:rgba(10,13,24,.7);display:flex;align-items:center;justify-content:center;z-index:9999}
+.kd-unlock-card{width:min(320px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 20px 50px rgba(0,0,0,.5);padding:18px;text-align:center}
+.kd-unlock-card h3{margin:0 0 8px;font-size:15px}
+.kd-unlock-card p{margin:0 0 10px}
+.kd-unlock-input{width:100%;box-sizing:border-box;font-size:20px;text-align:center;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--hi);margin-bottom:10px}
+.kd-unlock-err{color:#e06565}
+.kd-unlock-btns{display:flex;gap:8px;justify-content:center}
 
 /* ---- Modal (account / link-a-child) ---- */
 .modal{position:fixed;inset:0;background:rgba(10,13,24,.6);display:flex;align-items:center;justify-content:center;z-index:60}

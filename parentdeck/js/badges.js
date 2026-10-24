@@ -90,9 +90,20 @@ function renderBadgeCase(body) {
     const ac = T1.listen(body, e => {
       const v = e.target.closest('[data-bcview]');
       if (v) { ui.badgeView = v.dataset.bcview; saveUI(); if (latest) draw(latest); return; }
+      const snap = e.target.closest('[data-bcsnap]');
+      if (snap) { kdSnapshot(snap.dataset.bcsnap); return; }
       const it = e.target.closest('[data-b]');
       if (it) { const i = order.findIndex(b => b.id === it.dataset.b); if (i >= 0) openDetail(i, it); }
     });
+    // Snapshot to KeepDeck (js/keepdeck-render.js): "set" draws every earned badge, "one" the badge the detail dialog is open on.
+    async function kdSnapshot(which) {
+      if (!latest || typeof KeepDeckRender === 'undefined') return;
+      try {
+        if (which === 'set') await KeepDeckRender.save('badgeSet', id, latest, (latest.badges || []).map(BC.clean));
+        else { const b = dlg && order.find(x => x.id === dlg.dataset.id); if (!b) return; await KeepDeckRender.save('badge', id, latest, b); }
+        toast(t('kd_saved_scrap'));
+      } catch (e) { toast(t('kd_snapshot_fail')); }
+    }
     const unsub = PD.subscribeChild(id, s => { if (!s) return; latest = s; draw(s); });
 
     function shelf(label, count, list, cls) {
@@ -125,7 +136,8 @@ function renderBadgeCase(body) {
           <div class="bc-hero-t">
             <h2>${esc(t('bc_title', { name: s.displayName }))}</h2>
             ${spot ? `<p class="bc-count"><b>${esc(t('bc_count', { n: badges.length }))}</b></p><div class="bc-chips">${chips}</div>
-              <p class="muted bc-last">${esc(t('bc_latest'))}: <b>${esc(spot.name)}</b>${BC.earnedLine(spot) ? ' · ' + esc(BC.earnedLine(spot)) : ''}</p>` : ''}
+              <p class="muted bc-last">${esc(t('bc_latest'))}: <b>${esc(spot.name)}</b>${BC.earnedLine(spot) ? ' · ' + esc(BC.earnedLine(spot)) : ''}</p>
+              <button type="button" class="btn sm" data-bcsnap="set">${esc(t('kd_snapshot'))}</button>` : ''}
           </div>
         </header>
         ${badges.length ? `<div class="bc-bar" role="group">
@@ -169,6 +181,7 @@ function renderBadgeCase(body) {
         <small class="bc-tier t${b.tier}">${esc(t('bc_tier_badge', { tier: BC.tierName(b.tier), group: BC.groupName(b.group) }))}</small>
         <h3>${esc(b.name)}</h3>${b.desc ? `<p>${esc(b.desc)}</p>` : ''}
         ${BC.earnedLine(b) ? `<em>${esc(BC.earnedLine(b))}</em>` : ''}
+        <button type="button" class="btn sm" data-bcsnap="one">${esc(t('kd_snapshot'))}</button>
         <div class="row center bc-nav">${order.length > 1 ? `<button type="button" class="btn" data-d="prev" aria-label="${esc(t('bc_prev'))}">‹</button>` : ''}<button type="button" class="btn primary" data-d="close">${esc(t('bc_close'))}</button>${order.length > 1 ? `<button type="button" class="btn" data-d="next" aria-label="${esc(t('bc_next'))}">›</button>` : ''}</div></div>`;
       d.addEventListener('click', e => {
         const a = e.target.closest('[data-d]'); const k = a && a.dataset.d;
