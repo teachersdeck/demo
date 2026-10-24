@@ -1,0 +1,24 @@
+{
+  "apps": {
+    "teachersdeck": {
+      "version": "0.25.0",
+      "label": "0.25.0 beta",
+      "date": "2026-10-23"
+    },
+    "studentdeck": {
+      "version": "0.13.0",
+      "label": "0.13.0 beta",
+      "date": "2026-10-23"
+    },
+    "parentdeck": {
+      "version": "0.21.6",
+      "label": "0.21.6 beta",
+      "date": "2026-10-19"
+    },
+    "admindeck": {
+      "version": "0.12.0",
+      "label": "0.12.0 beta",
+      "date": "2026-10-23"
+    }
+  }
+}
