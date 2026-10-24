@@ -1,20 +1,151 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TeachersDeck Suite – Live Demos</title>
 <meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
+<!-- Written by tools/build_demo.py from tools/demo_landing.html. Each row checks its app is online by fetching the
+     app's manifest.json from this same site: green = answered quickly, amber = answered slowly or oddly, red = no answer. -->
 <style>
-  body{font-family:system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 16px;line-height:1.5;color:#222}
-  a.card{display:block;padding:14px 18px;margin:10px 0;border:1px solid #ccd;border-radius:10px;text-decoration:none;color:inherit}
-  a.card:hover{background:#f3f6ff} small,.v,footer{color:#666} .v{font-size:13px}
-  footer{margin-top:28px;font-size:13px} footer a{color:#4A55B8}
-</style></head><body>
-<h1>TeachersDeck Suite – Live Demos</h1>
-<p>Each app opens in demo mode with example data. Nothing is saved to a server. Use “Exit demo” in any app to see it empty, the way a new user does. These follow the latest development, so they can be ahead of the released versions.</p>
-<a class="card" href="teachersdeck/?demo=1"><b>TeachersDeck</b> <span class="v">v0.31.0</span><br><small>Classroom tools for teachers</small></a>
-<a class="card" href="studentdeck/?edition=student&demo=1"><b>StudentDeck</b> <span class="v">v0.18.0</span><br><small>For students</small></a>
-<a class="card" href="studentdeck/?edition=uni&demo=1"><b>UniStudentDeck</b> <span class="v">v0.18.0</span><br><small>StudentDeck's university edition, for undergraduate and graduate students</small></a>
-<a class="card" href="parentdeck/?demo=1"><b>ParentDeck</b> <span class="v">v0.24.0</span><br><small>For parents and families</small></a>
-<a class="card" href="admindeck/?demo=1"><b>AdminDeck</b> <span class="v">v0.13.0</span><br><small>For school administrators</small></a>
-<footer>Updated 24 Oct 2026, 18:45 UTC · build 235ec40 · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></footer>
-</body></html>
+  :root{
+    --dusk-1:#1A2740; --dusk-2:#2C3B57; --ink:#E9EEF6; --muted:#93A3BA; --line:rgba(233,238,246,.12);
+    --gold:#E0A93B; --gold-hi:#F2C46A; --ok:#3DD68C; --slow:#F5B83D; --down:#F0605A; --off:#56637A;
+    --row:rgba(255,255,255,.035); --row-hover:rgba(255,255,255,.06);
+  }
+  *{box-sizing:border-box}
+  html{background:var(--dusk-1)}
+  body{margin:0;min-height:100vh;color:var(--ink);background:linear-gradient(180deg,var(--dusk-1) 0%,var(--dusk-2) 60%,#263248 100%) fixed;
+    font:17px/1.55 'Atkinson Hyperlegible',system-ui,sans-serif}
+  main{max-width:860px;margin:0 auto;padding:56px 24px 40px}
+  .brand{display:flex;align-items:center;gap:10px;font:700 17px/1 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.01em}
+  .brand b{color:var(--gold);font-size:20px}
+  h1{font:700 clamp(36px,6vw,58px)/1.02 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.03em;margin:44px 0 16px;max-width:15ch}
+  .lead{color:var(--muted);max-width:60ch;margin:0 0 12px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin:22px 0 0;padding:0;list-style:none;color:var(--muted);font-size:15px}
+  .legend li{display:flex;align-items:center;gap:8px}
+  .legend .lamp{width:12px;height:12px;box-shadow:none}
+  .recheck{margin-left:auto;background:none;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:15px;border-radius:999px;padding:4px 14px;cursor:pointer}
+  .recheck:hover{border-color:var(--muted)}
+  h2{font:700 22px/1.2 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.01em;margin:48px 0 4px}
+  h2 + p{color:var(--muted);margin:0 0 16px;font-size:15px}
+  .apps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  .app{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;padding:18px 20px;background:var(--row);border:1px solid var(--line);border-radius:16px}
+  .app:hover{background:var(--row-hover)}
+  .lamp{width:22px;height:22px;border-radius:50%;background:var(--off);flex:none;transition:background .4s,box-shadow .4s}
+  .lamp[data-s=ok]{background:var(--ok);box-shadow:0 0 0 5px rgba(61,214,140,.14),0 0 18px rgba(61,214,140,.55)}
+  .lamp[data-s=slow]{background:var(--slow);box-shadow:0 0 0 5px rgba(245,184,61,.14),0 0 18px rgba(245,184,61,.5)}
+  .lamp[data-s=down]{background:var(--down);box-shadow:0 0 0 5px rgba(240,96,90,.16),0 0 18px rgba(240,96,90,.5)}
+  .lamp[data-s=checking]{background:var(--off);animation:blink 1s ease-in-out infinite}
+  @keyframes blink{50%{opacity:.35}}
+  .name{font:700 20px/1.2 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.01em;margin:0}
+  .ver{font:400 14px/1 'Atkinson Hyperlegible',system-ui,sans-serif;color:var(--muted);margin-left:8px;letter-spacing:0}
+  .who{margin:3px 0 0;color:var(--muted);font-size:15px}
+  .state{margin:6px 0 0;font-size:14px;color:var(--muted)}
+  .state[data-s=ok]{color:var(--ok)} .state[data-s=slow]{color:var(--slow)} .state[data-s=down]{color:var(--down)}
+  .actions{display:flex;align-items:center;gap:14px}
+  .play{display:inline-flex;align-items:center;gap:10px;background:var(--gold);color:#1A2740;border:0;border-radius:999px;padding:11px 20px 11px 16px;
+    font:700 16px/1 'Atkinson Hyperlegible',system-ui,sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .play svg{width:16px;height:16px;fill:currentColor}
+  .play:hover{background:var(--gold-hi)}
+  .play[aria-disabled=true]{background:transparent;color:var(--muted);border:1px dashed var(--off);cursor:default}
+  .tab{color:var(--muted);font-size:14px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+  .tab:hover{color:var(--ink)}
+  a:focus-visible,button:focus-visible{outline:3px solid var(--gold-hi);outline-offset:3px}
+  .app.future{background:transparent;border-style:dashed}
+  footer{margin:56px 0 0;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:6px 24px}
+  footer a{color:var(--ink)}
+  @media (max-width:640px){
+    main{padding-top:36px}
+    .app{grid-template-columns:auto 1fr;gap:14px}
+    .actions{grid-column:1 / -1;justify-content:space-between}
+  }
+  @media (prefers-reduced-motion:reduce){.lamp{transition:none}.lamp[data-s=checking]{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><b aria-hidden="true">◆</b> TeachersDeck Suite</div>
+  <h1>Try every app with example data</h1>
+  <p class="lead">Each demo opens in its own window with a pretend class, student or school already set up. Nothing is saved to a server, and you can close the window at any time. These follow the latest development, so they can be ahead of the released versions.</p>
+  <ul class="legend" aria-label="What the lights mean">
+    <li><span class="lamp" data-s="ok"></span>Online</li>
+    <li><span class="lamp" data-s="slow"></span>Slow to answer</li>
+    <li><span class="lamp" data-s="down"></span>Not answering</li>
+    <li><span class="lamp"></span>Not built yet</li>
+    <li style="margin-left:auto"><button class="recheck" type="button" id="recheck">Check again</button></li>
+  </ul>
+
+  <h2>TeachersDeck Suite</h2>
+  <p>For schools: teachers, students, families and administrators.</p>
+  <ul class="apps">
+    <li class="app" data-path="teachersdeck/"><span class="lamp" data-s="checking"></span>
+      <div><p class="name">TeachersDeck<span class="ver"></span></p><p class="who">Classroom tools for teachers</p><p class="state" role="status">Checking…</p></div>
+      <div class="actions"><a class="play" href="teachersdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="teachersdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+    <li class="app" data-path="studentdeck/"><span class="lamp" data-s="checking"></span>
+      <div><p class="name">StudentDeck<span class="ver"></span></p><p class="who">A study dashboard for school students</p><p class="state" role="status">Checking…</p></div>
+      <div class="actions"><a class="play" href="studentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="studentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+    <li class="app" data-path="parentdeck/"><span class="lamp" data-s="checking"></span>
+      <div><p class="name">ParentDeck<span class="ver"></span></p><p class="who">For parents and families</p><p class="state" role="status">Checking…</p></div>
+      <div class="actions"><a class="play" href="parentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="parentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+    <li class="app" data-path="admindeck/"><span class="lamp" data-s="checking"></span>
+      <div><p class="name">AdminDeck<span class="ver"></span></p><p class="who">For school administrators</p><p class="state" role="status">Checking…</p></div>
+      <div class="actions"><a class="play" href="admindeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="admindeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+  </ul>
+
+  <h2>UniDeck</h2>
+  <p>The university edition: for colleges, graduate programs, language centers and test-prep schools.</p>
+  <ul class="apps">
+    <li class="app" data-path="unideck/unistudentdeck/"><span class="lamp" data-s="checking"></span>
+      <div><p class="name">UniStudentDeck<span class="ver"></span></p><p class="who">A calm study dashboard for undergraduate and graduate students</p><p class="state" role="status">Checking…</p></div>
+      <div class="actions"><a class="play" href="unideck/unistudentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/unistudentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
+    <li class="app future"><span class="lamp"></span>
+      <div><p class="name">LectureDeck</p><p class="who">Courses, assignments and grading for lecturers</p><p class="state">Not built yet</p></div>
+      <div class="actions"><span class="play" aria-disabled="true">Coming later</span></div></li>
+    <li class="app future"><span class="lamp"></span>
+      <div><p class="name">CampusDeck</p><p class="who">Courses, terms and enrollment for a campus, program or center</p><p class="state">Not built yet</p></div>
+      <div class="actions"><span class="play" aria-disabled="true">Coming later</span></div></li>
+  </ul>
+
+  <footer><span>Updated 24 Oct 2026, 19:08 UTC (build 13e2a1b)</span><a href="https://myteachersdeck.com/">myteachersdeck.com</a></footer>
+</main>
+<script>
+(function () {
+  var SLOW_MS = 1500, TIMEOUT_MS = 8000;
+  var rows = Array.prototype.slice.call(document.querySelectorAll('.app[data-path]'));
+  var TEXT = { ok: 'Online', slow: 'Online, but slow to answer', down: 'Not answering right now. Try again in a few minutes.', checking: 'Checking…' };
+
+  function set(row, s, version) {
+    row.querySelector('.lamp').setAttribute('data-s', s);
+    var st = row.querySelector('.state'); st.setAttribute('data-s', s); st.textContent = TEXT[s];
+    if (version) row.querySelector('.ver').textContent = 'v' + version;
+  }
+  function check(row) {
+    set(row, 'checking');
+    var t0 = performance.now(), ctl = 'AbortController' in window ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, TIMEOUT_MS);
+    fetch(row.getAttribute('data-path') + 'manifest.json?t=' + Date.now(), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (m) { clearTimeout(timer); var ms = performance.now() - t0; set(row, m && m.version && ms < SLOW_MS ? 'ok' : 'slow', m && m.version); })
+      .catch(function () { clearTimeout(timer); set(row, 'down'); });
+  }
+  function checkAll() { rows.forEach(check); }
+
+  // Play opens the demo in its own window; if the browser blocks pop-ups, the link simply opens it here.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a.play');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    var w = Math.min(1440, screen.availWidth - 40), h = Math.min(900, screen.availHeight - 60);
+    var win = window.open(a.href, 'demo-' + a.closest('.app').getAttribute('data-path').replace(/\W+/g, '-'),
+      'popup=yes,width=' + w + ',height=' + h + ',left=' + Math.round((screen.availWidth - w) / 2) + ',top=' + Math.round((screen.availHeight - h) / 2));
+    if (win) { e.preventDefault(); try { win.focus(); } catch (x) {} }
+  });
+  document.getElementById('recheck').addEventListener('click', checkAll);
+  checkAll(); setInterval(function () { if (!document.hidden) checkAll(); }, 60000);
+})();
+</script>
+</body>
+</html>
