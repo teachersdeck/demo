@@ -1,0 +1,48 @@
+{
+ "id": "starter-stamps",
+ "version": 1,
+ "kind": "stamp",
+ "name": {
+  "en": "Starter stamps",
+  "vi": "Con dấu cơ bản"
+ },
+ "license": "Original artwork made for StudentDeck. Free with StudentDeck; not for redistribution.",
+ "items": [
+  {
+   "id": "sun",
+   "name": {
+    "en": "Sun",
+    "vi": "Mặt trời"
+   },
+   "mode": "stroke",
+   "path": "M50 30A20 20 0 1 1 49.99 30ZM50 4L50 16M50 84L50 96M4 50L16 50M84 50L96 50M17 17L25 25M75 75L83 83M17 83L25 75M75 25L83 17"
+  },
+  {
+   "id": "sparkle",
+   "name": {
+    "en": "Sparkle",
+    "vi": "Lấp lánh"
+   },
+   "mode": "fill",
+   "path": "M50 4L58.5 41.5L96 50L58.5 58.5L50 96L41.5 58.5L4 50L41.5 41.5Z"
+  },
+  {
+   "id": "flower",
+   "name": {
+    "en": "Flower",
+    "vi": "Bông hoa"
+   },
+   "mode": "fill",
+   "path": "M50 28Q81 -3.7 69.1 39Q112 50 69.1 61Q81 103.7 50 72Q19 103.7 30.9 61Q-12 50 30.9 39Q19 -3.7 50 28Z"
+  },
+  {
+   "id": "done",
+   "name": {
+    "en": "Tick in a circle",
+    "vi": "Dấu tích trong vòng tròn"
+   },
+   "mode": "stroke",
+   "path": "M50 6A44 44 0 1 1 49.99 6ZM28 52L44 68L74 34"
+  }
+ ]
+}
