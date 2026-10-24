@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "StudentDeck",
-  "version": "0.17.0",
-  "version_name": "0.17.0 beta",
-  "description": "A study dashboard for students: focus timer, homework to-do, reading log, games, an idiom a day, Translate, a Dictionary and Flashcards, a mood/journal journey, a Scrapdeck scrapbook for photos, text and stickers, a Files viewer for PDFs and Google docs, and XP with a stats dashboard.",
+  "version": "0.18.0",
+  "version_name": "0.18.0 beta",
+  "description": "A study dashboard for students: focus timer, homework to-do, reading log, games, an idiom a day, Translate, a Dictionary and Flashcards, a mood/journal journey, a Scrapdeck scrapbook for photos, text and stickers, a Files viewer for PDFs and Google docs, and XP with a stats dashboard. Includes UniStudentDeck, a calmer edition for university students, switched on in Settings.",
   "chrome_url_overrides": {
     "newtab": "index.html"
   },

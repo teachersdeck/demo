@@ -2,7 +2,12 @@
 /* StudentDeck v0.3.0 — laptop shell, 5 study widgets, XP engine and a Stats & XP dashboard.
    Widget contract: { id, title, icon, w, h, render(body) -> optional cleanup fn }.
    awardXP() is the M2 seam: M1 widgets already call it, it just does nothing yet. */
-const VERSION = '0.17.0', KEY = 'sd_state_v1';
+const VERSION = '0.18.0', KEY = 'sd_state_v1';
+/* UniStudentDeck edition (v0.18.0): js/edition.js decides the edition before this file runs. UNI = the university edition;
+   XP_ON = XP, levels and badges are shown (always in StudentDeck; off by default in UniStudentDeck). XP keeps being COUNTED
+   either way, so switching back loses nothing. U(studentText, uniText) picks the wording for the current edition. */
+const ED = window.SD_EDITION || { uni: false, xpOn: true, name: 'StudentDeck', setUni() {}, setXp() {} };
+const UNI = ED.uni, XP_ON = ED.xpOn, APP = ED.name, U = (sd, uni) => (UNI ? uni : sd);
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -45,14 +50,14 @@ function beep() {
    Add a row to XP_RULES only to give it a nicer label or its own daily cap. */
 const XP_RULES = {
   focus:   { label: 'Focus sessions',   cap: 60 },
-  todo:    { label: 'Homework done',    cap: 30 },
+  todo:    { label: U('Homework done', 'Assignments done'), cap: 30 },
   reading: { label: 'Reading',          cap: 60 },
   game:    { label: 'Games',            cap: 60 },
   idiom:   { label: 'Idiom of the day', cap: 5 },
   words:   { label: 'Saving words',     cap: 10 },    // 2 XP per new word saved from Translate / Dictionary / Idiom (not typed in by hand)
   cards:   { label: 'Flashcards',       cap: 30 },    // 1 XP per card answered right in a scheduled review + a 3 XP bonus for the day's first finished session
   journal: { label: 'Journal',          cap: 10 },
-  notes:   { label: 'Notepad',          cap: 15 },    // 1 XP per timestamped line of 4+ words (a repeat of a line earns once a day, and rewarded lines are at least 20 s apart) + 2 for the day's first one — see noteXpFor()
+  notes:   { label: U('Notepad', 'Notes'), cap: 15 },    // 1 XP per timestamped line of 4+ words (a repeat of a line earns once a day, and rewarded lines are at least 20 s apart) + 2 for the day's first one — see noteXpFor()
   scrap:   { label: 'Scrapbooking',     cap: 15 },    // Scrapdeck: 2 XP the first time each day something new is added + 3 XP the first time a page reaches 3 items — never for moving, resizing, duplicating or deleting (js/scrapdeck-core.js xpForItemAdded)
   daily:   { label: 'Daily visit',      cap: 5 },
   docs:    { label: 'Reading documents', cap: 20 }     // 1 XP per DOC_XP_SECS of active time with a document open (Files widget), at most DOC_XP_PER_DOC per document per day
@@ -74,7 +79,7 @@ function awardXP(source, amount, meta) {
   let n = Math.round(amount * streakMult());
   if (r.xp >= SOFT_CEILING) n = Math.ceil(n / 2);                             // past ~150 XP a day, everything earns half
   n = Math.min(n, rule.cap - (r.xpBy[source] || 0));
-  if (n <= 0) { const k = source + dayKey(Date.now()); if (!capSeen.has(k)) { capSeen.add(k); toast(`Daily XP limit reached for ${rule.label}.`); } return 0; }
+  if (n <= 0) { const k = source + dayKey(Date.now()); if (!capSeen.has(k)) { capSeen.add(k); if (XP_ON) toast(`Daily XP limit reached for ${rule.label}.`); } return 0; }
   const before = levelInfo(state.xp.total).level;
   state.xp.total += n; r.xp += n; r.xpBy[source] = (r.xpBy[source] || 0) + n;
   state.xp.log.push({ t: Date.now(), s: source, n }); if (state.xp.log.length > 100) state.xp.log.shift();
@@ -83,6 +88,7 @@ function awardXP(source, amount, meta) {
 function drawXP(gain, up) {
   const L = levelInfo(state.xp.total);
   $('#xp-lv').textContent = 'Lv ' + L.level; $('#xp-fill').style.width = Math.round(L.into / L.need * 100) + '%'; $('#xp-tot').textContent = state.xp.total + ' XP';
+  if (!XP_ON) return;                                                            // UniStudentDeck with XP off: counted, never shown
   if (gain) { const p = $('#xp-pop'); p.textContent = '+' + gain + ' XP'; p.classList.remove('go'); void p.offsetWidth; p.classList.add('go'); }
   if (up) toast(`Level up! You reached level ${L.level} 🎉`, 3500);
 }
@@ -188,6 +194,7 @@ function grantBadge(b, silent) {
   return true;
 }
 function checkBadges() {
+  if (UNI) return;                                                   // UniStudentDeck has no badges, even with XP on (milestones come later); switching back awards what was reached
   const B = state.badges; B.bestStreak = Math.max(B.bestStreak || 0, state.xp.streak || 0);
   const c = badgeCtx(), fresh = BADGES.filter(b => !B.earned[b.id] && b.val(c) >= b.need), first = !B.init;
   if (first) {                                                       // first run with history: award quietly, say so once
@@ -396,7 +403,7 @@ window.addEventListener('pagehide', () => { if (docStageOpen()) closeDocLog(); s
 function moodOn(d) { const e = state.journal.entries.find(x => dayKey(x.ts) === d); return e ? e.mood : null; }
 function dailyPayload(d) {
   const r = state.stats.daily[d] || {};
-  return { xp: r.xp || 0, hw: r.hw || 0, readEntries: r.readEntries || 0, readMin: r.readMin || 0, focus: r.focus || 0, games: r.games || 0, gamesStarted: r.gamesStarted || 0, idioms: r.idioms || 0, wordsSaved: r.wordsSaved || 0, cardsReviewed: r.cardsReviewed || 0, mood: moodOn(d), xpBy: { ...(r.xpBy || {}) }, timeBy: { ...(r.timeBy || {}) } };
+  return { xp: r.xp || 0, hw: r.hw || 0, readEntries: r.readEntries || 0, readMin: r.readMin || 0, focus: r.focus || 0, games: r.games || 0, gamesStarted: r.gamesStarted || 0, idioms: r.idioms || 0, wordsSaved: r.wordsSaved || 0, cardsReviewed: r.cardsReviewed || 0, mood: UNI ? null : moodOn(d), xpBy: { ...(r.xpBy || {}) }, timeBy: { ...(r.timeBy || {}) } };
 }
 // Per-game plays/best/last, for ParentDeck's "Game scores" (map keyed by game folder; Firestore keys can't contain . or /).
 function gameScoresPayload() {
@@ -561,7 +568,7 @@ function renderTodo(b) {
     <div id="hw-cal-wrap" hidden></div>
     <div id="hw-teacher"></div>
     <p class="drawer-label" style="margin-top:10px">My list</p>
-    <div class="row"><input type="text" id="ti" placeholder="Add homework or a task…" maxlength="120" style="flex:1" aria-label="New task"><button class="btn primary" data-a="add">Add</button></div>
+    <div class="row"><input type="text" id="ti" placeholder="${U('Add homework or a task…', 'Add an assignment or a task…')}" maxlength="120" style="flex:1" aria-label="New task"><button class="btn primary" data-a="add">Add</button></div>
     <ul id="tl"></ul><div class="row"><span class="muted" id="tc"></span><button class="btn" data-a="clear" style="margin-left:auto">Clear done</button></div>`;
 
   function drawCal() {
@@ -580,7 +587,7 @@ function renderTodo(b) {
     if (hwErr) { el.innerHTML = `<p class="drawer-label" style="color:#e05353">Couldn\u2019t load assignments from your teacher (${esc(hwErr)}). Ask your teacher to check Cloud Class sync.</p>`; return; }
     if (!assignments.length) { el.innerHTML = ''; return; }
     const today = dayKey(Date.now());
-    el.innerHTML = `<p class="drawer-label">From your teacher</p><ul id="hw-list">${assignments.map(a => {
+    el.innerHTML = `<p class="drawer-label">From your ${U('teacher', 'instructor')}</p><ul id="hw-list">${assignments.map(a => {
       const done = !!state.hwDone[a.id];
       const pending = state.hwPending && state.hwPending[a.id];
       const overdue = !done && a.dueDate && a.dueDate < today;
@@ -767,11 +774,12 @@ function renderIdiom(b) {
   draw();
 }
 
+const dayActive = r => Object.entries((r && r.timeBy) || {}).reduce((a, [w, n]) => a + (w === DOC_KEY ? 0 : n), 0);   // seconds active in widgets that day (document time overlaps it)
 const fmtT = s => s >= 3600 ? `${Math.floor(s / 3600)}h ${pad(Math.floor(s % 3600 / 60))}m` : s >= 60 ? `${Math.floor(s / 60)}m` : `${s}s`;
 function renderStats(b) {
   let range = 'today';
   b.innerHTML = `<div class="sx-top"><div id="sx-lvl"></div><div class="sx-ctl"><div class="row" role="group" aria-label="Time range">${[['today', 'Today'], ['week', '7 days'], ['month', '30 days'], ['all', 'All time']].map(([k, l]) => `<button class="chip" data-r="${k}">${l}</button>`).join('')}</div>
-    <div class="row"><button class="btn" id="sx-sync-btn">☁️ Sync to ParentDeck</button><span class="muted" id="sx-sync-msg"></span></div></div></div><div class="sx-medals"><div class="bstrip" id="badge-strip" aria-label="Your badges"></div><button class="btn" data-open-badges>🏅 Badges & Rewards →</button></div><div id="sx-body" class="sx-grid"></div>`;
+    <div class="row"><button class="btn" id="sx-sync-btn">${U('☁️ Sync to ParentDeck', '☁️ Sync now')}</button><span class="muted" id="sx-sync-msg"></span></div></div></div><div class="sx-medals"><div class="bstrip" id="badge-strip" aria-label="Your badges"></div><button class="btn" data-open-badges>🏅 Badges & Rewards →</button></div><div id="sx-body" class="sx-grid"></div>`;
   const D = () => state.stats.daily, back = n => dayKey(Date.now() - n * 864e5);
   const dayKeys = () => { const all = Object.keys(D()), t = dayKey(Date.now()); return range === 'today' ? all.filter(k => k === t) : range === 'week' ? all.filter(k => k >= back(6)) : range === 'month' ? all.filter(k => k >= back(29)) : all; };
   const bars = rows => { const mx = Math.max(1, ...rows.map(r => r.v)); return rows.map((r, n) => `<div class="bar" style="--n:${n}"><span>${esc(r.l)}</span><div><i style="width:${Math.round(r.v / mx * 100)}%"></i></div><b>${esc(r.t)}</b></div>`).join('') || '<p class="muted">Nothing yet.</p>'; };
@@ -814,10 +822,10 @@ function renderStats(b) {
   function heatmap() {                                                        // last 16 weeks, Monday at the top, today in the last column
     const now = new Date(); now.setHours(12, 0, 0, 0);
     const monday = new Date(now.getTime() - ((now.getDay() + 6) % 7) * 864e5), start = monday.getTime() - 15 * 7 * 864e5, today = dayKey(now);
-    const cells = Array.from({ length: 16 * 7 }, (_, i) => { const k = dayKey(start + i * 864e5); return { k, v: k > today ? -1 : (D()[k] || {}).xp || 0 }; });
+    const cells = Array.from({ length: 16 * 7 }, (_, i) => { const k = dayKey(start + i * 864e5); return { k, v: k > today ? -1 : XP_ON ? (D()[k] || {}).xp || 0 : dayActive(D()[k]) }; });
     const mx = Math.max(1, ...cells.map(c => c.v));
-    return `<div class="heat" role="img" aria-label="XP per day over the last 16 weeks">${cells.map((c, n) => `<i class="${c.v < 0 ? 'f' : c.v === 0 ? '' : 'l' + Math.min(4, Math.ceil(c.v / mx * 4))}" style="--n:${n};--d:${((n * 37) % 23) / 10}s" title="${c.k}${c.v >= 0 ? ': ' + c.v + ' XP' : ''}"></i>`).join('')}</div>
-      <p class="muted" style="margin:6px 0 0">Each square is a day (Monday at the top). Brighter = more XP.</p>`;
+    return `<div class="heat" role="img" aria-label="${XP_ON ? 'XP' : 'Study time'} per day over the last 16 weeks">${cells.map((c, n) => `<i class="${c.v < 0 ? 'f' : c.v === 0 ? '' : 'l' + Math.min(4, Math.ceil(c.v / mx * 4))}" style="--n:${n};--d:${((n * 37) % 23) / 10}s" title="${c.k}${c.v >= 0 ? ': ' + (XP_ON ? c.v + ' XP' : fmtT(c.v)) : ''}"></i>`).join('')}</div>
+      <p class="muted" style="margin:6px 0 0">Each square is a day (Monday at the top). Brighter = ${XP_ON ? 'more XP' : 'more study time'}.</p>`;
   }
   function draw() {
     const T = { xp: 0, hw: 0, readEntries: 0, readMin: 0, focus: 0, games: 0, gamesStarted: 0, idioms: 0, wordsSaved: 0, cardsReviewed: 0, translations: 0, lookups: 0, notes: 0 }, xpBy = {}, timeBy = {};
@@ -830,7 +838,7 @@ function renderStats(b) {
     const pct = Math.round(L.into / L.need * 100);
     $('#sx-lvl', b).innerHTML = `<div class="lvl"><div class="big">Lv ${L.level}</div><div style="flex:1"><div class="xpbar wide"><i style="width:${fx && !still() ? 0 : pct}%"></i></div>
       <div class="muted">${L.into} / ${L.need} XP to level ${L.level + 1} · ${X.total} XP total</div></div></div>
-      <p class="muted" style="margin:6px 0">🔥 Streak: ${X.streak} day${X.streak === 1 ? '' : 's'} · best ${Math.max(bestStreak(), X.streak)}${m > 1 ? ` · ×${m.toFixed(1)} XP bonus` : ''}</p>`;
+      <p class="muted" style="margin:6px 0">🔥 Streak: ${X.streak} day${X.streak === 1 ? '' : 's'} · best ${Math.max(bestStreak(), X.streak)}${m > 1 && XP_ON ? ` · ×${m.toFixed(1)} XP bonus` : ''}</p>`;
     b.querySelectorAll('[data-r]').forEach(c => c.classList.toggle('on', c.dataset.r === range));
     const active = ks.filter(k => (D()[k].xp || 0) > 0), best = active.reduce((a, k) => (D()[k].xp > (a ? D()[a].xp : 0) ? k : a), '');
     const daysSt = range === 'week' ? stoplight('days', active.length) : null;       // day-count thresholds assume a 7-day week
@@ -840,36 +848,36 @@ function renderStats(b) {
     const trendSt = (cur, prevVal) => P ? stoplight('trend', stPct(cur, prevVal)) : null;
     const avgXp = active.length ? Math.round(T.xp / active.length) : 0, prevAvgXp = P && P.activeDays ? Math.round(P.xp / P.activeDays) : null;
     const tiles = [['XP earned', T.xp, trendSt(T.xp, P && P.xp)], ['Active days', active.length, daysSt], ['Average XP / active day', avgXp, trendSt(avgXp, prevAvgXp)], ['Best day', best ? `${D()[best].xp} XP · ${new Date(best + 'T12:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}` : '—'],
-      ['Homework done', T.hw, trendSt(T.hw, P && P.hw)], ['Reading', `${T.readEntries} entr${T.readEntries === 1 ? 'y' : 'ies'} · ${T.readMin} min`, trendSt(T.readMin, P && P.readMin)], ['Games played', `${T.gamesStarted} (${T.games} finished)`, trendSt(T.games, P && P.games)], ['Focus sessions', T.focus, trendSt(T.focus, P && P.focus)],
-      ['Active time', fmtT(totalT), trendSt(totalT, P && P.totalT)], ['Time with documents', fmtT(docT), trendSt(docT, P && P.docT)], ['Words saved', T.wordsSaved, trendSt(T.wordsSaved, P && P.wordsSaved)], ['Cards reviewed', T.cardsReviewed, trendSt(T.cardsReviewed, P && P.cardsReviewed)], ['Translations', T.translations, trendSt(T.translations, P && P.translations)], ['Dictionary look-ups', T.lookups, trendSt(T.lookups, P && P.lookups)], ['Notepad lines', T.notes, trendSt(T.notes, P && P.notes)], ['Idioms learned', T.idioms, trendSt(T.idioms, P && P.idioms)], ['Badges earned', `${badgesEarnedN} / ${BADGES.length}`, badgesSt]];
+      [U('Homework done', 'Assignments done'), T.hw, trendSt(T.hw, P && P.hw)], ['Reading', `${T.readEntries} entr${T.readEntries === 1 ? 'y' : 'ies'} · ${T.readMin} min`, trendSt(T.readMin, P && P.readMin)], ['Games played', `${T.gamesStarted} (${T.games} finished)`, trendSt(T.games, P && P.games)], ['Focus sessions', T.focus, trendSt(T.focus, P && P.focus)],
+      ['Active time', fmtT(totalT), trendSt(totalT, P && P.totalT)], ['Time with documents', fmtT(docT), trendSt(docT, P && P.docT)], ['Words saved', T.wordsSaved, trendSt(T.wordsSaved, P && P.wordsSaved)], ['Cards reviewed', T.cardsReviewed, trendSt(T.cardsReviewed, P && P.cardsReviewed)], ['Translations', T.translations, trendSt(T.translations, P && P.translations)], ['Dictionary look-ups', T.lookups, trendSt(T.lookups, P && P.lookups)], [U('Notepad lines', 'Note lines'), T.notes, trendSt(T.notes, P && P.notes)], ['Idioms learned', T.idioms, trendSt(T.idioms, P && P.idioms)], ['Badges earned', `${badgesEarnedN} / ${BADGES.length}`, badgesSt]].filter(([l]) => !(UNI && ['Games played', 'Idioms learned', 'Badges earned'].includes(l)) && !(!XP_ON && ['XP earned', 'Average XP / active day', 'Best day'].includes(l)));
     const xpRows = Object.keys({ ...XP_RULES, ...xpBy }).map(s => ({ l: srcLabel(s), v: xpBy[s] || 0, t: (xpBy[s] || 0) + ' XP' })).filter(r => r.v).sort((a, c) => c.v - a.v);
     const timeRows = [...WIDGETS.map(w => ({ id: w.id, l: stripLeadingEmoji(w.title) })), { id: DOC_KEY, l: 'Open documents' }].map(w => ({ l: w.l, v: timeBy[w.id] || 0, t: fmtT(timeBy[w.id] || 0) })).filter(r => r.v).sort((a, c) => c.v - a.v);
     const docRows = Object.values(state.docTime).filter(e => e.secs).sort((a, c) => c.secs - a.secs).slice(0, 6).map(e => ({ l: (e.kind === 'pdf' ? '\ud83d\udcd5 ' : '\ud83d\udd17 ') + e.name, v: e.secs, t: fmtT(e.secs) }));
-    const nCols = range === 'month' || range === 'all' ? 30 : 7, colsD = Array.from({ length: nCols }, (_, i) => { const k = back(nCols - 1 - i); return { k, v: (D()[k] || {}).xp || 0 }; }), mxc = Math.max(1, ...colsD.map(d => d.v));
-    const trend = [['XP', 'xp'], ['Reading (min)', 'readMin'], ['Homework done', 'hw'], ['Focus sessions', 'focus'], ['Games finished', 'games'], ['Words saved', 'wordsSaved'], ['Notepad lines', 'notes']].map(([l, f], n) => {
+    const nCols = range === 'month' || range === 'all' ? 30 : 7, colsD = Array.from({ length: nCols }, (_, i) => { const k = back(nCols - 1 - i); return { k, v: XP_ON ? (D()[k] || {}).xp || 0 : Math.round(dayActive(D()[k]) / 60) }; }), mxc = Math.max(1, ...colsD.map(d => d.v));
+    const trend = [['XP', 'xp'], ['Reading (min)', 'readMin'], [U('Homework done', 'Assignments done'), 'hw'], ['Focus sessions', 'focus'], ['Games finished', 'games'], ['Words saved', 'wordsSaved'], [U('Notepad lines', 'Note lines'), 'notes']].filter(([, f]) => !(f === 'xp' && !XP_ON) && !(f === 'games' && UNI)).map(([l, f], n) => {
       const a = sumDays(0, 6, f), c = sumDays(7, 13, f), d = a - c;
       return `<tr style="--n:${n}"><td>${l}</td><td>${a}</td><td>${c}</td><td class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? '▲ +' + d : d < 0 ? '▼ −' + Math.abs(d) : '—'}</td></tr>`; }).join('');
     const rowsN = range === 'all' ? 21 : range === 'month' ? 14 : 7;
     const daily = Array.from({ length: rowsN }, (_, i) => { const k = back(i), r = D()[k] || {}, mo = moodOn(k), emo = mo ? (MOODS.find(x => x[0] === mo) || [, '·'])[1] : '·';
-      return `<tr style="--n:${i}"><td>${new Date(k + 'T12:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</td><td>${r.xp || 0}</td><td>${r.readMin || 0}</td><td>${r.hw || 0}</td><td>${r.focus || 0}</td><td>${r.games || 0}</td><td>${r.notes || 0}</td><td>${emo}</td></tr>`; }).join('');
+      return `<tr style="--n:${i}"><td>${new Date(k + 'T12:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</td>${XP_ON ? `<td>${r.xp || 0}</td>` : ''}<td>${fmtT(dayActive(r))}</td><td>${r.readMin || 0}</td><td>${r.hw || 0}</td><td>${r.focus || 0}</td>${UNI ? '' : `<td>${r.games || 0}</td>`}<td>${r.notes || 0}</td><td>${emo}</td></tr>`; }).join('');
     const mood14 = Array.from({ length: 14 }, (_, i) => { const k = back(13 - i), mo = moodOn(k); return `<span class="mo" style="--n:${i}" title="${k}">${mo ? (MOODS.find(x => x[0] === mo) || [, '·'])[1] : '·'}</span>`; }).join('');
     const NP = state.notes.pages, noteLines = NP.reduce((n, p) => n + p.lines.length, 0), today = dayKey(Date.now()), linesToday = NP.reduce((n, p) => n + p.lines.filter(l => dayKey(l.t) === today).length, 0), xpNotesToday = ((D()[today] || {}).xpBy || {}).notes || 0;
     $('#sx-body', b).innerHTML = [
       card('Highlights', `<div class="ss-stlegend"><span class="ss-st ss-stkey" data-st="good">On track</span><span class="ss-st ss-stkey" data-st="watch">Monitor</span><span class="ss-st ss-stkey" data-st="bad">Needs attention</span>
         <details><summary>How are these colours worked out?</summary><p>Active days this week: ${STOPLIGHT.days.good}+ is on track, ${STOPLIGHT.days.watch}–${STOPLIGHT.days.good} is worth monitoring, below ${STOPLIGHT.days.watch} needs attention.</p><p>Share of a total (e.g. badges): ${STOPLIGHT.share.good}%+ is on track, ${STOPLIGHT.share.watch}–${STOPLIGHT.share.good}% is worth monitoring, below ${STOPLIGHT.share.watch}% needs attention.</p><p>Everything else is judged against the period right before it of the same length: flat or up is on track, down to 10% is worth monitoring, down more than that needs attention.</p></details></div>
         <div class="tiles wide">${tiles.map(([l, v, st], n) => `<div class="tile" style="--n:${n}"${st ? ` data-st="${st}"` : ''}><b>${esc(v)}</b><span>${l}</span></div>`).join('')}</div>`, 'wide'),
-      card('XP by source', bars(xpRows)),
-      card(`XP per day <span class="muted">(last ${nCols} days)</span>`, `<div class="cols big${nCols > 7 ? ' dense' : ''}">${colsD.map((d, n) => `<div class="col" style="--n:${n}" data-v="${d.v} XP" title="${d.k}: ${d.v} XP"><em>${nCols > 7 ? '' : (d.v || '')}</em><i style="height:${Math.round(d.v / mxc * 100)}%"></i><span>${nCols > 7 ? (new Date(d.k + 'T12:00').getDate() % 5 === 0 ? new Date(d.k + 'T12:00').getDate() : '') : new Date(d.k + 'T12:00').toLocaleDateString('en', { weekday: 'short' })}</span></div>`).join('')}</div>`),
+      XP_ON ? card('XP by source', bars(xpRows)) : '',
+      card(`${XP_ON ? 'XP' : 'Study minutes'} per day <span class="muted">(last ${nCols} days)</span>`, `<div class="cols big${nCols > 7 ? ' dense' : ''}">${colsD.map((d, n) => `<div class="col" style="--n:${n}" data-v="${d.v} ${XP_ON ? 'XP' : 'min'}" title="${d.k}: ${d.v} ${XP_ON ? 'XP' : 'min'}"><em>${nCols > 7 ? '' : (d.v || '')}</em><i style="height:${Math.round(d.v / mxc * 100)}%"></i><span>${nCols > 7 ? (new Date(d.k + 'T12:00').getDate() % 5 === 0 ? new Date(d.k + 'T12:00').getDate() : '') : new Date(d.k + 'T12:00').toLocaleDateString('en', { weekday: 'short' })}</span></div>`).join('')}</div>`),
       card('Activity <span class="muted">(last 16 weeks)</span>', heatmap()),
       card('This week vs last week', `<table class="sx-tbl"><thead><tr><th></th><th>Last 7 days</th><th>Before that</th><th>Change</th></tr></thead><tbody>${trend}</tbody></table>`),
       card(`Time in each widget <span class="muted">(while you're active)</span>`, bars(timeRows)),
-      card('Notepad', `<div class="tiles"><div class="tile"><b>${linesToday}</b><span>lines today</span></div><div class="tile"><b>${noteLines}</b><span>lines in ${NP.length} page${NP.length === 1 ? '' : 's'}</span></div><div class="tile"><b>${xpNotesToday} / ${XP_RULES.notes.cap}</b><span>notepad XP today</span></div></div><p class="muted" style="margin:0">Only these counts are used here. What you write stays on this device.</p>`),
-      card('Mood, last 14 days', `<div class="moods">${mood14}</div><p class="muted" style="margin:6px 0 0">From your Journey entries (the latest one each day).</p>`),
+      card(U('Notepad', 'Notes'), `<div class="tiles"><div class="tile"><b>${linesToday}</b><span>lines today</span></div><div class="tile"><b>${noteLines}</b><span>lines in ${NP.length} page${NP.length === 1 ? '' : 's'}</span></div>${XP_ON ? `<div class="tile"><b>${xpNotesToday} / ${XP_RULES.notes.cap}</b><span>notepad XP today</span></div>` : ''}</div><p class="muted" style="margin:0">Only these counts are used here. What you write stays on this device.</p>`),
+      card('Mood, last 14 days', `<div class="moods">${mood14}</div><p class="muted" style="margin:6px 0 0">From your ${U('Journey', 'Journal')} entries (the latest one each day).${UNI ? ' Your mood never leaves this device.' : ''}</p>`),
       card('Top documents <span class="muted">(all time)</span>', bars(docRows)),
-      card('Game scores <span class="muted">(all time)</span>', GAMES.map((g, n) => { const S = state.games.scores[g.folder];
+      UNI ? '' : card('Game scores <span class="muted">(all time)</span>', GAMES.map((g, n) => { const S = state.games.scores[g.folder];
         return `<div class="srow" style="--n:${n}"><span>${esc(g.name)}</span><span class="muted">played ${state.games.plays[g.folder] || 0}× · ${S && S.best !== null && S.best !== undefined ? `best ${S.best}, last ${S.last} ${esc(g.scoreLabel || '')}` : 'no score yet'}</span></div>`; }).join('')),
-      card('Recent XP', X.log.slice(-25).reverse().map((e, n) => `<div class="srow" style="--n:${n}"><span>${new Date(e.t).toLocaleDateString([], { month: 'short', day: 'numeric' })} ${new Date(e.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · ${esc(srcLabel(e.s))}</span><b>+${e.n}</b></div>`).join('') || '<p class="muted">Nothing yet.</p>'),
-      card(`Day by day <span class="muted">(last ${rowsN} days)</span>`, `<div class="tbl-scroll"><table class="sx-tbl"><thead><tr><th>Day</th><th>XP</th><th>Reading min</th><th>Homework</th><th>Focus</th><th>Games</th><th>Notes</th><th>Mood</th></tr></thead><tbody>${daily}</tbody></table></div>`, 'wide')
+      !XP_ON ? '' : card('Recent XP', X.log.slice(-25).reverse().map((e, n) => `<div class="srow" style="--n:${n}"><span>${new Date(e.t).toLocaleDateString([], { month: 'short', day: 'numeric' })} ${new Date(e.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · ${esc(srcLabel(e.s))}</span><b>+${e.n}</b></div>`).join('') || '<p class="muted">Nothing yet.</p>'),
+      card(`Day by day <span class="muted">(last ${rowsN} days)</span>`, `<div class="tbl-scroll"><table class="sx-tbl"><thead><tr><th>Day</th>${XP_ON ? '<th>XP</th>' : ''}<th>Active</th><th>Reading min</th><th>${U('Homework', 'Assignments')}</th><th>Focus</th>${UNI ? '' : '<th>Games</th>'}<th>Notes</th><th>Mood</th></tr></thead><tbody>${daily}</tbody></table></div>`, 'wide')
     ].join('');
     const body = $('#sx-body', b), lvl = $('#sx-lvl', b);
     body.classList.toggle('fx-in', fx); lvl.classList.toggle('fx-lvl', fx);
@@ -895,7 +903,7 @@ function renderStats(b) {
   function drawSync() {
     const i = SDCloud.getSyncInfo(), j = SDCloud.getJoined(), tm = i.at ? new Date(i.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
     if (!SDCloud.isConfigured()) syncMsg.textContent = 'Cloud sync isn\u2019t set up in this build.';
-    else if (!j) syncMsg.textContent = 'Not connected to a class \u2014 join in the Class widget so your parent can see your stats.';
+    else if (!j) syncMsg.textContent = U('Not connected to a class \u2014 join in the Class widget so your parent can see your stats.', 'Not connected to a course \u2014 join in the Course widget to share your study stats with your instructor.');
     else if (i.ok === null) syncMsg.textContent = 'Not synced yet \u2014 tap the button.';
     else if (i.ok) syncMsg.textContent = `\u2705 Synced ${tm}` + (i.mode === 'basic' ? ' (totals only \u2014 the server refused the extra details)' : '');
     else syncMsg.textContent = `\u26a0\ufe0f Sync failed ${tm}: ${i.error}` + (/permission/i.test(i.error) ? ' \u2014 the Firestore rules must let a student write their own students/{id} \u201cpractice\u201d field and practiceDaily/*.' : /unavailable|network|offline/i.test(i.error) ? ' \u2014 check your connection; it retries automatically.' : '');
@@ -914,8 +922,9 @@ function renderJourney(b) {
   let mood = '';
   b.innerHTML = `<p class="muted" style="margin:0 0 4px">How was today?</p>
     <div class="row" role="group" aria-label="Mood" id="jm">${MOODS.map(([k, e, l]) => `<button class="chip mood" data-m="${k}" aria-label="${l}">${e}</button>`).join('')}</div>
-    <textarea id="jt" rows="4" maxlength="4000" placeholder="Write about your day, or how school went…" aria-label="Journal entry"></textarea>
+    <textarea id="jt" rows="4" maxlength="4000" placeholder="${U('Write about your day, or how school went…', 'Write about your day, or how your studies went…')}" aria-label="Journal entry"></textarea>
     <div class="row"><button class="btn primary" data-a="save" style="margin-left:auto">Save entry</button></div>
+    ${UNI ? '<p class="muted uni-note">\ud83d\udd12 Private: kept on this device, never visible to your instructors or your school.</p>' : ''}
     <h4 style="margin:12px 0 4px">Past entries</h4><div id="jl"></div>`;
   function draw() {
     b.querySelectorAll('[data-m]').forEach(c => c.classList.toggle('on', c.dataset.m === mood));
@@ -1094,34 +1103,34 @@ function renderClass(b) {
   let pinBanner = '';
   function draw() {
     if (!SDCloud.isConfigured()) {
-      b.innerHTML = `<p class="muted">Class sync isn\u2019t set up yet \u2014 ask your teacher\u2019s app to finish setup.</p><div class="row center"><button class="btn primary" data-demo-start>Try the demo</button></div>`;
+      b.innerHTML = `<p class="muted">${U('Class sync isn\u2019t set up yet \u2014 ask your teacher\u2019s app to finish setup.', 'Course sync isn\u2019t set up yet \u2014 ask your instructor.')}</p><div class="row center"><button class="btn primary" data-demo-start>Try the demo</button></div>`;
       return;
     }
     const j = SDCloud.getJoined();
     if (!j) {
       if (SDCloud.getStatus() === 'joining') {
-        b.innerHTML = `<p class="muted">Reconnecting to your class\u2026</p>`;
+        b.innerHTML = `<p class="muted">Reconnecting to your ${U('class', 'course')}\u2026</p>`;
         return;
       }
       let tab = 'join';
       b.innerHTML = `
-        <div class="row" style="margin-bottom:4px"><button class="chip on" data-tab="join">🚪 Join with class code</button><button class="chip" data-tab="resume">🔑 I have a PIN</button></div>
+        <div class="row" style="margin-bottom:4px"><button class="chip on" data-tab="join">🚪 Join with ${U('class', 'course')} code</button><button class="chip" data-tab="resume">🔑 I have a PIN</button></div>
         <div id="cl-form"></div>`;
       function drawForm() {
         b.querySelector('[data-tab="join"]').classList.toggle('on', tab === 'join');
         b.querySelector('[data-tab="resume"]').classList.toggle('on', tab === 'resume');
         $('#cl-form', b).innerHTML = tab === 'join'
-          ? `<div class="row"><input type="text" id="cl-code" placeholder="🏫 Class code" maxlength="12" style="flex:1"></div>
+          ? `<div class="row"><input type="text" id="cl-code" placeholder="${U('🏫 Class code', '🏛️ Course code')}" maxlength="12" style="flex:1"></div>
              <div class="row"><input type="text" id="cl-name" placeholder="🙋 Your name" maxlength="60" style="flex:1"></div>
-             <p class="muted" style="font-size:11.5px;margin:2px 0 0">Already joined this class before? Use <b>🔑 I have a PIN</b> instead — joining again here makes a brand-new record and your teacher will see you twice.</p>
-             <div class="row center"><button class="btn primary" id="cl-go">✅ Join class</button></div>`
-          : `<div class="row"><input type="text" id="cl-code" placeholder="🏫 Class code" maxlength="12" style="flex:1"></div>
+             <p class="muted" style="font-size:11.5px;margin:2px 0 0">Already joined this ${U('class', 'course')} before? Use <b>🔑 I have a PIN</b> instead — joining again here makes a brand-new record and your ${U('teacher', 'instructor')} will see you twice.</p>
+             <div class="row center"><button class="btn primary" id="cl-go">✅ Join ${U('class', 'course')}</button></div>`
+          : `<div class="row"><input type="text" id="cl-code" placeholder="${U('🏫 Class code', '🏛️ Course code')}" maxlength="12" style="flex:1"></div>
              <div class="row"><input type="text" id="cl-name" placeholder="🙋 Your name" maxlength="60" style="flex:1"></div>
              <div class="row"><input type="text" id="cl-pin" placeholder="🔢 4-digit PIN" maxlength="4" style="width:90px"></div>
              <div class="row center"><button class="btn primary" id="cl-go">↩️ Resume</button></div>`;
         $('#cl-go', b).addEventListener('click', async () => {
           const code = $('#cl-code', b).value.trim(), name = $('#cl-name', b).value.trim();
-          if (!code || !name) { toast('Enter a class code and your name.'); return; }
+          if (!code || !name) { toast(`Enter a ${U('class', 'course')} code and your name.`); return; }
           try {
             if (tab === 'join') {
               const creds = await SDCloud.joinClass(code, name);
@@ -1142,28 +1151,27 @@ function renderClass(b) {
 
     b.innerHTML = `
       ${pinBanner ? `<p class="muted" style="color:var(--gold-hi)">${esc(pinBanner)}</p>` : ''}
-      <div class="stat"><div><b id="cl-pts">0</b><span class="muted">⭐ class points</span></div><div><b id="cl-lvl">1</b><span class="muted">🚀 level</span></div></div>
+      ${XP_ON ? '<div class="stat"><div><b id="cl-pts">0</b><span class="muted">⭐ class points</span></div><div><b id="cl-lvl">1</b><span class="muted">🚀 level</span></div></div>' : ''}
       <p class="muted" id="cl-class-name"></p>
-      <p class="cl-pro" id="cl-pro" hidden>⭐ Pro — thanks to your family!</p>
+      ${UNI ? '' : `<p class="cl-pro" id="cl-pro" hidden>⭐ Pro — thanks to your family!</p>
       <div class="cl-family" id="cl-family" hidden>
         <span>👪 Family code for your parents: <b id="cl-family-code"></b></span>
         <button class="x" id="cl-family-copy" aria-label="Copy family code">📋</button>
         <p class="muted" style="margin:2px 0 0">Your parents type this into ParentDeck to see your progress. Only share it with your own family.</p>
-      </div>
-      <h4 style="margin:10px 0 4px">🎁 Rewards</h4><ul id="cl-rewards"><li class="muted">Loading\u2026</li></ul>
+      </div>`}
+      ${XP_ON ? '<h4 style="margin:10px 0 4px">🎁 Rewards</h4><ul id="cl-rewards"><li class="muted">Loading\u2026</li></ul>' : ''}
       <h4 style="margin:10px 0 4px">📅 Upcoming</h4><ul id="cl-cal"><li class="muted">Loading\u2026</li></ul>
-      <div class="row"><button class="btn" id="cl-rank">🏆 See class ranking</button><button class="btn" id="cl-leave" style="margin-left:auto">👋 Leave class</button></div>
+      <div class="row">${XP_ON ? '<button class="btn" id="cl-rank">🏆 See class ranking</button>' : ''}<button class="btn" id="cl-leave" style="margin-left:auto">👋 Leave ${U('class', 'course')}</button></div>
       <p class="muted" id="cl-rank-out"></p>`;
 
     const unsubs = [
       SDCloud.subscribeStudent(s => {
         if (!s) return;
-        $('#cl-pts', b).textContent = s.xp || 0;
-        $('#cl-lvl', b).textContent = s.level || 1;
-        $('#cl-pro', b).hidden = !(s.pro && s.pro.active);
+        if (XP_ON) { $('#cl-pts', b).textContent = s.xp || 0; $('#cl-lvl', b).textContent = s.level || 1; }
+        if (!UNI) $('#cl-pro', b).hidden = !(s.pro && s.pro.active);
       }),
-      SDCloud.subscribeClassMeta(cls => { $('#cl-class-name', b).textContent = cls ? `🏫 ${cls.className}` : ''; }),
-      SDCloud.subscribeRewards(list => {
+      SDCloud.subscribeClassMeta(cls => { $('#cl-class-name', b).textContent = cls ? `${U('🏫', '🏛️')} ${cls.className}` : ''; }),
+      XP_ON && SDCloud.subscribeRewards(list => {
         $('#cl-rewards', b).innerHTML = list.length ? list.map(r =>
           `<li><span>🎁 ${esc(r.name)}</span><span>⭐ ${r.cost} pts <button class="x" data-redeem="${r.id}" aria-label="Redeem ${esc(r.name)}">🎟️</button></span></li>`
         ).join('') : '<li class="muted">No rewards yet.</li>';
@@ -1183,7 +1191,7 @@ function renderClass(b) {
       })
     ];
 
-    if (SDCloud.getFamilyCode) {
+    if (!UNI && SDCloud.getFamilyCode) {
       SDCloud.getFamilyCode().then(code => {
         if (!b.isConnected) return;
         $('#cl-family-code', b).textContent = code;
@@ -1194,7 +1202,7 @@ function renderClass(b) {
       }).catch(() => { /* backend older than v2.0.0, or offline: nothing to show */ });
     }
 
-    $('#cl-rank', b).addEventListener('click', async () => {
+    if (XP_ON) $('#cl-rank', b).addEventListener('click', async () => {
       $('#cl-rank-out', b).textContent = 'Loading\u2026';
       try {
         const res = await SDCloud.getRanking();
@@ -1202,13 +1210,13 @@ function renderClass(b) {
       } catch (e) { $('#cl-rank-out', b).textContent = e.message || String(e); }
     });
     $('#cl-leave', b).addEventListener('click', () => {
-      unsubs.forEach(u => u());
+      unsubs.forEach(u => u && u());
       SDCloud.leaveClass();
       pinBanner = '';
       draw();
     });
 
-    return () => unsubs.forEach(u => u());
+    return () => unsubs.forEach(u => u && u());
   }
   let cleanup = draw();
   const unsub = SDCloud.onStatusChanged(() => { if (typeof cleanup === 'function') cleanup(); cleanup = draw(); });
@@ -1491,9 +1499,9 @@ function openTrackMenu() {
   menu.innerHTML = '<p class="doc-menu-hint">Time with this document can also show up here.</p>';
   menu.appendChild(row(!!state.docToReading, '\ud83d\udcda Add to my Reading Log when I close it', v => { state.docToReading = v; save(); }));
   menu.appendChild(row(!!state.docFocus, '\u23f1 Offer a focus timer when I open a document', v => { state.docFocus = v; save(); }));
-  const h = document.createElement('p'); h.className = 'doc-menu-hint'; h.style.marginTop = '8px'; h.textContent = '\ud83d\udcdd Homework this document is for:'; menu.appendChild(h);
+  const h = document.createElement('p'); h.className = 'doc-menu-hint'; h.style.marginTop = '8px'; h.textContent = U('\ud83d\udcdd Homework this document is for:', '\ud83d\udcdd Assignment this document is for:'); menu.appendChild(h);
   const items = hwOpenItems();
-  if (!items.length) menu.insertAdjacentHTML('beforeend', '<p class="doc-menu-empty">No open homework \u2014 add some in Homework Assignments.</p>');
+  if (!items.length) menu.insertAdjacentHTML('beforeend', U('<p class="doc-menu-empty">No open homework \u2014 add some in Homework Assignments.</p>', '<p class="doc-menu-empty">No open assignments \u2014 add some in Assignments.</p>'));
   items.forEach(it => menu.appendChild(row((state.hwLinks[it.key] || { docs: [] }).docs.includes(dk), it.title + (it.sub ? ' \u00b7 ' + it.sub : ''), v => hwLink(it.key, dk, v))));
   menu.hidden = false; docStage.tmenuBtn.setAttribute('aria-expanded', 'true');
 }
@@ -1768,6 +1776,15 @@ const WIDGETS = [
   { id: 'scrap', title: '🖼️ Scrapdeck', icon: I('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L8 19"/>'), w: 400, h: 600, full: true, render: renderScrapdeck },   // v0.12.0: scrapbook pages (js/scrapdeck.js); full-screen like Stats & XP
   { id: 'class', title: '🏫 Class', icon: I('<path d="M7 18a4.5 4.5 0 0 1-.6-8.96 5.5 5.5 0 0 1 10.7-1.6A4 4 0 0 1 17.5 18H7Z"/>'), w: 330, h: 460, render: renderClass }
 ];
+/* UniStudentDeck edition: the scope doc's "From StudentDeck to UniDeck" table, as far as it goes without the new course backend.
+   Dropped: Games Hub, Idiom of the Day, Scrapdeck, and Badges & Rewards (lighter gamification). Renamed for an adult tone.
+   Saved layouts, panels and dock placements of a dropped widget are kept untouched, so switching back restores them. */
+const UNI_DROP = ['games', 'idiom', 'scrap', 'badges'];
+const UNI_TITLES = { todo: '📝 Assignments', reading: '📚 Reading List', notes: '🗒️ Notes', stats: '📈 Study Stats', journey: '📓 Journal', class: '🏛️ Course' };
+if (UNI) {
+  for (let i = WIDGETS.length - 1; i >= 0; i--) if (UNI_DROP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
+  WIDGETS.forEach(w => { if (UNI_TITLES[w.id]) w.title = UNI_TITLES[w.id]; });
+}
 
 /* ---------- Shell: panels, drag, resize, dock ---------- */
 const wall = $("#wall"), panels = {}; let topZ = 10, pinZ = 1000;
@@ -1852,7 +1869,7 @@ function openWidget(id) {
   const full = !!def.full, el = document.createElement('section'); el.className = 'widget' + (full ? ' full' : '') + (!full && L.min ? ' min' : '');
   const top = clamp(L.y, 0, Math.max(0, wall.clientHeight - 44));                                   // and never taller than the space below it
   if (!full) el.style.cssText = `left:${clamp(L.x, 0, Math.max(0, wall.clientWidth - 150))}px;top:${top}px;width:${L.w}px;height:${Math.max(140, Math.min(L.h, wall.clientHeight - top - 8))}px`;
-  el.innerHTML = `<div class="head">${full ? '<button class="btn" data-w="close" aria-label="Back to StudentDeck">\u2190 Back to StudentDeck</button>' : ''}<span class="title" data-wl="${def.id}">${esc(widgetLabel(def.title))}</span>
+  el.innerHTML = `<div class="head">${full ? `<button class="btn" data-w="close" aria-label="Back to ${APP}">\u2190 Back to ${APP}</button>` : ''}<span class="title" data-wl="${def.id}">${esc(widgetLabel(def.title))}</span>
     ${full ? '<button class="hbtn wide" data-w="bar" aria-label="Show or hide the top bar" title="Show the top bar">Toolbar</button>' : ''}<button class="hbtn" data-w="min" aria-label="Minimise ${esc(def.title)}">–</button><button class="hbtn" data-w="close" aria-label="Close ${esc(def.title)}">×</button></div>
     <div class="body"></div>${full ? '' : '<div class="grip" aria-hidden="true"></div>'}`;
   el.dataset.wid = id; wall.appendChild(el); front(el);
@@ -1888,7 +1905,7 @@ const DOCK_CAPS = { bottom: 10, left: 5, right: 5 };
 const PLACE_LABEL = { bottom: 'Bottom dock', left: 'Left drawer', right: 'Right drawer', hidden: 'Hidden' };
 const DEFAULT_PLACEMENT = { clock: 'bottom', timer: 'bottom', todo: 'bottom', reading: 'bottom', notes: 'bottom', files: 'bottom', translate: 'bottom', dict: 'bottom', cards: 'bottom', games: 'left', idiom: 'left', journey: 'left', scrap: 'left', stats: 'right', badges: 'right', class: 'right' };
 const WIDGET_CAT = { timer: 'study', todo: 'study', reading: 'study', notes: 'study', files: 'study', translate: 'language', dict: 'language', cards: 'language', idiom: 'language', games: 'me', journey: 'me', scrap: 'me', stats: 'me', badges: 'me', class: 'cloud' };
-const CATEGORIES = [['study', 'Study'], ['language', 'Language'], ['me', 'Me & fun'], ['cloud', 'Class']];
+const CATEGORIES = [['study', 'Study'], ['language', 'Language'], ['me', U('Me & fun', 'Me')], ['cloud', U('Class', 'Course')]];
 
 const widgetsFor = loc => WIDGETS.filter(w => state.dockPlacement[w.id] === loc).slice(0, DOCK_CAPS[loc] || 99);   // a dock never shows more than its cap; the rest stay reachable in the tray
 const placementCount = loc => widgetsFor(loc).length;
@@ -1985,6 +2002,11 @@ function closeSettings() { settingsDrawer.hidden = true; $('#btn-settings').setA
   dt.addEventListener('click', () => SD_DEMO.active ? SD_DEMO.exit() : SD_DEMO.enter());
   rg.addEventListener('click', () => location.reload()); }                                      // the demo lives in memory, so a reload regenerates it
 document.addEventListener('click', e => { if (e.target.closest('[data-demo-start]')) SD_DEMO.enter(); });
+{ const ut = $('#edition-uni-toggle'), xr = $('#edition-xp-row'), xt = $('#edition-xp-toggle');   // v0.18.0: the edition switch (js/edition.js)
+  ut.checked = UNI; xr.hidden = !UNI; xt.checked = XP_ON;
+  ut.addEventListener('change', () => { toast(`Switching to ${ut.checked ? 'UniStudentDeck' : 'StudentDeck'}\u2026`); setTimeout(() => ED.setUni(ut.checked), 350); });
+  xt.addEventListener('change', () => ED.setXp(xt.checked)); }
+document.querySelectorAll('.app-name').forEach(el => { el.textContent = APP; });
 $('#btn-settings').addEventListener('click', openSettings); $('#settings-close').addEventListener('click', closeSettings);
 $('#app-tray-tab').addEventListener('click', () => $('#app-tray-backdrop').hidden ? openAppTray() : closeAppTray());
 $('#app-tray-handle').addEventListener('click', closeAppTray);

@@ -38,7 +38,7 @@ const SD_DEMO = (() => {
   const mem = new Mem();
   try { Object.defineProperty(window, 'localStorage', { configurable: true, get: () => mem }); } catch (e) {}
   if (window.localStorage !== mem) { try { realLS.removeItem(FLAG); } catch (e) {} console.warn('StudentDeck demo: this browser would not let the demo use temporary storage, so it will not start.'); api.active = false; api.blocked = true; return api; }
-  document.title = 'StudentDeck (demo)';
+  document.title = ((window.SD_EDITION && window.SD_EDITION.name) || 'StudentDeck') + ' (demo)';   // v0.18.0: UniStudentDeck in its own name
 
   /* ---------- 2. helpers ---------- */
   const DAY = 864e5, now = Date.now(), dayKey = ms => new Date(ms).toLocaleDateString('en-CA'), ago = n => now - n * DAY;
