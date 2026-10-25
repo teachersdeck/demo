@@ -1,23 +1,17 @@
-/* TeachersDeck demo mode (v0.15.3) — show the Cloud features without a Firebase project, a sign-in or a real class.
+/* LectureDeck demo mode (UniDeck v0.3.1; built on TeachersDeck's demo, v0.15.3) — the whole deck with university example data:
+   no Firebase project, no sign-in, no real course.
 
-   What you get: you are signed in as a pretend teacher with Class 5A already linked to a pretend cloud class (12 students, a rewards
-   catalogue, a points history, homework and calendar, Notes Home history, two weeks of student activity), plus Class 3B to practise
-   "pick an existing class". Cloud Class, Class Activity, Notes Home, Progress Reports, Assignments and Calendar all work for real against it:
-   award points, send a note to parents, change ranking visibility, regenerate a join code, add a reward, remove a student, send a progress
-   report. A gold "Cloud demo" tab (bottom left) opens a panel with
-     - a live LOG of every Cloud call the app makes (function name, what it did, and who would see it in StudentDeck / ParentDeck), and
-     - buttons that play the OTHER side: a student joins with the class code, students do homework and practise, a student redeems a reward,
-       a parent opens a note — so you can watch the teacher's widgets update live, which is the point of the Cloud features.
+   What you get: you are Dr Linh Vu, a lecturer. Course mode (Course builder, Course assignments, Grader, Gradebook) runs on
+   js/unicourses.js's own demo courses — Academic Writing (ENG 201-02, 12 students, graded and ungraded essays, one of them late)
+   and Research Methods (SOC 310) — and opens on first load. The deck's other cloud widgets run on a pretend section of the same
+   Academic Writing class (12 students, readings and deadlines in Assignments and Calendar, two weeks of study activity), plus a
+   second section to practise "pick an existing class". A gold "Cloud demo" tab (bottom left) logs every pretend cloud call and
+   has buttons that play the students' side.
 
-   How it works (so you can trust it): this file loads after js/cloud.js and before js/app.js. It replaces the public TDCloud.* functions
-   with in-memory versions that return the same shapes the real ones do, so no widget knows the difference. Nothing is sent anywhere.
-   And it keeps your real deck safe: the app runs on a throw-away, in-memory copy of localStorage (your real classes, settings and Pro
-   license are neither read nor changed), the demo class has its own id so a background picked in the demo never overwrites your own, and
-   everything resets when the page reloads. (Media you upload into the library while in the demo is the one thing stored for real; the
-   library is shared across classes.)
-
-   Turn on: "Try demo" in Settings or in any Cloud widget's "not connected" message, or add ?demo=1 to the page address.
-   Turn off: "Exit demo" in the panel or Settings, or ?demo=0. Dates are generated relative to today. */
+   How it works: this file loads after js/cloud.js and before js/app.js and replaces the public TDCloud.* functions with in-memory
+   versions that return the same shapes. Nothing is sent anywhere; the deck runs on a throw-away, in-memory copy of localStorage,
+   so your real courses, settings and licence are untouched; everything resets on reload. This file is LectureDeck's own (not
+   shared with TeachersDeck). Turn on: "Try demo" in Settings, or ?demo=1. Turn off: "Exit demo", or ?demo=0. */
 const TD_DEMO = (() => {
   const KEY = 'td_demo_flag';
   const realLS = window.localStorage;                    // captured before anything can replace it
@@ -46,15 +40,15 @@ const TD_DEMO = (() => {
   }
   const mem = new MemStorage();
   try { Object.defineProperty(window, 'localStorage', { configurable: true, get: () => mem }); }
-  catch (e) { console.warn('TeachersDeck demo: this browser would not let the demo use temporary storage, so it will not start.'); try { realLS.removeItem(KEY); } catch (e2) {} api.active = false; api.blocked = true; return api; }
+  catch (e) { console.warn('LectureDeck demo: this browser would not let the demo use temporary storage, so it will not start.'); try { realLS.removeItem(KEY); } catch (e2) {} api.active = false; api.blocked = true; return api; }
   if (window.localStorage !== mem) { try { realLS.removeItem(KEY); } catch (e2) {} api.active = false; api.blocked = true; return api; }
   // The demo class has its own id (not the default one), so its background image id is 'background::demo_5a' — never the real 'background'.
-  mem.setItem('td_classes_v1', JSON.stringify({ active: 'demo_5a', list: [{ id: 'demo_5a', name: 'Class 5A' }] }));
+  mem.setItem('td_classes_v1', JSON.stringify({ active: 'demo_5a', list: [{ id: 'demo_5a', name: 'ENG 201-02 Academic Writing' }] }));
   // Mark widget curation as already done, so curateWidgetsOnce() doesn't re-deactivate the shelve-tier widgets (and
   // pop the "Tidied up" toast) on every single demo reload — a fresh in-memory localStorage otherwise looks like a
   // brand-new device every time.
   mem.setItem('td_widgets_v1', JSON.stringify({ curated: true, off: {}, parked: {} }));
-  document.title = ((window.DECK_EDITION && window.DECK_EDITION.name) || 'TeachersDeck') + ' (demo)';   // UniDeck: this app's own name
+  document.title = 'LectureDeck (demo)';
 
   /* ---------- 2. helpers ---------- */
   const DAY = 864e5, now = Date.now();
@@ -99,19 +93,19 @@ const TD_DEMO = (() => {
   })();
 
   /* ---------- 3. the pretend cloud ---------- */
-  const NAMES_5A = ['Minh Nguyen', 'Lan Tran', 'Bao Le', 'An Pham', 'Chi Vo', 'Khoa Dang', 'Linh Do', 'Phuc Huynh', 'Mai Bui', 'Hieu Ngo', 'Thao Duong', 'Duc Ly'];
-  const NAMES_3B = ['Nam Le', 'Quan Hoang', 'Anh Dinh', 'Tu Phan', 'Binh Mai', 'Hoa Trinh', 'Son Vu', 'Kim Lam'];
+  const NAMES_5A = ['An Nguyen', 'Binh Tran', 'Chi Le', 'Duc Pham', 'Giang Vo', 'Hanh Do', 'Khoa Bui', 'Lan Hoang', 'Minh Dang', 'Ngoc Phan', 'Phuc Ly', 'Quynh Mai'];   // the same students as js/unicourses.js's demo course
+  const NAMES_3B = ['Nam Le', 'Quan Hoang', 'Anh Dinh', 'Tu Phan', 'Binh Mai', 'Hoa Trinh', 'Son Vu', 'Kim Lam'];   // section 03
   const NEW_NAMES = ['Yen Ta', 'Long Ha', 'Nga Chau', 'Hung Ton', 'Thy Kieu', 'Tam Quach', 'Uyen La', 'Viet Doan'];
   const ACT = ['readMin', 'focus', 'games', 'idioms', 'wordsSaved', 'cardsReviewed'];
   const HW = [   // [id, title, subject, due (days from today), points, instructions]
-    ['demo_hw1', 'Reading log: Chapter 3', 'English', -6, 10, 'Read and write three sentences about the main character.'],
-    ['demo_hw2', 'Fractions worksheet', 'Math', -3, 15, ''],
-    ['demo_hw3', 'Spelling list 12', 'English', -1, 10, ''],
-    ['demo_hw4', 'Science: plant diary', 'Science', 1, 10, 'Draw and label your bean plant.'],
-    ['demo_hw5', 'Book report draft', 'English', 4, 20, '']
+    ['demo_hw1', 'Read: Swales & Feak, unit 3 (hedging)', 'Academic Writing', -6, 10, 'Bring three hedged sentences from the reading to the seminar.'],
+    ['demo_hw2', 'Annotate one academic article', 'Academic Writing', -3, 15, 'Mark the thesis, the claims and the evidence for each.'],
+    ['demo_hw3', 'Essay 1 peer review', 'Academic Writing', -1, 10, 'Use the rubric; two strengths and two questions for the writer.'],
+    ['demo_hw4', 'Read: Booth et al., chapter 7', 'Academic Writing', 1, 10, ''],
+    ['demo_hw5', 'Research question draft', 'Academic Writing', 4, 20, 'One question, why it matters, and two possible sources.']
   ];
-  const EVENTS = [['Class picnic', 3, '10:00'], ['Parent-teacher meetings', 6, ''], ['Unit test', 9, '09:00']];
-  const session0 = { uid: 'demo-teacher', displayName: 'Demo Teacher', email: 'demo.teacher@example.com', photoURL: null };
+  const EVENTS = [['Seminar: peer review workshop', 3, '10:00'], ['Office hours (room B204)', 6, '14:00'], ['Midterm: in-class writing', 9, '09:00']];
+  const session0 = { uid: 'demo-teacher', displayName: 'Dr Linh Vu', email: 'linh.vu@demo.uni.edu', photoURL: null };
   let session = session0;
   const authL = new Set();
   const fireAuth = () => authL.forEach(fn => { try { fn(session); } catch (e) {} });
@@ -136,17 +130,14 @@ const TD_DEMO = (() => {
     C[id] = {
       doc: { id, className: name, teacherUid: session0.uid, studentJoinCode: code(), parentJoinCode: code(), rankingVisibility: 'anonymized' },
       students, hw: [], cal: [], reports: {},
-      rewards: [{ id: id + '_r0', name: 'Sticker', cost: 30, description: 'Pick a sticker.', active: true }, { id: id + '_r1', name: 'Pick the class song', cost: 120, description: '', active: true }, { id: id + '_r2', name: 'Homework pass', cost: 300, description: 'Skip one homework.', active: true }],
-      ledger: rich ? [[0, 0, 10, 'Great participation', 'teacher'], [0, 3, -30, 'Redeemed: Sticker', 'self-redemption'], [1, 1, 5, 'Helped a classmate', 'teacher'], [1, 6, 15, 'Reading challenge', 'teacher'], [2, 2, 10, 'Homework on time', 'teacher'], [3, 7, -5, 'Talking during story time', 'teacher'], [4, 0, 10, 'Kindness award', 'teacher'], [5, 8, 20, 'Science fair project', 'teacher']]
+      rewards: [{ id: id + '_r0', name: '24-hour extension', cost: 30, description: 'One assignment, ask before the deadline.', active: true }, { id: id + '_r1', name: 'Priority office-hours slot', cost: 120, description: '', active: true }, { id: id + '_r2', name: 'Drop the lowest reading response', cost: 300, description: '', active: true }],
+      ledger: rich ? [[0, 0, 10, 'Strong seminar contribution', 'teacher'], [0, 3, -30, 'Redeemed: 24-hour extension', 'self-redemption'], [1, 1, 5, 'Helpful peer review', 'teacher'], [1, 6, 15, 'Led the study group', 'teacher'], [2, 2, 10, 'Reading response on time', 'teacher'], [4, 0, 10, 'Excellent presentation', 'teacher'], [5, 8, 20, 'Library research workshop', 'teacher']]
         .map(([d, si, delta, reason, by], k) => ({ id: id + '_l' + k, studentId: students[si].id, delta, reason, awardedBy: by, createdAt: ts(ago(d) - k * 6e5) })) : [],
-      notes: rich ? [
-        { id: id + '_n0', studentId: students[1].id, displayName: students[1].displayName, mood: 'smiley', text: 'Lan led her group today and encouraged the quieter students to share ideas. Wonderful teamwork!', read: true, readAt: ts(ago(5) + 36e5), createdAt: ts(ago(6)) },
-        { id: id + '_n1', studentId: students[2].id, displayName: students[2].displayName, mood: 'frowny', text: 'Bao found today\u2019s reading task difficult and got frustrated. A little extra reading at home would help. Thank you!', read: false, readAt: null, createdAt: ts(ago(2)) },
-        { id: id + '_n2', studentId: students[0].id, displayName: students[0].displayName, mood: 'smiley', text: 'Minh scored 18 out of 20 on the spelling test. Well done!', read: false, readAt: null, createdAt: ts(ago(1)) }] : []
+      notes: []   // Notes Home writes to families; university students manage their own accounts, so the demo starts with none
     };
   }
-  makeClass('demo_5a', 'Class 5A', NAMES_5A, true);
-  makeClass('demo_3b', 'Class 3B', NAMES_3B, false);
+  makeClass('demo_5a', 'ENG 201-02 Academic Writing', NAMES_5A, true);
+  makeClass('demo_3b', 'ENG 201-03 Academic Writing', NAMES_3B, false);
 
   /* ---------- 4. subscriptions ---------- */
   const subs = {};   // key -> Set(cb)
@@ -178,7 +169,7 @@ const TD_DEMO = (() => {
     init: () => true,
     watchAuth() {},
     onAuthChanged(fn) { authL.add(fn); fn(session); return () => authL.delete(fn); },
-    async signIn() { await wait(350); session = session0; fireAuth(); log('signIn', 'Signed in with Google (demo teacher)', 'ensureUserProfile role=teacher'); return session; },
+    async signIn() { await wait(350); session = session0; fireAuth(); log('signIn', 'Signed in with Google (demo lecturer)', 'ensureUserProfile role=teacher'); return session; },
     signOut() { session = null; fireAuth(); log('signOut', 'Signed out', ''); },
     getSession: () => session,
     async myClasses() { await lat(); return Object.values(C).map(c => ({ ...c.doc })); },
@@ -199,12 +190,12 @@ const TD_DEMO = (() => {
       return { ok: true };
     },
     // v0.21.3 (backend v2.1.0): school + notes from the school admin
-    async joinSchool(code) { await lat(); log('joinSchool', `Joined a school with code ${String(code).toUpperCase()}`, 'Your classes now appear in that school\u2019s AdminDeck'); return { schoolId: 'demo', schoolName: 'Demo School', classesMoved: 1 }; },
-    subscribeMySchool(cb) { cb({ schoolId: 'demo', schoolName: 'Demo School' }); return () => {}; },
+    async joinSchool(code) { await lat(); log('joinSchool', `Joined a school with code ${String(code).toUpperCase()}`, 'Your classes now appear in that school\u2019s AdminDeck'); return { schoolId: 'demo', schoolName: 'Demo University', classesMoved: 1 }; },
+    subscribeMySchool(cb) { cb({ schoolId: 'demo', schoolName: 'Demo University' }); return () => {}; },
     subscribeAdminNotes(cb) {
       const notes = window.__tdDemoNotes = window.__tdDemoNotes || [
-        { id: 'an1', subject: 'Parents\u2019 evening', text: 'Thursday from 5pm in the hall. Please have progress reports sent by Wednesday.', from: 'School office', createdAtMs: Date.now() - 864e5, read: false },
-        { id: 'an2', subject: 'Reading week', text: 'Thank you for logging reading minutes!', from: 'Principal', createdAtMs: Date.now() - 4 * 864e5, read: true }];
+        { id: 'an1', subject: 'Midterm grades due', text: 'Please release midterm grades by Friday 5pm so the registry can send progress letters.', from: 'Faculty office', createdAtMs: Date.now() - 864e5, read: false },
+        { id: 'an2', subject: 'Reading week', text: 'No classes next week; office hours continue online.', from: 'Head of department', createdAtMs: Date.now() - 4 * 864e5, read: true }];
       window.__tdDemoNotesCb = cb; cb(notes.map(n => ({ ...n }))); return () => { window.__tdDemoNotesCb = null; };
     },
     async markAdminNoteRead(id) { await lat(); const n = (window.__tdDemoNotes || []).find(x => x.id === id); if (n) n.read = true; if (window.__tdDemoNotesCb) window.__tdDemoNotesCb(window.__tdDemoNotes.map(x => ({ ...x }))); },
@@ -301,8 +292,8 @@ const TD_DEMO = (() => {
     ];
     state.dim = true;
     if (!Object.values(state.active || {}).some(Boolean)) {
-      state.active = { cloudclass: true, classactivity: true, noteshome: true };
-      if (window.innerWidth >= 1150) state.layout = { cloudclass: { x: 20, y: 90, w: 320, h: 500 }, classactivity: { x: 360, y: 90, w: 400, h: 580 }, noteshome: { x: 780, y: 90, w: 350, h: 640 } };
+      state.active = { coursebuilder: true, grader: true };   // UniDeck: Course mode first
+      if (window.innerWidth >= 1150) state.layout = { coursebuilder: { x: 20, y: 90, w: 420, h: 600 }, grader: { x: 460, y: 90, w: 820, h: 620 } };
     }
     // The first sync would log two lines the moment the app starts; do it quietly so the log begins with what you do.
     lastCal = 'demo_5a::' + JSON.stringify(state.calendarEvents); lastHw = 'demo_5a::' + JSON.stringify(state.assignments);
@@ -317,7 +308,7 @@ const TD_DEMO = (() => {
       if (!name) { toast('Everyone in the demo has already joined.'); return; }
       const s = { id: uid(A + '_s'), displayName: name, classId: A, xp: 0, level: 1, practice: { streak: 0, updatedAt: null }, lastActiveAt: null, _daily: {}, _hwDone: {} };
       C[A].students.push(s); emit('roster:' + A); toast(name + ' joined the class');
-      log('StudentDeck \u2192 join', `${name} joined with code ${C[A].doc.studentJoinCode}`, 'Appears in Cloud Class\u2019s roster at once', 'student');
+      log('UniStudentDeck \u2192 join', `${name} joined with code ${C[A].doc.studentJoinCode}`, 'Appears in Cloud Class\u2019s roster at once', 'student');
     },
     practise() {
       const hw = (typeof state !== 'undefined' && state.assignments || []).filter(a => a.id);
@@ -330,8 +321,8 @@ const TD_DEMO = (() => {
         emit('act:' + s.id);
       });
       emit('roster:' + A);
-      log('StudentDeck \u2192 sync', `${who.length} students did homework and practised`, 'Class Activity: active count, reading minutes and homework bars move', 'student');
-      toast(who.length + ' students just practised');
+      log('UniStudentDeck \u2192 sync', `${who.length} students read and ticked off readings`, 'Class Activity: active count, reading minutes and to-do bars move', 'student');
+      toast(who.length + ' students just studied');
     },
     redeem() {
       const r = C[A].rewards.filter(x => x.active !== false).sort((a, b) => a.cost - b.cost)[0], s = r && C[A].students.find(x => x.xp >= r.cost);
@@ -355,14 +346,12 @@ const TD_DEMO = (() => {
     bar.innerHTML = `
       <button class="demotab" id="demo-tab" aria-expanded="false">\ud83c\udfac Cloud demo</button>
       <div class="demopanel" id="demo-panel" hidden>
-        <p class="small-hint" style="text-align:left;margin:0 0 8px">Pretend cloud: Class 5A is linked, with 12 students. Everything you do in Cloud Class, Class Activity, Notes Home, Progress Reports, Assignments and Calendar goes through the log below. These buttons play the student and parent side.</p>
+        <p class="small-hint" style="text-align:left;margin:0 0 8px">You are Dr Linh Vu. <b>Course mode</b> (Course builder, Course assignments, Grader, Gradebook) has two demo courses: sign in there (no real account is used), grade Essay 1, release grades, export the gradebook. The deck's other cloud widgets run on a pretend ENG 201-02 section with the same 12 students; their calls appear in the log below, and these buttons play the students' side.</p>
         <div class="demo-actions">
           <button class="wbtn" data-sim="join">\ud83d\udc4b Student joins</button>
-          <button class="wbtn" data-sim="practise">\ud83d\udcda Students practise</button>
-          <button class="wbtn" data-sim="redeem">\ud83c\udf81 Student redeems</button>
-          <button class="wbtn" data-sim="parent">\ud83d\udc6a Parent opens a note</button>
+          <button class="wbtn" data-sim="practise">\ud83d\udcda Students study</button>
         </div>
-        <p class="demo-log-title">Cloud calls <span class="demo-key"><i class="t"></i>you <i class="s"></i>student <i class="p"></i>parent</span></p>
+        <p class="demo-log-title">Cloud calls <span class="demo-key"><i class="t"></i>you <i class="s"></i>student</span></p>
         <ol class="demo-log" id="demo-log"></ol>
         <div class="demo-actions"><button class="wbtn" data-sim="reset">\u21a9 Reset demo</button><button class="wbtn" data-sim="exit">Exit demo</button></div>
       </div>`;
