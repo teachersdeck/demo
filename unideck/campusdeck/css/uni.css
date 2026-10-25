@@ -1,2 +1,20 @@
 /* CampusDeck's own styles, loaded after the shared stylesheets (which come from AdminDeck through tools/sync_shared.py).
    Anything only CampusDeck needs goes here, scoped under html.uni. Empty for now: the shell looks like AdminDeck. */
+
+/* ---------- UniDeck phase 1: Courses (js/campus-courses.js) ---------- */
+.cc-pad{padding:12px 14px;overflow:auto;height:100%;box-sizing:border-box;color:var(--text-hi)}
+.cc-lo{color:var(--text-lo);font-size:12px}
+.cc-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.cc-tiles div{background:var(--ink-1);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column}
+.cc-tiles b{font-size:22px}.cc-tiles span{font-size:11px;color:var(--text-lo)}
+.cc-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0}
+.cc-check{display:flex;gap:6px;align-items:center;font-size:13px}
+.cc-term{font-weight:700;margin:14px 0 4px}
+.cc-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.cc-tbl th{text-align:left;color:var(--text-lo);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}
+.cc-tbl td{padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
+.cc-ended td{opacity:.6}
+.cc-tag{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:1px 7px;color:var(--text-lo)}
+.cc-bar{display:inline-block;width:70px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);vertical-align:middle;overflow:hidden}
+.cc-bar i{display:block;height:100%;background:var(--amber,#e8a33d)}
+@media (max-width:700px){.cc-tiles{grid-template-columns:repeat(2,1fr)}}

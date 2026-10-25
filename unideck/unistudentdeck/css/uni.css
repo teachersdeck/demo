@@ -5,3 +5,37 @@ html.no-xp .xp-wrap{display:none}                                  /* XP and lev
 html.uni .sx-medals,html.no-xp .sx-top .lvl{display:none}   /* no badges at all in UniStudentDeck */
 .uni-note{font-size:11.5px;margin:6px 0 0}
 html.uni .dock-item>span:last-child{letter-spacing:-.3px;hyphens:auto;-webkit-hyphens:auto}   /* "Assignments" fits a 74 px dock button instead of breaking as "Assignment s" */
+
+/* ---------- UniDeck phase 1: Courses, Assignments, Grades (js/uni-courses-ui.js) ---------- */
+.ud-pad{padding:10px 12px;overflow:auto;height:100%}
+.ud-empty{padding:18px;text-align:center}
+.ud-empty p{margin:6px 0}
+.ud-card{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.ud-card p{margin:4px 0}
+.ud-k{font-weight:700}
+.ud-h{margin:6px 0 2px;font-size:16px}
+.ud-lbl{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:12px;color:var(--lo)}
+.ud-lbl input,.ud-lbl select,.ud-pick select{font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:7px 10px}
+.ud-lbl input[type=date]{color-scheme:dark}
+.ud-pick{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--lo);margin-bottom:6px}
+.ud-pick select{flex:1;min-width:0}
+.ud-list{list-style:none;margin:6px 0;padding:0}
+.ud-list li{display:flex;align-items:center;gap:8px}
+.ud-list li.on{background:rgba(224,169,59,.12);border-radius:8px}
+.ud-linkbtn{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;padding:2px 4px;border-radius:6px}
+.ud-linkbtn:focus-visible{outline:2px solid var(--gold)}
+.ud-back{flex-direction:row;color:var(--gold-hi);font-size:12px}
+.ud-x{all:unset;cursor:pointer;color:var(--lo);font-size:18px;padding:0 6px}.ud-x:hover{color:var(--hi)}
+.ud-tag{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap;color:var(--lo)}
+.ud-tag.s{color:#8fd19e;border-color:rgba(143,209,158,.5)}.ud-tag.l{color:var(--gold-hi);border-color:var(--gold)}
+.ud-tag.m{color:#f08a7e;border-color:rgba(240,138,126,.5)}.ud-tag.g{color:var(--hi);background:rgba(255,255,255,.08)}
+.ud-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}.ud-tiles div{background:rgba(255,255,255,.04);border-radius:10px;padding:6px 8px;display:flex;flex-direction:column}
+.ud-tiles b{font-size:18px}.ud-tiles span{font-size:11px;color:var(--lo)}
+.ud-instr{background:rgba(255,255,255,.04);border-radius:10px;padding:8px 10px;margin:8px 0;white-space:normal;line-height:1.5}
+.ud-tbl{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}
+.ud-tbl th{text-align:left;color:var(--lo);font-weight:600;padding:4px;border-bottom:1px solid var(--line)}
+.ud-tbl td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.ud-total{display:flex;flex-direction:column;align-items:flex-start}.ud-total b{font-size:28px;line-height:1.2}
+.ud-grade{border-color:var(--gold)}
+.ud-warn{color:var(--gold-hi);font-size:12px}
+.ud-foot{margin-top:12px}.ud-foot a{color:var(--gold-hi)}

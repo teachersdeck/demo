@@ -8,7 +8,7 @@
    The version lives here (tools/release.py checks it against manifest.json, the HTML pages and the README). */
 window.DECK_EDITION = Object.freeze({
   name: 'ParentDeck',
-  version: '0.1.0',
+  version: '0.1.1',
   uni: true                   // the university edition
 });
 document.documentElement.classList.add('uni');

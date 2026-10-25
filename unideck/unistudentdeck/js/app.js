@@ -1781,12 +1781,16 @@ const WIDGETS = [
 ];
 /* UniStudentDeck edition: the scope doc's "From StudentDeck to UniDeck" table, as far as it goes without the new course backend.
    Dropped: Games Hub, Idiom of the Day, Scrapdeck, and Badges & Rewards (lighter gamification). Renamed for an adult tone.
-   Saved layouts, panels and dock placements of a dropped widget are kept untouched. */
-const UNI_DROP = ['games', 'idiom', 'scrap', 'badges'];
-const UNI_TITLES = { todo: '📝 Assignments', reading: '📚 Reading List', notes: '🗒️ Notes', stats: '📈 Study Stats', journey: '📓 Journal', class: '🏛️ Course' };
+   Saved layouts, panels and dock placements of a dropped widget are kept untouched.
+   UniDeck phase 1: the school-class widgets (Cloud Class, Shared Board, Board Assignments) give way to UniDeck's own
+   course widgets, which UniStudentDeck's js/uni-courses-ui.js lists in window.UNI_WIDGETS ({ id, title, iconPath, w, h,
+   render, cat? }); the to-do list is "To-do" again now that real course Assignments exist. */
+const UNI_DROP = ['games', 'idiom', 'scrap', 'badges', 'class', 'sharedboard', 'boardassign'];
+const UNI_TITLES = { todo: '📝 To-do', reading: '📚 Reading List', notes: '🗒️ Notes', stats: '📈 Study Stats', journey: '📓 Journal' };
 if (UNI) {
   for (let i = WIDGETS.length - 1; i >= 0; i--) if (UNI_DROP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
   WIDGETS.forEach(w => { if (UNI_TITLES[w.id]) w.title = UNI_TITLES[w.id]; });
+  (window.UNI_WIDGETS || []).forEach(w => { if (!WIDGETS.some(x => x.id === w.id)) WIDGETS.push({ ...w, icon: I(w.iconPath || '<circle cx="12" cy="12" r="8"/>') }); });
 }
 
 /* ---------- Shell: panels, drag, resize, dock ---------- */
@@ -1908,7 +1912,8 @@ const DOCK_CAPS = { bottom: 10, left: 5, right: 5 };
 const PLACE_LABEL = { bottom: 'Bottom dock', left: 'Left drawer', right: 'Right drawer', hidden: 'Hidden' };
 const DEFAULT_PLACEMENT = { clock: 'bottom', timer: 'bottom', todo: 'bottom', reading: 'bottom', notes: 'bottom', files: 'bottom', translate: 'bottom', dict: 'bottom', cards: 'bottom', games: 'left', idiom: 'left', journey: 'left', scrap: 'left', stats: 'right', badges: 'right', class: 'right' };
 const WIDGET_CAT = { timer: 'study', todo: 'study', reading: 'study', notes: 'study', files: 'study', translate: 'language', dict: 'language', cards: 'language', idiom: 'language', games: 'me', journey: 'me', scrap: 'me', stats: 'me', badges: 'me', class: 'cloud' };
-const CATEGORIES = [['study', 'Study'], ['language', 'Language'], ['me', U('Me & fun', 'Me')], ['cloud', U('Class', 'Course')]];
+if (UNI) (window.UNI_WIDGETS || []).forEach(w => { WIDGET_CAT[w.id] = w.cat || 'cloud'; });   // UniDeck's course widgets
+const CATEGORIES = [['study', 'Study'], ['language', 'Language'], ['me', U('Me & fun', 'Me')], ['cloud', U('Class', 'Courses')]];
 
 const widgetsFor = loc => WIDGETS.filter(w => state.dockPlacement[w.id] === loc).slice(0, DOCK_CAPS[loc] || 99);   // a dock never shows more than its cap; the rest stay reachable in the tray
 const placementCount = loc => widgetsFor(loc).length;

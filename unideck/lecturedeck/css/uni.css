@@ -1,2 +1,45 @@
 /* LectureDeck's own styles, loaded after the shared stylesheets (which come from TeachersDeck through tools/sync_shared.py).
    Anything only LectureDeck needs goes here, scoped under html.uni. Empty for now: the shell looks like TeachersDeck. */
+
+/* ---------- UniDeck phase 1: Course mode (js/course-mode.js) ---------- */
+.cm-pad{padding:10px 12px;overflow:auto;height:100%;box-sizing:border-box;color:var(--text-hi)}
+.cm-empty{padding:20px;text-align:center}.cm-empty p{margin:6px 0}
+.cm-lo{color:var(--text-lo);font-size:12px}
+.cm-k{font-weight:700;margin:2px 0}
+.cm-card{background:var(--ink-1);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.cm-card p{margin:4px 0}
+.cm-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cm-split{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.cm-pick{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-lo);flex:1;min-width:180px}
+.cm-pick select,.cm-lbl input,.cm-lbl select,.cm-lbl textarea,.cm-rrow input,.cm-tbl input{font:inherit;color:var(--text-hi);background:var(--ink-0);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0}
+.cm-pick select{flex:1}
+.cm-lbl{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:12px;color:var(--text-lo)}
+.cm-lbl textarea{resize:vertical}
+.cm-lbl input[type=datetime-local]{color-scheme:dark}
+.cm-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cm-four{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cm-check{display:flex;gap:8px;align-items:center;font-size:13px;margin:8px 0}
+.cm-left{justify-content:flex-start;align-items:center}
+.cm-code{display:flex;align-items:center;gap:8px;margin:10px 0 2px;flex-wrap:wrap}
+.cm-code b{font-family:ui-monospace,Menlo,monospace;font-size:20px;letter-spacing:1px;color:var(--amber-hi)}
+.cm-list{list-style:none;margin:8px 0;padding:0}
+.cm-list li{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line)}
+.cm-list li.on{background:rgba(232,163,61,.12);border-radius:8px}
+.cm-linkbtn{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.cm-linkbtn:focus-visible{outline:2px solid var(--amber)}
+.cm-x{all:unset;cursor:pointer;color:var(--text-lo);font-size:18px;padding:0 6px}.cm-x:hover{color:var(--text-hi)}
+.cm-tag{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap;color:var(--text-lo)}
+.cm-tag.s{color:#8fd19e}.cm-tag.l{color:var(--amber-hi)}.cm-tag.g{color:var(--text-hi);background:rgba(255,255,255,.08)}.cm-tag.d{color:var(--amber-hi);border-style:dashed}.cm-tag.r{color:#f0a37e}
+.cm-tbl{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+.cm-tbl th{text-align:left;color:var(--text-lo);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:bottom}
+.cm-tbl td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.cm-tbl input{width:64px}
+.cm-rrow{display:grid;grid-template-columns:1fr 80px auto;gap:6px;margin:4px 0;align-items:center}
+.cm-cols{display:grid;grid-template-columns:minmax(200px,34%) 1fr;gap:12px;margin-top:8px;min-height:0}
+.cm-people{max-height:480px;overflow:auto;margin:0}
+.cm-sub{min-width:0}
+.cm-text{background:var(--ink-1);border-radius:10px;padding:8px 10px;margin:8px 0;max-height:220px;overflow:auto;line-height:1.5}
+.cm-late{color:var(--amber-hi)}
+.cm-scroll{overflow:auto;margin-top:8px}
+.cm-book td,.cm-book th{white-space:nowrap;text-align:center}.cm-book td:first-child,.cm-book th:first-child{text-align:left;position:sticky;left:0;background:var(--ink-2)}
+.cm-draft{background:rgba(232,163,61,.12);color:var(--amber-hi)}

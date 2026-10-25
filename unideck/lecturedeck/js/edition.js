@@ -8,8 +8,9 @@
    The version lives here (tools/release.py checks it against manifest.json, the HTML pages and the README). */
 window.DECK_EDITION = Object.freeze({
   name: 'LectureDeck',
-  version: '0.1.0',
-  uni: true                   // the university edition
+  version: '0.2.0',
+  uni: true,                  // the university edition
+  officialIds: ['lglogedbdfjcncfhmkbgkehljfnokbjd']   // this build's extension ID (manifest key); js/app.js treats it as official
 });
 document.documentElement.classList.add('uni');
 document.title = '🎓 LectureDeck';
