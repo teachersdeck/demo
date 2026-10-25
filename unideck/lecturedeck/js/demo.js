@@ -346,12 +346,8 @@ const TD_DEMO = (() => {
     bar.innerHTML = `
       <button class="demotab" id="demo-tab" aria-expanded="false">\ud83c\udfac Cloud demo</button>
       <div class="demopanel" id="demo-panel" hidden>
-        <p class="small-hint" style="text-align:left;margin:0 0 8px">You are Dr Linh Vu. <b>Course mode</b> (Course builder, Course assignments, Grader, Gradebook) has two demo courses: sign in there (no real account is used), grade Essay 1, release grades, export the gradebook. The deck's other cloud widgets run on a pretend ENG 201-02 section with the same 12 students; their calls appear in the log below, and these buttons play the students' side.</p>
-        <div class="demo-actions">
-          <button class="wbtn" data-sim="join">\ud83d\udc4b Student joins</button>
-          <button class="wbtn" data-sim="practise">\ud83d\udcda Students study</button>
-        </div>
-        <p class="demo-log-title">Cloud calls <span class="demo-key"><i class="t"></i>you <i class="s"></i>student</span></p>
+        <p class="small-hint" style="text-align:left;margin:0 0 8px">You are Dr Linh Vu. <b>Course mode</b> (Course builder, Course assignments, Grader, Gradebook) has two demo courses: sign in there (no real account is used), grade Essay 1, release grades, export the gradebook. Assignments and Calendar sync to a pretend ENG 201-02 section; those calls appear in the log below.</p>
+        <p class="demo-log-title">Cloud calls</p>
         <ol class="demo-log" id="demo-log"></ol>
         <div class="demo-actions"><button class="wbtn" data-sim="reset">\u21a9 Reset demo</button><button class="wbtn" data-sim="exit">Exit demo</button></div>
       </div>`;
