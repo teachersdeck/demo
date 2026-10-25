@@ -43,3 +43,10 @@
 .cm-scroll{overflow:auto;margin-top:8px}
 .cm-book td,.cm-book th{white-space:nowrap;text-align:center}.cm-book td:first-child,.cm-book th:first-child{text-align:left;position:sticky;left:0;background:var(--ink-2)}
 .cm-draft{background:rgba(232,163,61,.12);color:var(--amber-hi)}
+
+/* ---------- UniDeck phase 2: Modules, Announcements (js/course-mode.js) ---------- */
+.cm-ord{display:flex;flex-direction:column}
+.cm-ord .cm-x{font-size:13px;padding:0 4px}.cm-x:disabled{opacity:.3;cursor:default}
+.cm-item input,.cm-item textarea,.cm-item select{font:inherit;color:var(--text-hi);background:var(--ink-0);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:100%;box-sizing:border-box;margin-top:6px}
+.cm-checks{display:flex;flex-direction:column;gap:2px}
+.cm-card a{color:var(--amber-hi)}

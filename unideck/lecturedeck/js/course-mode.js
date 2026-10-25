@@ -1,5 +1,5 @@
 'use strict';
-/* LectureDeck — Course mode, UniDeck phase 1: Course builder, Course assignments, Grader and Gradebook (UniDeck v0.3.0).
+/* LectureDeck — Course mode: Course builder, Course assignments, Grader and Gradebook (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0).
    LectureDeck's own file (not shared with TeachersDeck). It only lists the widgets in window.UNI_WIDGETS; the shared
    js/app.js adds them to a "Courses" category when the edition is the university one. Data: js/unicourses.js (shared
    with UniStudentDeck); maths: js/coursemath.js (the same file the backend runs). Loaded before js/app.js. */
@@ -274,10 +274,120 @@
     return live(draw);
   }
 
+  const rich = (s) => h(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g, '<br>');
+  const KIND = { page: ['📄', 'Page'], link: ['🔗', 'Link'], reading: ['📚', 'Reading'], assignment: ['🗂️', 'Assignment'] };
+
+  /* ---------------- Modules (UniDeck phase 2) ---------------- */
+  function renderModules(body) {
+    let seq = 0, editing = null;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await pick(list);
+      if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
+      let mods, as, roster, prog;
+      try { [mods, as, roster, prog] = await Promise.all([C.modules(cid), C.assignments(cid), C.roster(cid), C.progressAll(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      if (editing) return form(cid, editing === 'new' ? null : mods.find((m) => m.id === editing), as);
+      const students = roster.filter((r) => r.role === 'student').length;
+      const doneBy = (m) => { if (!students || !m.items.length) return null; const all = prog.filter((p) => m.items.every((i) => p.done[i.id])).length; return Math.round((all / students) * 100); };
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}<button class="wbtn primary" data-add>＋ New module</button></div>
+        <ul class="cm-list">${mods.map((m, k) => { const open = !m.releaseAtMs || m.releaseAtMs <= Date.now(), pct = doneBy(m);
+          return `<li><div class="cm-ord"><button class="cm-x" data-up="${k}" ${k ? '' : 'disabled'} aria-label="Move up" title="Move up">↑</button><button class="cm-x" data-down="${k}" ${k < mods.length - 1 ? '' : 'disabled'} aria-label="Move down" title="Move down">↓</button></div>
+            <button class="cm-linkbtn" data-ed="${h(m.id)}"><b>${h(m.title)}</b><span class="cm-lo">${m.items.length} item${m.items.length === 1 ? '' : 's'} · ${open ? 'open' : '🔒 opens ' + h(when(m.releaseAtMs))}${pct === null ? '' : ` · ${pct}% of students finished it`}</span></button>
+            <button class="cm-x" data-del="${h(m.id)}" aria-label="Delete ${h(m.title)}" title="Delete">×</button></li>`; }).join('') || '<li class="cm-lo">No modules yet. A module is usually one week: a page, the readings, links and that week’s assignment.</li>'}</ul></div>`;
+      wirePicker(body, () => { editing = null; });
+      body.querySelector('[data-add]').onclick = () => { editing = 'new'; draw(); };
+      body.querySelectorAll('[data-ed]').forEach((b) => { b.onclick = () => { editing = b.dataset.ed; draw(); }; });
+      const move = async (k, d) => { const ids = mods.map((m) => m.id); const [x] = ids.splice(k, 1); ids.splice(k + d, 0, x); try { await C.reorderModules(cid, ids); draw(); } catch (e) { say(C.errText(e)); } };
+      body.querySelectorAll('[data-up]').forEach((b) => { b.onclick = () => move(Number(b.dataset.up), -1); });
+      body.querySelectorAll('[data-down]').forEach((b) => { b.onclick = () => move(Number(b.dataset.down), 1); });
+      body.querySelectorAll('[data-del]').forEach((b) => { b.onclick = async () => { if (!confirm('Delete this module? Its assignments, submissions and grades stay.')) return; try { await C.deleteModule(cid, b.dataset.del); draw(); } catch (e) { say(C.errText(e)); } }; });
+    }
+    async function form(cid, m, as) {
+      const content = m ? ((await C.moduleContent(cid, m.id)) || { items: {} }).items : {};
+      const items = m ? m.items.map((i) => ({ ...i, url: (content[i.id] || {}).url || '', body: (content[i.id] || {}).body || '' })) : [];
+      body.innerHTML = `<form class="cm-pad" data-f><p class="cm-k">${m ? 'Edit module' : 'New module'}</p>
+        <label class="cm-lbl">Title<input name="title" required maxlength="120" value="${h(m ? m.title : '')}" placeholder="e.g. Week 3: Sources and evidence"></label>
+        <label class="cm-lbl">Opens for students (empty = straight away)<input type="datetime-local" name="release" value="${localInput(m && m.releaseAtMs)}"></label>
+        <p class="cm-lo">Items, in the order students see them</p><div data-items></div>
+        <div class="btn-row cm-left">${Object.entries(KIND).map(([k, [ic, l]]) => `<button type="button" class="wbtn" data-addk="${k}">${ic} ${l}</button>`).join('')}</div>
+        <div class="btn-row cm-left"><button class="wbtn primary">Save module</button><button type="button" class="wbtn" data-cancel>Cancel</button></div></form>`;
+      const f = body.querySelector('[data-f]'), box = f.querySelector('[data-items]');
+      const paint = () => {
+        box.innerHTML = items.map((i, k) => `<div class="cm-card cm-item"><div class="cm-split"><span class="cm-lo">${KIND[i.kind][0]} ${KIND[i.kind][1]}</span><span><button type="button" class="cm-x" data-iu="${k}" ${k ? '' : 'disabled'} aria-label="Move up">↑</button><button type="button" class="cm-x" data-id="${k}" ${k < items.length - 1 ? '' : 'disabled'} aria-label="Move down">↓</button><button type="button" class="cm-x" data-irm="${k}" aria-label="Remove item">×</button></span></div>
+          ${i.kind === 'assignment' ? `<select data-k="refId" data-i="${k}" aria-label="Assignment">${as.length ? as.map((a) => `<option value="${h(a.id)}" ${a.id === i.refId ? 'selected' : ''}>${h(a.title)}</option>`).join('') : '<option value="">No assignments yet: make one in Course assignments</option>'}</select>`
+            : `<input data-k="title" data-i="${k}" maxlength="120" placeholder="Title" value="${h(i.title)}" aria-label="Title">
+               ${i.kind !== 'page' ? `<input data-k="url" data-i="${k}" type="url" placeholder="${i.kind === 'link' ? 'https://… (slides, video, a PDF on Drive)' : 'Link (optional)'}" value="${h(i.url)}" aria-label="Link">` : ''}
+               ${i.kind === 'page' ? `<textarea data-k="body" data-i="${k}" rows="4" maxlength="20000" placeholder="The page: plain text, links are made clickable" aria-label="Page text">${h(i.body)}</textarea>` : ''}`}</div>`).join('') || '<p class="cm-lo">No items yet: add a page, link, reading or assignment below.</p>';
+        box.querySelectorAll('[data-k]').forEach((el) => { el.oninput = el.onchange = () => { items[el.dataset.i][el.dataset.k] = el.value; }; });
+        const mv = (k, d) => { const [x] = items.splice(k, 1); items.splice(k + d, 0, x); paint(); };
+        box.querySelectorAll('[data-iu]').forEach((b) => { b.onclick = () => mv(Number(b.dataset.iu), -1); });
+        box.querySelectorAll('[data-id]').forEach((b) => { b.onclick = () => mv(Number(b.dataset.id), 1); });
+        box.querySelectorAll('[data-irm]').forEach((b) => { b.onclick = () => { items.splice(Number(b.dataset.irm), 1); paint(); }; });
+      };
+      paint();
+      f.querySelectorAll('[data-addk]').forEach((b) => { b.onclick = () => { const k = b.dataset.addk; items.push({ kind: k, title: '', url: '', body: '', refId: k === 'assignment' && as[0] ? as[0].id : '' }); paint(); }; });
+      f.querySelector('[data-cancel]').onclick = () => { editing = null; draw(); };
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        const data = { id: m ? m.id : undefined, title: f.title.value, releaseAtMs: f.release.value ? new Date(f.release.value).getTime() : null,
+          items: items.map((i) => (i.kind === 'assignment' ? { id: i.id, kind: i.kind, refId: i.refId } : { id: i.id, kind: i.kind, title: i.title, url: i.url, body: i.body })) };
+        try { await C.saveModule(cid, data); say('Module saved.'); editing = null; draw(); } catch (er) { say(C.errText(er)); }
+      };
+    }
+    draw();
+    return live(draw);
+  }
+
+  /* ---------------- Announcements (UniDeck phase 2) ---------------- */
+  function renderAnnouncements(body) {
+    let seq = 0, editing = null;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await pick(list);
+      if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
+      let anns, counts, roster;
+      try { [anns, counts, roster] = await Promise.all([C.announcements(cid), C.readCounts(cid), C.roster(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const students = roster.filter((r) => r.role === 'student').length;
+      const ed = editing && editing !== 'new' ? anns.find((a) => a.id === editing) : null;
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}</div>
+        <form class="cm-card" data-f><p class="cm-k">${ed ? 'Edit announcement' : 'New announcement'}</p>
+          <label class="cm-lbl">Title<input name="title" required maxlength="140" value="${h(ed ? ed.title : '')}"></label>
+          <label class="cm-lbl">Message<textarea name="body" rows="4" maxlength="10000" required>${h(ed ? ed.body : '')}</textarea></label>
+          ${ed ? '' : `<p class="cm-lo">Post to</p><div class="cm-checks">${list.map((c) => `<label class="cm-check"><input type="checkbox" name="to" value="${h(c.courseId)}" ${c.courseId === cid ? 'checked' : ''}> ${h(c.title)}${c.section ? ' · ' + h(c.section) : ''}</label>`).join('')}</div>`}
+          <label class="cm-check"><input type="checkbox" name="pinned" ${ed && ed.pinned ? 'checked' : ''}> Pin to the top</label>
+          <div class="btn-row cm-left"><button class="wbtn primary">${ed ? 'Save' : 'Post'}</button>${ed ? '<button type="button" class="wbtn" data-cancel>Cancel</button>' : ''}</div></form>
+        ${anns.map((a) => `<div class="cm-card"><div class="cm-split"><p class="cm-k">${a.pinned ? '📌 ' : ''}${h(a.title)}</p><span><button class="wbtn" data-ed="${h(a.id)}">Edit</button> <button class="cm-x" data-del="${h(a.id)}" aria-label="Delete">×</button></span></div>
+          <p class="cm-lo">${h(when(a.createdAtMs))}${a.editedAtMs ? ' · edited' : ''} · read by ${counts[a.id] || 0} of ${students} student${students === 1 ? '' : 's'}</p><div>${rich(a.body)}</div></div>`).join('') || '<p class="cm-lo">No announcements yet.</p>'}</div>`;
+      wirePicker(body, () => { editing = null; });
+      const f = body.querySelector('[data-f]');
+      const cancel = f.querySelector('[data-cancel]'); if (cancel) cancel.onclick = () => { editing = null; draw(); };
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        const d = { title: f.title.value.trim(), body: f.body.value.trim(), pinned: f.pinned.checked };
+        if (ed) { d.id = ed.id; d.courseId = cid; } else d.courseIds = [...f.querySelectorAll('[name=to]:checked')].map((x) => x.value);
+        try { const r = await C.saveAnnouncement(d); say(ed ? 'Announcement saved.' : `Posted to ${r.posted.length} course${r.posted.length === 1 ? '' : 's'}.`); editing = null; draw(); } catch (er) { say(C.errText(er)); }
+      };
+      body.querySelectorAll('[data-ed]').forEach((b) => { b.onclick = () => { editing = b.dataset.ed; draw(); }; });
+      body.querySelectorAll('[data-del]').forEach((b) => { b.onclick = async () => { if (!confirm('Delete this announcement?')) return; try { await C.deleteAnnouncement(cid, b.dataset.del); draw(); } catch (e) { say(C.errText(e)); } }; });
+    }
+    draw();
+    return live(draw);
+  }
+
   window.UNI_WIDGETS = [
     { id: 'coursebuilder', cat: 'course', title: '🏛️ Course builder', desc: 'Create a university course: code, term, grading weights, late policy, people.', icon: 'people', w: 440, h: 600, render: renderBuilder },
     { id: 'courseassign', cat: 'course', title: '🗂️ Course assignments', desc: 'Assignments with due dates, rubrics, submission types and attempts.', icon: 'clipboard', w: 440, h: 600, render: renderAssignments },
     { id: 'grader', cat: 'course', title: '✅ Grader', desc: 'Each submission beside its rubric: score, feedback, release.', icon: 'report', w: 820, h: 620, render: renderGrader },
+    { id: 'coursemodules', cat: 'course', title: '🧭 Modules', desc: 'Weekly modules: pages, links, readings and assignments, with release dates.', icon: 'clipboard', w: 520, h: 640, render: renderModules },
+    { id: 'courseannounce', cat: 'course', title: '📣 Announcements', desc: 'Post to one or several courses, pin, see who has read it.', icon: 'report', w: 460, h: 620, render: renderAnnouncements },
     { id: 'gradebook', cat: 'course', title: '📒 Gradebook', desc: 'Students by assignments, weighted totals, CSV export.', icon: 'stats', w: 760, h: 560, render: renderGradebook },
   ];
 })();

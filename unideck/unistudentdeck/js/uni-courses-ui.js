@@ -1,5 +1,5 @@
 'use strict';
-/* UniStudentDeck — UniDeck phase 1 course widgets: Courses, Assignments and Grades (UniDeck v0.3.0).
+/* UniStudentDeck — UniDeck course widgets: Courses, Assignments and Grades (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0).
    UniStudentDeck's own file (not shared with StudentDeck). It only lists the widgets in window.UNI_WIDGETS; the shared
    js/app.js adds them to the dock when the edition is the university one. Data comes from js/unicourses.js (shared with
    LectureDeck), sums from js/coursemath.js (the same maths the backend runs). Loaded after those two, before js/app.js. */
@@ -10,6 +10,9 @@
   const say = (m) => (typeof toast === 'function' ? toast(m, 3600) : alert(m));
   const when = (ms) => (ms ? new Date(ms).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No due date');
   const kb = (n) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+  // Plain text from a lecturer (page bodies, announcements): escaped, line breaks kept, http(s) links made clickable.
+  const rich = (s) => h(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g, '<br>');
+  const ago = (ms) => { const d = Math.round((Date.now() - ms) / 864e5); return d <= 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`; };
   const MAX_FILE = 25 * 1048576, TYPES = /^(application\/pdf|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|image\/(png|jpeg|gif|webp))$/;
 
   /* Sign-in gate shared by all three widgets: Google, then a date of birth once. Returns true when ready. */
@@ -92,14 +95,18 @@
     }
     async function home(el, cid, my) {
       try {
-        const [course, as, subs] = await Promise.all([C.course(cid), C.assignments(cid), C.mySubmissions(cid)]);
+        const [course, as, subs, anns, reads, mods] = await Promise.all([C.course(cid), C.assignments(cid), C.mySubmissions(cid), C.announcements(cid), C.myReads(cid), C.modules(cid)]);
         if (my !== seq || !course) return;
+        const unread = anns.filter((x) => !reads[x.id]).length, latest = anns[0];
+        const open = mods.filter((m) => !m.releaseAtMs || m.releaseAtMs <= Date.now()), week = open[open.length - 1];
         const next = as.filter((a) => a.dueAtMs && a.dueAtMs > Date.now() && !subs[a.id])[0];
         const todo = as.filter((a) => !subs[a.id]).length;
         el.innerHTML = `<div class="ud-card"><p class="ud-k">${h(course.title)}</p><p class="muted">${h(course.ownerName || '')}${course.term ? ' · ' + h(course.term) : ''}</p>
           <div class="ud-tiles"><div><b>${as.length}</b><span>assignments</span></div><div><b>${todo}</b><span>to submit</span></div></div>
           ${next ? `<p>Next due: <b>${h(next.title)}</b><br><span class="muted">${h(when(next.dueAtMs))}</span></p>` : '<p class="muted">Nothing due right now.</p>'}
-          <div class="row"><button class="btn" data-w="uassign">Assignments →</button><button class="btn" data-w="grades">Grades →</button></div></div>`;
+          ${week ? `<p>This week: <b>${h(week.title)}</b></p>` : ''}
+          ${latest ? `<div class="ud-ann-mini"><span class="muted">${latest.pinned ? '📌 ' : ''}Latest announcement${unread ? ` · <b>${unread} unread</b>` : ''}</span><br><b>${h(latest.title)}</b></div>` : ''}
+          <div class="row"><button class="btn" data-w="modules">Modules →</button><button class="btn" data-w="announce">Announcements →</button><button class="btn" data-w="uassign">Assignments →</button><button class="btn" data-w="grades">Grades →</button></div></div>`;
         el.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => (typeof openWidget === 'function' ? openWidget(b.dataset.w) : null); });
       } catch (e) { el.innerHTML = `<p class="muted">${h(C.errText(e))}</p>`; }
     }
@@ -217,12 +224,90 @@
     return live(body, draw);
   }
 
+  /* ---------------- Modules (UniDeck phase 2) ---------------- */
+  function renderModules(body) {
+    let seq = 0, openMod = null;
+    const KIND_ICON = { page: '📄', link: '🔗', reading: '📚', assignment: '🗂️' };
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await currentOf(list);
+      if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
+      let mods, done, as;
+      try { [mods, done, as] = await Promise.all([C.modules(cid), C.myProgress(cid), C.assignments(cid)]); }
+      catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const now = Date.now(), isOpen = (m) => !m.releaseAtMs || m.releaseAtMs <= now;
+      const opened = mods.filter(isOpen);
+      if (!openMod || !mods.some((m) => m.id === openMod)) openMod = (opened[opened.length - 1] || mods[0] || {}).id || null;
+      const total = opened.reduce((n, m) => n + m.items.length, 0), ticked = opened.reduce((n, m) => n + m.items.filter((i) => done[i.id]).length, 0);
+      body.innerHTML = `<div class="ud-pad">${picker(list, cid)}
+        ${mods.length ? `<p class="muted">${ticked} of ${total} items done in the modules open so far.</p>` : '<p class="muted">Your instructor hasn’t posted any modules yet.</p>'}
+        <div class="ud-mods">${mods.map((m) => { const op = isOpen(m), n = m.items.filter((i) => done[i.id]).length;
+          return `<div class="ud-mod ${op ? '' : 'locked'} ${m.id === openMod ? 'on' : ''}"><button class="ud-linkbtn ud-modhead" data-m="${h(m.id)}"><b>${h(m.title)}</b>
+            <span class="muted">${op ? `${n}/${m.items.length} done` : `🔒 Opens ${h(when(m.releaseAtMs))}`}</span></button>
+            ${m.id === openMod ? `<div data-items="${h(m.id)}">${op ? '<p class="muted">Loading…</p>' : `<ul class="ud-items">${m.items.map((i) => `<li class="muted">${KIND_ICON[i.kind] || '•'} ${h(i.title || (as.find((a) => a.id === i.refId) || {}).title || '')}</li>`).join('')}</ul><p class="muted">The content opens on the release date.</p>`}</div>` : ''}</div>`; }).join('')}</div></div>`;
+      const s = body.querySelector('[data-course]'); if (s) s.onchange = () => { openMod = null; C.setCurrentCourse(s.value); };
+      body.querySelectorAll('[data-m]').forEach((b) => { b.onclick = () => { openMod = openMod === b.dataset.m ? '' : b.dataset.m; draw(); }; });
+      const m = mods.find((x) => x.id === openMod);
+      if (m && isOpen(m)) items(body.querySelector(`[data-items="${CSS.escape(m.id)}"]`), cid, m, done, as, my);
+    }
+    async function items(el, cid, m, done, as, my) {
+      let content = null;
+      try { content = await C.moduleContent(cid, m.id); } catch (e) { content = null; }
+      if (my !== seq || !el) return;
+      const c = (content && content.items) || {};
+      el.innerHTML = `<ul class="ud-items">${m.items.map((i) => { const x = c[i.id] || {}, a = i.kind === 'assignment' ? as.find((y) => y.id === i.refId) : null;
+        const title = h(i.title || (a && a.title) || '');
+        return `<li><label class="ud-tick"><input type="checkbox" data-done="${h(i.id)}" ${done[i.id] ? 'checked' : ''} aria-label="Done: ${title}"></label>
+          <div class="ud-item"><span>${KIND_ICON[i.kind] || '•'} ${x.url && i.kind !== 'page' ? `<a href="${h(x.url)}" target="_blank" rel="noopener">${title}</a>` : `<b>${title}</b>`}</span>
+          ${a ? `<span class="muted">Due ${h(when(a.dueAtMs))} · ${a.points} pts · <a href="#" data-asg="${h(a.id)}">open in Assignments</a></span>` : ''}
+          ${i.kind === 'page' && x.body ? `<details class="ud-page"><summary>Read</summary><div class="ud-instr">${rich(x.body)}</div></details>` : ''}
+          ${i.kind === 'reading' && !x.url ? '<span class="muted">Reading (no link)</span>' : ''}</div></li>`; }).join('')}</ul>`;
+      el.querySelectorAll('[data-done]').forEach((cb) => { cb.onchange = async () => { try { await C.markItemDone(cid, m.id, cb.dataset.done, cb.checked); } catch (e) { cb.checked = !cb.checked; say(C.errText(e)); } }; });
+      el.querySelectorAll('[data-asg]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); if (typeof openWidget === 'function') openWidget('uassign'); }; });
+    }
+    draw();
+    return live(body, draw);
+  }
+
+  /* ---------------- Announcements (UniDeck phase 2) ---------------- */
+  function renderAnnouncements(body) {
+    let seq = 0;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await currentOf(list);
+      if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
+      let anns, reads;
+      try { [anns, reads] = await Promise.all([C.announcements(cid), C.myReads(cid)]); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const unread = anns.filter((a) => !reads[a.id]).map((a) => a.id);
+      body.innerHTML = `<div class="ud-pad">${picker(list, cid)}
+        ${anns.length ? '' : '<p class="muted">No announcements in this course yet.</p>'}
+        ${anns.map((a) => `<article class="ud-card ud-ann ${reads[a.id] ? '' : 'unread'}"><p class="ud-k">${a.pinned ? '📌 ' : ''}${h(a.title)}${reads[a.id] ? '' : ' <span class="ud-tag l">new</span>'}</p>
+          <p class="muted">${h(a.authorName || '')} · ${h(ago(a.createdAtMs))}${a.editedAtMs ? ' · edited' : ''}</p><div>${rich(a.body)}</div></article>`).join('')}</div>`;
+      const s = body.querySelector('[data-course]'); if (s) s.onchange = () => C.setCurrentCourse(s.value);
+      if (unread.length) C.markRead(cid, unread).catch(() => {});   // seen once the list is on screen; the "new" tags stay until the next visit
+    }
+    draw();
+    return live(body, draw);
+  }
+
   const P = { book: '<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v13"/>',
     task: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12l2 2 4-4"/>',
-    grade: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/><path d="M14 5l2 2 4-4"/>' };
+    grade: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/><path d="M14 5l2 2 4-4"/>',
+    mods: '<rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="11" width="16" height="4" rx="1.5"/><rect x="4" y="17" width="16" height="4" rx="1.5"/>',
+    ann: '<path d="M4 10v4h3l6 4V6L7 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 7a7 7 0 0 1 0 10"/>' };
   window.UNI_WIDGETS = [
     { id: 'courses', title: '🏛️ Courses', iconPath: P.book, w: 340, h: 520, render: renderCourses, cat: 'cloud' },
     { id: 'uassign', title: '🗂️ Assignments', iconPath: P.task, w: 400, h: 560, render: renderAssign, cat: 'cloud' },
     { id: 'grades', title: '🎯 Grades', iconPath: P.grade, w: 380, h: 520, render: renderGrades, cat: 'cloud' },
+    { id: 'modules', title: '🧭 Modules', iconPath: P.mods, w: 420, h: 580, render: renderModules, cat: 'cloud' },
+    { id: 'announce', title: '📣 Announcements', iconPath: P.ann, w: 380, h: 520, render: renderAnnouncements, cat: 'cloud' },
   ];
 })();

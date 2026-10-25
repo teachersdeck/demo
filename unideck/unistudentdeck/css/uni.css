@@ -39,3 +39,18 @@ html.uni .dock-item>span:last-child{letter-spacing:-.3px;hyphens:auto;-webkit-hy
 .ud-grade{border-color:var(--gold)}
 .ud-warn{color:var(--gold-hi);font-size:12px}
 .ud-foot{margin-top:12px}.ud-foot a{color:var(--gold-hi)}
+
+/* ---------- UniDeck phase 2: Modules, Announcements ---------- */
+.ud-mods{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.ud-mod{border:1px solid var(--line);border-radius:12px;padding:6px 8px;background:rgba(0,0,0,.15)}
+.ud-mod.on{border-color:var(--gold)}.ud-mod.locked .ud-modhead b{opacity:.65}
+.ud-modhead{flex-direction:row;justify-content:space-between;align-items:center;gap:8px;padding:4px}
+.ud-items{list-style:none;margin:6px 0 2px;padding:0}
+.ud-items li{display:flex;gap:8px;align-items:flex-start;padding:6px 2px;border-top:1px solid var(--line)}
+.ud-tick input{width:16px;height:16px;margin-top:2px;accent-color:var(--gold)}
+.ud-item{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.ud-item a{color:var(--gold-hi)}
+.ud-page summary{cursor:pointer;color:var(--gold-hi);font-size:12px}
+.ud-ann.unread{border-color:var(--gold)}
+.ud-ann a,.ud-instr a{color:var(--gold-hi)}
+.ud-ann-mini{background:rgba(255,255,255,.04);border-radius:10px;padding:6px 8px;margin:8px 0}
