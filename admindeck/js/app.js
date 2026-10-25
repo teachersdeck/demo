@@ -2040,6 +2040,15 @@ const WIDGETS = [
   { id:'schooldeck', labelKey:'w_schooldeck', icon:'school', w:820, h:680, render: renderSchoolDeck }
 ];
 
+/* UniDeck phase 1 (CampusDeck): CampusDeck's own js/campus-courses.js lists its widgets in window.UNI_WIDGETS
+   ({ id, title, icon, w, h, render, full? }). They join the registry only in the university edition, with their
+   labels added to STRINGS (English for now). AdminDeck never loads that file. */
+if(UNI) (window.UNI_WIDGETS || []).forEach(w => {
+  if(WIDGETS.some(x => x.id === w.id)) return;
+  STRINGS['uw_' + w.id] = STRINGS['uw_' + w.id] || { en: w.title };
+  WIDGETS.push({ id:w.id, labelKey:'uw_' + w.id, icon:w.icon || 'school', w:w.w, h:w.h, full:!!w.full, render:w.render });
+});
+
 /* ---------------- Init ---------------- */
 function init(){
   document.documentElement.lang = state.lang;

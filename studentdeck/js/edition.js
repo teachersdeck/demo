@@ -8,7 +8,7 @@
    VERSION lives here (tools/release.py checks it against manifest.json, index.html and the README). */
 window.SD_EDITION = Object.freeze({
   name: 'StudentDeck',
-  version: '0.19.1',
+  version: '0.19.2',
   uni: false,                 // the school edition
   xpOn: true,                 // XP, levels, badges and class points are always shown in StudentDeck
   setXp() {}                  // StudentDeck has no XP switch

@@ -425,11 +425,12 @@ if(window.Watermark) Watermark.configure({ identity: ()=> `${(state.license && s
    The extension ID comes from the manifest's "key" (dliphbbeinjlpcnpenllgaddihpkamcl), so a copy republished under another ID shows a notice and
    cannot activate Pro. Update OFFICIAL_IDS if the Chrome Web Store assigns a different ID when you publish. Pages served
    outside an extension (demo/testing over http) are not checked. */
-const OFFICIAL_IDS = ['dliphbbeinjlpcnpenllgaddihpkamcl'];
+// UniDeck: LectureDeck runs this same file under its own extension ID, listed in its own js/edition.js (officialIds).
+const OFFICIAL_IDS = ['dliphbbeinjlpcnpenllgaddihpkamcl', ...((ED && ED.officialIds) || [])];
 function isOfficialBuild(){ try{ return !(window.chrome && chrome.runtime && chrome.runtime.id) || OFFICIAL_IDS.includes(chrome.runtime.id); }catch(e){ return true; } }
 if(!isOfficialBuild()) document.addEventListener('DOMContentLoaded', ()=>{
   const n = document.createElement('div'); n.className = 'unofficial-build'; n.setAttribute('role', 'alert');
-  n.textContent = 'This copy of TeachersDeck is not an official build. Pro and licence activation are switched off. Please install the official version.';
+  n.textContent = `This copy of ${APP} is not an official build. Pro and licence activation are switched off. Please install the official version.`;
   document.body.prepend(n);
 });
 
@@ -1532,6 +1533,17 @@ const WIDGETS = [
   { id:'boardreview', cat:'cloud', labelKey:'boardreview', icon:'report', w:420, h:560, render:renderBoardReview },   // v0.29.0 (backend v2.9.0): review Board Assignments submissions and award XP (DrawDeck scope step D)
   { id:'drawdeck', cat:'tools', labelKey:'drawdeck', icon:'draw', w:380, h:560, render:renderDrawDeck, full:true }   // v0.22.0: DrawDeck — whiteboard, mind map, flowchart (full screen)
 ];
+/* UniDeck phase 1 (LectureDeck's Course mode): LectureDeck's own js/course-mode.js lists its widgets in window.UNI_WIDGETS
+   ({ id, cat, title, desc, icon, w, h, render }). They join the registry only in the university edition, in a "Courses"
+   category of the app tray, with their labels added to STRINGS (English for now). TeachersDeck never loads that file. */
+const UNI_WIDGET_DEFS = UNI ? (window.UNI_WIDGETS || []) : [];
+UNI_WIDGET_DEFS.forEach(w => {
+  if(WIDGETS.some(x => x.id === w.id)) return;
+  STRINGS['uw_' + w.id] = STRINGS['uw_' + w.id] || { en: w.title };
+  STRINGS['wc_' + w.id] = STRINGS['wc_' + w.id] || { en: w.desc || '' };
+  WIDGETS.push({ id:w.id, cat:w.cat || 'course', labelKey:'uw_' + w.id, icon:w.icon || 'clipboard', w:w.w, h:w.h, render:w.render, full:!!w.full });
+});
+if(UNI) STRINGS.cat_course = STRINGS.cat_course || { en:'Courses' };
 
 const wall = document.getElementById('wall');
 const dock = document.getElementById('dock');
@@ -1837,6 +1849,8 @@ const CATEGORIES = [
   { id:'language', labelKey:'cat_language' },
   { id:'cloud', labelKey:'cat_cloud' }
 ];
+if(UNI) CATEGORIES.unshift({ id:'course', labelKey:'cat_course' });   // UniDeck: LectureDeck's Course mode widgets come first
+if(UNI) WIDGET_TIERS.core.push(...UNI_WIDGET_DEFS.map(w => w.id));
 function buildAppTray(){
   const grid = document.getElementById('app-tray-grid');
   if(!grid) return;
