@@ -54,3 +54,29 @@ html.uni .dock-item>span:last-child{letter-spacing:-.3px;hyphens:auto;-webkit-hy
 .ud-ann.unread{border-color:var(--gold)}
 .ud-ann a,.ud-instr a{color:var(--gold-hi)}
 .ud-ann-mini{background:rgba(255,255,255,.04);border-radius:10px;padding:6px 8px;margin:8px 0}
+
+/* ---------- UniDeck phase 2: Discussions, Calendar, Office hours ---------- */
+.ud-threads li{padding:6px 2px;border-bottom:1px solid var(--line)}
+.ud-post{border-left:3px solid var(--line);padding:4px 10px;margin:10px 0}
+.ud-post.staff{border-left-color:var(--gold)}
+.ud-post p{margin:2px 0}.ud-post .row a{color:var(--gold-hi);font-size:12px}
+.ud-post textarea,.ud-card textarea{font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:7px 10px;width:100%;box-sizing:border-box}
+.ud-calbar{align-items:center;gap:6px;flex-wrap:wrap}.ud-grow{flex:1}.ud-callabel{margin:0 6px}
+.chip.on{background:var(--gold);color:#231604;border-color:var(--gold)}
+.ud-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:10px}
+.ud-day{background:rgba(0,0,0,.15);border:1px solid var(--line);border-radius:10px;padding:6px;min-height:120px;min-width:0}
+.ud-day.today{border-color:var(--gold)}
+.ud-day ul{list-style:none;margin:0;padding:0}
+.ud-ev{font-size:12px;padding:4px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.ud-ev.done{opacity:.6}.ud-ev a{color:var(--gold-hi)}
+.ud-ev.k-exam,.ud-month i.k-exam{color:#f0a37e}.ud-ev.k-due{color:var(--hi)}
+.ud-month{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px}
+.ud-month>b{text-align:center;font-size:11px}
+.ud-cell{all:unset;cursor:pointer;box-sizing:border-box;min-height:72px;background:rgba(0,0,0,.15);border:1px solid var(--line);border-radius:8px;padding:4px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.ud-cell.out{opacity:.45}.ud-cell.today{border-color:var(--gold)}
+.ud-cell span{font-size:11px;color:var(--lo)}
+.ud-cell i{font-style:normal;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:700px){.ud-week{grid-template-columns:1fr}}
+.ud-slots{list-style:none;margin:4px 0 10px;padding:0}
+.ud-slots li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ud-slots form input{font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:6px 8px;min-width:200px}

@@ -1,5 +1,5 @@
 'use strict';
-/* UniStudentDeck — UniDeck course widgets: Courses, Assignments and Grades (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0).
+/* UniStudentDeck — UniDeck course widgets: Courses, Assignments and Grades (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0), Discussions, Calendar and Office hours (phase 2, v0.5.0).
    UniStudentDeck's own file (not shared with StudentDeck). It only lists the widgets in window.UNI_WIDGETS; the shared
    js/app.js adds them to the dock when the edition is the university one. Data comes from js/unicourses.js (shared with
    LectureDeck), sums from js/coursemath.js (the same maths the backend runs). Loaded after those two, before js/app.js. */
@@ -298,16 +298,192 @@
     return live(body, draw);
   }
 
+  /* ---------------- Discussions (UniDeck phase 2) ---------------- */
+  function renderDiscussions(body) {
+    let seq = 0, openT = null, editing = null;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await currentOf(list);
+      if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
+      let ths;
+      try { ths = await C.threads(cid); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const th = openT && ths.find((x) => x.id === openT);
+      if (th) return thread(cid, th, my);
+      body.innerHTML = `<div class="ud-pad">${picker(list, cid)}
+        ${ths.length ? '' : '<p class="muted">No discussions in this course yet.</p>'}
+        <ul class="ud-list ud-threads">${ths.map((x) => `<li><button class="ud-linkbtn" data-t="${h(x.id)}"><b>${x.pinned ? '📌 ' : ''}${h(x.title)}</b>
+          <span class="muted">${x.postCount || 0} repl${x.postCount === 1 ? 'y' : 'ies'} · ${h(ago(x.lastPostAtMs || x.createdAtMs))}${x.postFirst ? ' · post first' : ''}${x.locked ? ' · closed' : ''}</span></button></li>`).join('')}</ul></div>`;
+      const s = body.querySelector('[data-course]'); if (s) s.onchange = () => { openT = null; C.setCurrentCourse(s.value); };
+      body.querySelectorAll('[data-t]').forEach((b) => { b.onclick = () => { openT = b.dataset.t; editing = null; draw(); }; });
+    }
+    async function thread(cid, th, my) {
+      let res;
+      try { res = await C.posts(cid, th.id); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const me = (C.state().user || {}).uid;
+      body.innerHTML = `<div class="ud-pad"><button class="ud-linkbtn ud-back" data-back>← All discussions</button>
+        <h3 class="ud-h">${th.pinned ? '📌 ' : ''}${h(th.title)}</h3><p class="muted">${h(th.authorName || '')} · ${h(ago(th.createdAtMs))}${th.locked ? ' · closed to new replies' : ''}</p>
+        <div class="ud-instr">${rich(th.body)}</div>
+        ${res.locked ? '<p class="ud-card muted">🔒 Post your own reply first; then you will see what your classmates wrote.</p>' : res.posts.map((p) => `<div class="ud-post ${p.role !== 'student' ? 'staff' : ''}">
+          <p class="muted"><b>${h(p.name)}</b>${p.role !== 'student' ? ` <span class="ud-tag">${h(p.role === 'ta' ? 'TA' : 'Instructor')}</span>` : ''} · ${h(ago(p.createdAtMs))}${p.editedAtMs && !p.removed ? ' · edited' : ''}</p>
+          ${p.removed ? '<p class="muted"><i>Reply removed.</i></p>' : editing === p.id ? `<form data-edit="${h(p.id)}"><textarea name="body" rows="3" maxlength="5000">${h(p.body)}</textarea><div class="row"><button class="btn primary">Save</button><button type="button" class="btn" data-cancel>Cancel</button></div></form>` : `<div>${rich(p.body)}</div>`}
+          ${p.uid === me && !p.removed && editing !== p.id && !th.locked ? `<div class="row"><a href="#" data-ed="${h(p.id)}">Edit</a><a href="#" data-rm="${h(p.id)}">Remove</a></div>` : ''}</div>`).join('') || '<p class="muted">No replies yet. Be the first.</p>'}
+        ${th.locked ? '' : `<form class="ud-card" data-reply><label class="ud-lbl">Your reply<textarea name="body" rows="4" maxlength="5000" required></textarea></label><div class="row"><button class="btn primary">Post reply</button></div></form>`}</div>`;
+      body.querySelector('[data-back]').onclick = () => { openT = null; draw(); };
+      const f = body.querySelector('[data-reply]');
+      if (f) f.onsubmit = async (e) => { e.preventDefault(); try { await C.postReply(cid, th.id, f.body.value.trim()); say('Reply posted.'); draw(); } catch (er) { say(C.errText(er)); } };
+      body.querySelectorAll('[data-ed]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); editing = a.dataset.ed; draw(); }; });
+      body.querySelectorAll('[data-rm]').forEach((a) => { a.onclick = async (e) => { e.preventDefault(); if (!confirm('Remove this reply?')) return; try { await C.removePost(cid, th.id, a.dataset.rm); draw(); } catch (er) { say(C.errText(er)); } }; });
+      body.querySelectorAll('[data-edit]').forEach((fm) => {
+        fm.onsubmit = async (e) => { e.preventDefault(); try { await C.editPost(cid, th.id, fm.dataset.edit, fm.body.value.trim()); editing = null; draw(); } catch (er) { say(C.errText(er)); } };
+        fm.querySelector('[data-cancel]').onclick = () => { editing = null; draw(); };
+      });
+    }
+    draw();
+    return live(body, draw);
+  }
+
+  /* ---------------- Calendar (UniDeck phase 2): every course, week or month, .ics export ---------------- */
+  const DAY = 864e5;
+  const dayStart = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const weekStart = (ms) => { const d = new Date(dayStart(ms)); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };
+  const hm = (ms) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  /** Everything with a date in the student's courses: [{ start, end, title, kind, course, location, link, weekly? }] (weekly events once, with weeklyUntil). */
+  async function gather(list) {
+    const out = [];
+    await Promise.all(list.map(async (c) => {
+      const [as, subs, mods, evs, mine, slots] = await Promise.all([C.assignments(c.courseId), C.mySubmissions(c.courseId), C.modules(c.courseId), C.events(c.courseId), C.myBookings(c.courseId), C.slots(c.courseId)].map((p) => p.catch(() => [])));
+      as.filter((a) => a.dueAtMs).forEach((a) => out.push({ id: 'a-' + a.id, start: a.dueAtMs, end: a.dueAtMs, title: `Due: ${a.title}`, kind: 'due', done: !!(subs && subs[a.id]), course: c.title }));
+      mods.filter((m) => m.releaseAtMs).forEach((m) => out.push({ id: 'm-' + m.id, start: m.releaseAtMs, end: m.releaseAtMs, title: `Opens: ${m.title}`, kind: 'module', course: c.title }));
+      evs.forEach((e) => out.push({ id: 'e-' + e.id, start: e.startAtMs, end: e.endAtMs, title: e.title, kind: e.kind, course: c.title, location: e.location, link: e.link, weeklyUntil: e.weeklyUntilMs || null }));
+      (mine || []).forEach((b) => { const s = (slots || []).find((x) => x.id === b.slotId) || {}; out.push({ id: 'o-' + b.slotId, start: b.startAtMs, end: b.endAtMs, title: 'Office hours (booked)', kind: 'office', course: c.title, location: s.location, link: s.link }); });
+    }));
+    return out;
+  }
+  /** Items that fall in [from, to), weekly ones expanded. */
+  function inRange(items, from, to) {
+    const out = [];
+    items.forEach((x) => {
+      if (!x.weeklyUntil) { if (x.start >= from && x.start < to) out.push(x); return; }
+      for (let s = x.start, k = 0; s <= x.weeklyUntil && s < to && k < 400; s += 7 * DAY, k++) if (s >= from) out.push({ ...x, start: s, end: s + (x.end - x.start) });
+    });
+    return out.sort((a, b) => a.start - b.start);
+  }
+  /** RFC 5545 calendar text: deadlines, module releases, events (weekly ones as RRULE) and booked office hours. */
+  function ics(items) {
+    const z = (ms) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const esc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+    const enc = new TextEncoder();
+    const fold = (l) => {   // lines of at most 75 octets (RFC 5545 3.1), never splitting a character
+      const out = []; let cur = '', n = 0;
+      for (const ch of l) { const b = enc.encode(ch).length; if (n + b > 75) { out.push(cur); cur = ' '; n = 1; } cur += ch; n += b; }
+      out.push(cur); return out.join('\r\n');
+    };
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//UniDeck//UniStudentDeck//EN', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:UniStudentDeck'];
+    const stamp = z(Date.now());
+    items.forEach((x) => {
+      lines.push('BEGIN:VEVENT', `UID:${x.id}@unideck`, `DTSTAMP:${stamp}`, `DTSTART:${z(x.start)}`, `DTEND:${z(Math.max(x.end || x.start, x.start + (x.kind === 'due' || x.kind === 'module' ? 15 * 6e4 : 0)))}`,
+        fold(`SUMMARY:${esc(`${x.title} · ${x.course}`)}`));
+      if (x.location) lines.push(fold(`LOCATION:${esc(x.location)}`));
+      if (x.link) lines.push(fold(`URL:${x.link}`));
+      if (x.weeklyUntil) lines.push(`RRULE:FREQ=WEEKLY;UNTIL=${z(x.weeklyUntil)}`);
+      lines.push('END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+    return lines.join('\r\n') + '\r\n';
+  }
+  function renderCalendar(body) {
+    let seq = 0, view = 'week', anchor = Date.now();
+    const ICON = { due: '🗂️', module: '🧭', class: '🏛️', exam: '📝', other: '📌', office: '🙋' };
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list, items;
+      try { list = await C.myCourses(); items = await gather(list); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const from = view === 'week' ? weekStart(anchor) : weekStart(new Date(new Date(anchor).getFullYear(), new Date(anchor).getMonth(), 1).getTime());
+      const days = view === 'week' ? 7 : 42, to = from + days * DAY + 3 * 36e5;   // + a margin for clock changes
+      const shown = inRange(items, from, to);
+      const byDay = (d) => shown.filter((x) => x.start >= d && x.start < d + DAY);
+      const label = view === 'week' ? `${new Date(from).toLocaleDateString([], { month: 'short', day: 'numeric' })} – ${new Date(from + 6 * DAY).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`
+        : new Date(anchor).toLocaleDateString([], { month: 'long', year: 'numeric' });
+      const today = dayStart(Date.now()), month = new Date(anchor).getMonth();
+      const line = (x) => `<li class="ud-ev k-${h(x.kind)} ${x.done ? 'done' : ''}" title="${h(x.course)}"><span class="muted">${x.kind === 'due' || x.kind === 'module' ? hm(x.start) : `${hm(x.start)}–${hm(x.end)}`}</span> ${ICON[x.kind] || '•'} ${h(x.title)}${x.done ? ' ✓' : ''}<br><span class="muted">${h(x.course)}${x.location ? ' · ' + h(x.location) : ''}</span>${x.link ? ` <a href="${h(x.link)}" target="_blank" rel="noopener">link</a>` : ''}</li>`;
+      body.innerHTML = `<div class="ud-pad"><div class="row ud-calbar"><button class="btn" data-nav="-1" aria-label="Previous">‹</button><button class="btn" data-nav="0">Today</button><button class="btn" data-nav="1" aria-label="Next">›</button>
+          <b class="ud-callabel">${h(label)}</b><span class="ud-grow"></span><button class="chip ${view === 'week' ? 'on' : ''}" data-view="week">Week</button><button class="chip ${view === 'month' ? 'on' : ''}" data-view="month">Month</button><button class="btn" data-ics title="For Google Calendar, Outlook or Apple Calendar">Export .ics</button></div>
+        ${list.length ? '' : '<p class="muted">Join a course to see its deadlines and classes here.</p>'}
+        ${view === 'week' ? `<div class="ud-week">${Array.from({ length: 7 }, (_, i) => { const d = from + i * DAY, xs = byDay(d);
+            return `<section class="ud-day ${d === today ? 'today' : ''}"><p class="ud-k">${new Date(d).toLocaleDateString([], { weekday: 'short', day: 'numeric' })}</p>${xs.length ? `<ul>${xs.map(line).join('')}</ul>` : '<p class="muted">—</p>'}</section>`; }).join('')}</div>`
+          : `<div class="ud-month">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => `<b class="muted">${w}</b>`).join('')}${Array.from({ length: 42 }, (_, i) => { const d = from + i * DAY, xs = byDay(d), dt = new Date(d);
+            return `<button class="ud-cell ${d === today ? 'today' : ''} ${dt.getMonth() !== month ? 'out' : ''}" data-day="${d}"><span>${dt.getDate()}</span>${xs.slice(0, 3).map((x) => `<i class="k-${h(x.kind)}" title="${h(x.title)}">${ICON[x.kind] || '•'} ${h(x.title.replace(/^(Due|Opens): /, ''))}</i>`).join('')}${xs.length > 3 ? `<i class="muted">+${xs.length - 3} more</i>` : ''}</button>`; }).join('')}</div>`}
+        <p class="muted ud-foot">🗂️ due · 🧭 module opens · 🏛️ class · 📝 exam · 🙋 your office hours. Export adds them to Google Calendar, Outlook or Apple Calendar (a copy: re-export after changes).</p></div>`;
+      body.querySelectorAll('[data-nav]').forEach((b) => { b.onclick = () => { const n = Number(b.dataset.nav); if (!n) anchor = Date.now(); else if (view === 'week') anchor += n * 7 * DAY; else { const d = new Date(anchor); d.setDate(1); d.setMonth(d.getMonth() + n); anchor = d.getTime(); } draw(); }; });
+      body.querySelectorAll('[data-view]').forEach((b) => { b.onclick = () => { view = b.dataset.view; draw(); }; });
+      body.querySelectorAll('[data-day]').forEach((b) => { b.onclick = () => { anchor = Number(b.dataset.day); view = 'week'; draw(); }; });
+      body.querySelector('[data-ics]').onclick = () => {
+        const keep = items.filter((x) => x.weeklyUntil ? x.weeklyUntil >= Date.now() - 30 * DAY : x.start >= Date.now() - 30 * DAY);
+        const url = URL.createObjectURL(new Blob([ics(keep)], { type: 'text/calendar;charset=utf-8' }));
+        const a = document.createElement('a'); a.href = url; a.download = 'unistudentdeck-calendar.ics'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+        say(`Exported ${keep.length} item${keep.length === 1 ? '' : 's'}. Open the file to add them to your calendar.`);
+      };
+    }
+    draw();
+    return live(body, draw);
+  }
+
+  /* ---------------- Office hours (UniDeck phase 2) ---------------- */
+  function renderOfficeHours(body) {
+    let seq = 0, booking = null;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await currentOf(list);
+      if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
+      let slots, mine;
+      try { [slots, mine] = await Promise.all([C.slots(cid), C.myBookings(cid)]); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const now = Date.now(), mineIds = new Set(mine.map((b) => b.slotId)), up = slots.filter((s) => s.endAtMs > now);
+      const days = [...new Set(up.map((s) => dayStart(s.startAtMs)))];
+      body.innerHTML = `<div class="ud-pad">${picker(list, cid)}
+        ${mine.filter((b) => b.endAtMs > now).map((b) => { const s = slots.find((x) => x.id === b.slotId) || {}; return `<div class="ud-card ud-grade"><p class="ud-k">Your booking: ${h(when(b.startAtMs))}</p>
+          <p class="muted">${h(s.location || '')}${b.note ? ' · ' + h(b.note) : ''}</p>${s.link ? `<p><a href="${h(s.link)}" target="_blank" rel="noopener">Join online</a></p>` : ''}<div class="row"><button class="btn" data-cancel="${h(b.slotId)}">Cancel booking</button></div></div>`; }).join('')}
+        ${up.length ? days.map((d) => `<p class="ud-k">${h(new Date(d).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' }))}</p><ul class="ud-slots">${up.filter((s) => dayStart(s.startAtMs) === d).map((s) => {
+            const mineS = mineIds.has(s.id);
+            return `<li><span>${hm(s.startAtMs)}–${hm(s.endAtMs)} <span class="muted">${h(s.location || '')}${s.link ? ' · online' : ''}</span></span>
+              ${mineS ? '<span class="ud-tag g">Yours</span>' : s.booked ? '<span class="ud-tag">Taken</span>' : booking === s.id ? `<form class="row" data-book="${h(s.id)}"><input name="note" maxlength="500" placeholder="What would you like to discuss? (optional)"><button class="btn primary">Book</button></form>` : `<button class="btn" data-pick="${h(s.id)}">Book</button>`}</li>`; }).join('')}</ul>`).join('')
+          : '<p class="muted">No office hours open in this course right now.</p>'}
+        <p class="muted ud-foot">Classmates see that a slot is taken, never by whom. Up to two upcoming bookings per course.</p></div>`;
+      const s = body.querySelector('[data-course]'); if (s) s.onchange = () => { booking = null; C.setCurrentCourse(s.value); };
+      body.querySelectorAll('[data-pick]').forEach((b) => { b.onclick = () => { booking = b.dataset.pick; draw(); }; });
+      body.querySelectorAll('[data-book]').forEach((f) => { f.onsubmit = async (e) => { e.preventDefault(); try { await C.bookSlot(cid, f.dataset.book, f.note.value.trim()); booking = null; say('Booked. It is in your Calendar too.'); draw(); } catch (er) { say(C.errText(er)); } }; });
+      body.querySelectorAll('[data-cancel]').forEach((b) => { b.onclick = async () => { if (!confirm('Cancel this booking?')) return; try { await C.cancelBooking(cid, b.dataset.cancel); draw(); } catch (er) { say(C.errText(er)); } }; });
+    }
+    draw();
+    return live(body, draw);
+  }
+
   const P = { book: '<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v13"/>',
     task: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12l2 2 4-4"/>',
     grade: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/><path d="M14 5l2 2 4-4"/>',
     mods: '<rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="11" width="16" height="4" rx="1.5"/><rect x="4" y="17" width="16" height="4" rx="1.5"/>',
-    ann: '<path d="M4 10v4h3l6 4V6L7 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 7a7 7 0 0 1 0 10"/>' };
+    ann: '<path d="M4 10v4h3l6 4V6L7 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 7a7 7 0 0 1 0 10"/>',
+    chat: '<path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+    cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    office: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>' };
   window.UNI_WIDGETS = [
     { id: 'courses', title: '🏛️ Courses', iconPath: P.book, w: 340, h: 520, render: renderCourses, cat: 'cloud' },
     { id: 'uassign', title: '🗂️ Assignments', iconPath: P.task, w: 400, h: 560, render: renderAssign, cat: 'cloud' },
     { id: 'grades', title: '🎯 Grades', iconPath: P.grade, w: 380, h: 520, render: renderGrades, cat: 'cloud' },
     { id: 'modules', title: '🧭 Modules', iconPath: P.mods, w: 420, h: 580, render: renderModules, cat: 'cloud' },
     { id: 'announce', title: '📣 Announcements', iconPath: P.ann, w: 380, h: 520, render: renderAnnouncements, cat: 'cloud' },
+    { id: 'discuss', title: '💬 Discussions', iconPath: P.chat, w: 420, h: 580, render: renderDiscussions, cat: 'cloud' },
+    { id: 'ucal', title: '📅 Calendar', iconPath: P.cal, w: 760, h: 580, render: renderCalendar, cat: 'cloud' },
+    { id: 'office', title: '🙋 Office hours', iconPath: P.office, w: 400, h: 540, render: renderOfficeHours, cat: 'cloud' },
   ];
 })();

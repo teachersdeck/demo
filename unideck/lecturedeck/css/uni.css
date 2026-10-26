@@ -50,3 +50,9 @@
 .cm-item input,.cm-item textarea,.cm-item select{font:inherit;color:var(--text-hi);background:var(--ink-0);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:100%;box-sizing:border-box;margin-top:6px}
 .cm-checks{display:flex;flex-direction:column;gap:2px}
 .cm-card a{color:var(--amber-hi)}
+
+/* ---------- UniDeck phase 2: Discussions, Course calendar, Office hours ---------- */
+.cm-post{border-left:3px solid var(--line);padding:4px 10px;margin:10px 0}
+.cm-post.staff{border-left-color:var(--amber)}
+.cm-post p{margin:2px 0}.cm-post .cm-x{font-size:12px}
+.cm-card textarea,.cm-card input,.cm-card select{box-sizing:border-box}

@@ -1,5 +1,5 @@
 'use strict';
-/* LectureDeck — Course mode: Course builder, Course assignments, Grader and Gradebook (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0).
+/* LectureDeck — Course mode: Course builder, Course assignments, Grader and Gradebook (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0), Discussions, Course calendar and Office hours (phase 2, v0.5.0).
    LectureDeck's own file (not shared with TeachersDeck). It only lists the widgets in window.UNI_WIDGETS; the shared
    js/app.js adds them to a "Courses" category when the edition is the university one. Data: js/unicourses.js (shared
    with UniStudentDeck); maths: js/coursemath.js (the same file the backend runs). Loaded before js/app.js. */
@@ -382,12 +382,167 @@
     return live(draw);
   }
 
+  const hm = (ms) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dayStart = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
+
+  /* ---------------- Discussions (UniDeck phase 2) ---------------- */
+  function renderDiscussions(body) {
+    let seq = 0, openT = null, form = null;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await pick(list);
+      if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
+      let ths;
+      try { ths = await C.threads(cid); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      if (form) return editor(cid, form === 'new' ? null : ths.find((x) => x.id === form));
+      const th = openT && ths.find((x) => x.id === openT);
+      if (th) return thread(cid, th, my);
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}<button class="wbtn primary" data-new>＋ New discussion</button></div>
+        <ul class="cm-list">${ths.map((x) => `<li><button class="cm-linkbtn" data-t="${h(x.id)}"><b>${x.pinned ? '📌 ' : ''}${h(x.title)}</b><span class="cm-lo">${x.postCount || 0} repl${x.postCount === 1 ? 'y' : 'ies'}${x.postFirst ? ' · post first' : ''}${x.locked ? ' · closed' : ''} · last ${h(when(x.lastPostAtMs || x.createdAtMs))}</span></button></li>`).join('') || '<li class="cm-lo">No discussions yet. Start one with a question for the week.</li>'}</ul></div>`;
+      wirePicker(body, () => { openT = null; });
+      body.querySelector('[data-new]').onclick = () => { form = 'new'; draw(); };
+      body.querySelectorAll('[data-t]').forEach((b) => { b.onclick = () => { openT = b.dataset.t; draw(); }; });
+    }
+    function editor(cid, th) {
+      body.innerHTML = `<form class="cm-pad" data-f><p class="cm-k">${th ? 'Edit discussion' : 'New discussion'}</p>
+        <label class="cm-lbl">Title<input name="title" required maxlength="140" value="${h(th ? th.title : '')}"></label>
+        <label class="cm-lbl">Prompt<textarea name="body" rows="5" maxlength="5000" required>${h(th ? th.body : '')}</textarea></label>
+        <label class="cm-check"><input type="checkbox" name="postFirst" ${th && th.postFirst ? 'checked' : ''}> Students post before they see others' replies</label>
+        <label class="cm-check"><input type="checkbox" name="pinned" ${th && th.pinned ? 'checked' : ''}> Pin to the top</label>
+        ${th ? `<label class="cm-check"><input type="checkbox" name="locked" ${th.locked ? 'checked' : ''}> Closed to new replies</label>` : ''}
+        <div class="btn-row cm-left"><button class="wbtn primary">${th ? 'Save' : 'Start discussion'}</button><button type="button" class="wbtn" data-cancel>Cancel</button></div></form>`;
+      const f = body.querySelector('[data-f]');
+      f.querySelector('[data-cancel]').onclick = () => { form = null; draw(); };
+      f.onsubmit = async (e) => { e.preventDefault();
+        try { const r = await C.saveThread(cid, { id: th ? th.id : undefined, title: f.title.value.trim(), body: f.body.value.trim(), postFirst: f.postFirst.checked, pinned: f.pinned.checked, locked: f.locked ? f.locked.checked : false }); say('Discussion saved.'); form = null; openT = r.threadId; draw(); } catch (er) { say(C.errText(er)); } };
+    }
+    async function thread(cid, th, my) {
+      let res;
+      try { res = await C.posts(cid, th.id); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const students = new Set(res.posts.filter((p) => p.role === 'student').map((p) => p.uid)).size;
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row"><button class="cm-linkbtn" data-back style="flex:0">← All discussions</button><span style="flex:1"></span><button class="wbtn" data-edit>Edit</button><button class="wbtn" data-lock>${th.locked ? 'Reopen' : 'Close'}</button><button class="cm-x" data-del aria-label="Delete discussion" title="Delete">×</button></div>
+        <p class="cm-k">${th.pinned ? '📌 ' : ''}${h(th.title)}</p><p class="cm-lo">${th.postFirst ? 'Post first · ' : ''}${th.locked ? 'Closed · ' : ''}${students} student${students === 1 ? '' : 's'} replied</p>
+        <div class="cm-text">${rich(th.body)}</div>
+        ${res.posts.map((p) => `<div class="cm-post ${p.role !== 'student' ? 'staff' : ''}"><p class="cm-lo"><b>${h(p.name)}</b> · ${h(when(p.createdAtMs))}${p.editedAtMs && !p.removed ? ' · edited' : ''}</p>
+          ${p.removed ? '<p class="cm-lo"><i>Reply removed.</i></p>' : `<div>${rich(p.body)}</div><div class="btn-row cm-left"><button class="cm-x" data-rm="${h(p.id)}" title="Remove this reply" aria-label="Remove reply">Remove</button></div>`}</div>`).join('') || '<p class="cm-lo">No replies yet.</p>'}
+        ${th.locked ? '' : '<form class="cm-card" data-reply><label class="cm-lbl">Reply as the instructor<textarea name="body" rows="3" maxlength="5000" required></textarea></label><div class="btn-row cm-left"><button class="wbtn primary">Post reply</button></div></form>'}</div>`;
+      body.querySelector('[data-back]').onclick = () => { openT = null; draw(); };
+      body.querySelector('[data-edit]').onclick = () => { form = th.id; draw(); };
+      body.querySelector('[data-lock]').onclick = async () => { try { await C.saveThread(cid, { ...th, locked: !th.locked }); draw(); } catch (e) { say(C.errText(e)); } };
+      body.querySelector('[data-del]').onclick = async () => { if (!confirm('Delete this discussion and every reply in it?')) return; try { await C.deleteThread(cid, th.id); openT = null; draw(); } catch (e) { say(C.errText(e)); } };
+      body.querySelectorAll('[data-rm]').forEach((b) => { b.onclick = async () => { if (!confirm('Remove this reply? The student sees "Reply removed".')) return; try { await C.removePost(cid, th.id, b.dataset.rm); draw(); } catch (e) { say(C.errText(e)); } }; });
+      const f = body.querySelector('[data-reply]');
+      if (f) f.onsubmit = async (e) => { e.preventDefault(); try { await C.postReply(cid, th.id, f.body.value.trim()); draw(); } catch (er) { say(C.errText(er)); } };
+    }
+    draw();
+    return live(draw);
+  }
+
+  /* ---------------- Course calendar: class times, exams, other events (UniDeck phase 2) ---------------- */
+  function renderCourseCalendar(body) {
+    let seq = 0, editing = null;
+    const KINDS = { class: '🏛️ Class', exam: '📝 Exam', other: '📌 Other' };
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await pick(list);
+      if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
+      let evs;
+      try { evs = await C.events(cid); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      evs.sort((a, b) => a.startAtMs - b.startAtMs);
+      const ed = editing && editing !== 'new' ? evs.find((x) => x.id === editing) : null;
+      const dur = ed ? Math.round((ed.endAtMs - ed.startAtMs) / 6e4) : 90;
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}<button class="wbtn primary" data-new>＋ Add</button></div>
+        ${editing ? `<form class="cm-card" data-f><p class="cm-k">${ed ? 'Edit event' : 'New event'}</p>
+          <div class="cm-two"><label class="cm-lbl">Title<input name="title" required maxlength="120" value="${h(ed ? ed.title : '')}" placeholder="e.g. Lecture"></label>
+          <label class="cm-lbl">Kind<select name="kind">${Object.entries(KINDS).map(([k, l]) => `<option value="${k}" ${(ed ? ed.kind : 'class') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
+          <div class="cm-two"><label class="cm-lbl">Starts<input type="datetime-local" name="start" required value="${localInput(ed && ed.startAtMs)}"></label>
+          <label class="cm-lbl">Length (minutes)<input type="number" name="minutes" min="5" max="1440" value="${dur}"></label></div>
+          <div class="cm-two"><label class="cm-lbl">Room<input name="location" maxlength="120" value="${h(ed ? ed.location : '')}"></label>
+          <label class="cm-lbl">Online link (optional)<input type="url" name="link" maxlength="2000" value="${h(ed ? ed.link : '')}" placeholder="https://"></label></div>
+          <label class="cm-lbl">Repeats every week until (empty = once)<input type="date" name="until" value="${ed && ed.weeklyUntilMs ? new Date(ed.weeklyUntilMs - new Date(ed.weeklyUntilMs).getTimezoneOffset() * 6e4).toISOString().slice(0, 10) : ''}"></label>
+          <div class="btn-row cm-left"><button class="wbtn primary">Save</button><button type="button" class="wbtn" data-cancel>Cancel</button></div></form>` : ''}
+        <ul class="cm-list">${evs.map((e) => `<li><button class="cm-linkbtn" data-ed="${h(e.id)}"><b>${KINDS[e.kind] ? KINDS[e.kind].split(' ')[0] : '📌'} ${h(e.title)}</b>
+          <span class="cm-lo">${e.weeklyUntilMs ? `Every ${new Date(e.startAtMs).toLocaleDateString([], { weekday: 'long' })} ${hm(e.startAtMs)}–${hm(e.endAtMs)}, until ${new Date(e.weeklyUntilMs).toLocaleDateString([], { month: 'short', day: 'numeric' })}` : `${h(when(e.startAtMs))}–${hm(e.endAtMs)}`}${e.location ? ' · ' + h(e.location) : ''}${e.link ? ' · online' : ''}</span></button>
+          <button class="cm-x" data-del="${h(e.id)}" aria-label="Delete ${h(e.title)}" title="Delete">×</button></li>`).join('') || '<li class="cm-lo">No class times or exams yet. They appear in every student’s Calendar.</li>'}</ul>
+        <p class="cm-lo">Students also see assignment due dates and module release dates in their Calendar, and can export it as .ics.</p></div>`;
+      wirePicker(body, () => { editing = null; });
+      body.querySelector('[data-new]').onclick = () => { editing = 'new'; draw(); };
+      body.querySelectorAll('[data-ed]').forEach((b) => { b.onclick = () => { editing = b.dataset.ed; draw(); }; });
+      body.querySelectorAll('[data-del]').forEach((b) => { b.onclick = async () => { if (!confirm('Delete this event?')) return; try { await C.deleteEvent(cid, b.dataset.del); draw(); } catch (e) { say(C.errText(e)); } }; });
+      const f = body.querySelector('[data-f]');
+      if (f) {
+        f.querySelector('[data-cancel]').onclick = () => { editing = null; draw(); };
+        f.onsubmit = async (e) => { e.preventDefault();
+          const start = new Date(f.start.value).getTime(), until = f.until.value ? new Date(f.until.value + 'T23:59').getTime() : null;
+          try { await C.saveEvent(cid, { id: ed ? ed.id : undefined, title: f.title.value.trim(), kind: f.kind.value, startAtMs: start, endAtMs: start + (Number(f.minutes.value) || 60) * 6e4, location: f.location.value.trim(), link: f.link.value.trim(), weeklyUntilMs: until }); say('Saved.'); editing = null; draw(); } catch (er) { say(C.errText(er)); } };
+      }
+    }
+    draw();
+    return live(draw);
+  }
+
+  /* ---------------- Office hours (UniDeck phase 2) ---------------- */
+  function renderOfficeHours(body) {
+    let seq = 0, opening = false;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await pick(list);
+      if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
+      let slots, books;
+      try { [slots, books] = await Promise.all([C.slots(cid), C.bookings(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const up = slots.filter((s) => s.endAtMs > Date.now()), days = [...new Set(up.map((s) => dayStart(s.startAtMs)))];
+      const bookOf = (id) => books.find((b) => b.slotId === id);
+      const taken = up.filter((s) => bookOf(s.id)).length;
+      const next = new Date(Date.now() + 864e5); next.setHours(14, 0, 0, 0);
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}<button class="wbtn primary" data-open>＋ Open slots</button></div>
+        ${opening ? `<form class="cm-card" data-f><p class="cm-k">Open office hours</p>
+          <div class="cm-two"><label class="cm-lbl">From<input type="datetime-local" name="start" required value="${localInput(next.getTime())}"></label>
+          <label class="cm-lbl">To<input type="datetime-local" name="end" required value="${localInput(next.getTime() + 2 * 36e5)}"></label></div>
+          <div class="cm-two"><label class="cm-lbl">Each slot (minutes)<input type="number" name="minutes" min="5" max="120" value="20"></label>
+          <label class="cm-lbl">Room<input name="location" maxlength="120" placeholder="e.g. Room B204"></label></div>
+          <label class="cm-lbl">Online link (optional)<input type="url" name="link" maxlength="2000" placeholder="https:// (Meet, Zoom, Teams)"></label>
+          <div class="btn-row cm-left"><button class="wbtn primary">Open slots</button><button type="button" class="wbtn" data-cancel>Cancel</button></div></form>` : ''}
+        <p class="cm-lo">${up.length} upcoming slot${up.length === 1 ? '' : 's'}, ${taken} booked. Students see free and taken slots, never who booked.</p>
+        ${days.map((d) => `<p class="cm-k">${h(new Date(d).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' }))}</p><table class="cm-tbl"><tbody>${up.filter((s) => dayStart(s.startAtMs) === d).map((s) => { const b = bookOf(s.id);
+          return `<tr><td>${hm(s.startAtMs)}–${hm(s.endAtMs)}<br><span class="cm-lo">${h(s.location || '')}${s.link ? ' · online' : ''}</span></td><td>${b ? `<b>${h(b.name)}</b>${b.note ? `<br><span class="cm-lo">${h(b.note)}</span>` : ''}` : '<span class="cm-lo">Free</span>'}</td>
+            <td>${b ? `<button class="wbtn" data-cancel-b="${h(s.id)}">Cancel</button>` : ''}<button class="cm-x" data-del="${h(s.id)}" aria-label="Delete slot" title="Delete slot">×</button></td></tr>`; }).join('')}</tbody></table>`).join('') || (opening ? '' : '<p class="cm-lo">No upcoming office hours. Open some: students book them from UniStudentDeck.</p>')}</div>`;
+      wirePicker(body, () => { opening = false; });
+      body.querySelector('[data-open]').onclick = () => { opening = true; draw(); };
+      body.querySelectorAll('[data-del]').forEach((b) => { b.onclick = async () => { if (!confirm(bookOf(b.dataset.del) ? 'Delete this booked slot? The booking is cancelled.' : 'Delete this slot?')) return; try { await C.deleteSlot(cid, b.dataset.del); draw(); } catch (e) { say(C.errText(e)); } }; });
+      body.querySelectorAll('[data-cancel-b]').forEach((b) => { b.onclick = async () => { if (!confirm('Cancel this booking? The slot becomes free again.')) return; try { await C.cancelBooking(cid, b.dataset.cancelB); draw(); } catch (e) { say(C.errText(e)); } }; });
+      const f = body.querySelector('[data-f]');
+      if (f) {
+        f.querySelector('[data-cancel]').onclick = () => { opening = false; draw(); };
+        f.onsubmit = async (e) => { e.preventDefault();
+          try { const r = await C.openSlots(cid, { startAtMs: new Date(f.start.value).getTime(), endAtMs: new Date(f.end.value).getTime(), minutes: Number(f.minutes.value), location: f.location.value.trim(), link: f.link.value.trim() }); say(`${r.created} slot${r.created === 1 ? '' : 's'} opened.`); opening = false; draw(); } catch (er) { say(C.errText(er)); } };
+      }
+    }
+    draw();
+    return live(draw);
+  }
+
   window.UNI_WIDGETS = [
     { id: 'coursebuilder', cat: 'course', title: '🏛️ Course builder', desc: 'Create a university course: code, term, grading weights, late policy, people.', icon: 'people', w: 440, h: 600, render: renderBuilder },
     { id: 'courseassign', cat: 'course', title: '🗂️ Course assignments', desc: 'Assignments with due dates, rubrics, submission types and attempts.', icon: 'clipboard', w: 440, h: 600, render: renderAssignments },
     { id: 'grader', cat: 'course', title: '✅ Grader', desc: 'Each submission beside its rubric: score, feedback, release.', icon: 'report', w: 820, h: 620, render: renderGrader },
     { id: 'coursemodules', cat: 'course', title: '🧭 Modules', desc: 'Weekly modules: pages, links, readings and assignments, with release dates.', icon: 'clipboard', w: 520, h: 640, render: renderModules },
     { id: 'courseannounce', cat: 'course', title: '📣 Announcements', desc: 'Post to one or several courses, pin, see who has read it.', icon: 'report', w: 460, h: 620, render: renderAnnouncements },
+    { id: 'coursediscuss', cat: 'course', title: '💬 Discussions', desc: 'Start course discussions, post-first prompts, pin, close, moderate.', icon: 'report', w: 520, h: 640, render: renderDiscussions },
+    { id: 'coursecal', cat: 'course', title: '📅 Course calendar', desc: 'Class times, exams and events for every student’s Calendar.', icon: 'clipboard', w: 480, h: 600, render: renderCourseCalendar },
+    { id: 'courseoffice', cat: 'course', title: '🙋 Office hours', desc: 'Open bookable slots, see who booked and why.', icon: 'people', w: 480, h: 600, render: renderOfficeHours },
     { id: 'gradebook', cat: 'course', title: '📒 Gradebook', desc: 'Students by assignments, weighted totals, CSV export.', icon: 'stats', w: 760, h: 560, render: renderGradebook },
   ];
 })();

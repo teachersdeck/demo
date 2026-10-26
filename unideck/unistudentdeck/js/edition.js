@@ -17,7 +17,7 @@
 
   const xpOn = get('sd_uni_xp') === '1';
   window.SD_EDITION = Object.freeze({
-    name: 'UniStudentDeck', version: '0.3.0', uni: true, xpOn,
+    name: 'UniStudentDeck', version: '0.4.0', uni: true, xpOn,
     setXp(on) { put('sd_uni_xp', on ? '1' : '0'); location.reload(); }
   });
 
