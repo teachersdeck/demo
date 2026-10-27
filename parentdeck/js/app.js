@@ -299,6 +299,10 @@ const STRINGS = {
   settings_lang:        { en:'Language', vi:'Ngôn ngữ' },
   settings_quick_pair:  { en:'Quick pair (header pill)', vi:'Cặp ngôn ngữ nhanh (thanh trên cùng)' },
   settings_theme:       { en:'Theme', vi:'Giao diện' },
+  mode_title:           { en:'Mode', vi:'Chế độ' },
+  mode_light:           { en:'Light', vi:'Sáng' },
+  mode_dark:            { en:'Dark', vi:'Tối' },
+  theme_backgrounds:    { en:'Background', vi:'Hình nền' },
   settings_theme_hint:  { en:'Pick a background for ParentDeck \u2014 the same six as StudentDeck. Applies instantly, saved on this device.', vi:'Chọn nền cho ParentDeck \u2014 giống sáu nền của StudentDeck. Áp dụng ngay, lưu trên thiết bị này.' },
   settings_account:     { en:'Account', vi:'Tài khoản' },
   settings_reset_layout:{ en:'Reset widget layout', vi:'Đặt lại bố cục widget' },
@@ -370,10 +374,12 @@ const THEME_PRESETS = [
   { id: 'slate',   name: 'Slate',   css: 'linear-gradient(180deg,#20242c 0%, #2b3038 100%)' },
   { id: 'plain',   name: 'Plain',   css: '#12161C' }
 ];
+const presetBg = p => (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
 function applyThemePreset(id) {
   const p = THEME_PRESETS.find(x => x.id === id) || THEME_PRESETS[0];
-  document.body.style.background = p.css; document.body.style.backgroundSize = 'cover';
+  document.body.style.background = presetBg(p); document.body.style.backgroundSize = 'cover';
 }
+if (typeof DeckMode !== 'undefined') DeckMode.onChange(() => applyThemePreset(ui.theme));
 
 /* ---------- XP / level maths — the same formulas as StudentDeck's engine (js/app.js there) ---------- */
 const levelStart = L => 100 * (L - 1) + 25 * (L - 1) * (L - 2);             // total XP at which level L begins: 0, 100, 250, 450…
@@ -1403,11 +1409,12 @@ function renderHomework(body) {
 }
 
 function renderTheme(body) {
-  body.innerHTML = `<p class="muted" style="margin:0 0 8px">${t('settings_theme_hint')}</p><div class="theme-grid" id="th-grid"></div>`;
+  const hasMode = typeof DeckMode !== 'undefined';
+  body.innerHTML = `${hasMode ? `<p class="theme-label">${t('mode_title')}</p><div id="th-mode"></div><p class="theme-label">${t('theme_backgrounds')}</p>` : ''}<p class="muted" style="margin:0 0 8px">${t('settings_theme_hint')}</p><div class="theme-grid" id="th-grid"></div>`;
   function draw() {
     $('#th-grid', body).innerHTML = THEME_PRESETS.map(p => `
       <button class="theme-swatch${ui.theme === p.id ? ' on' : ''}" data-id="${p.id}">
-        <span class="theme-swatch-dot" style="background:${p.css}"></span>
+        <span class="theme-swatch-dot" style="background:${presetBg(p)}"></span>
         <span>${esc(p.name)}</span>
       </button>`).join('');
   }
@@ -1416,6 +1423,10 @@ function renderTheme(body) {
     ui.theme = id; saveUI(); applyThemePreset(id); draw();
   });
   draw();
+  if (!hasMode) return undefined;
+  const sw = DeckMode.mountSwitch($('#th-mode', body), { label: t('mode_title'), light: t('mode_light'), dark: t('mode_dark') });
+  const off = DeckMode.onChange(draw);                                  // the swatches show the backgrounds of the mode in use
+  return () => { sw.destroy(); off(); };
 }
 
 /* ---------- Settings widget ---------- */
@@ -1461,7 +1472,8 @@ const WIDGETS = [
   // Teacher Notes (Tier 2): the Notes Home inbox for every linked child. The Summary keeps its own "Notes from teacher" section for the selected child.
   { id: 'notes', cat: 'overview', titleKey: 'w_notes', icon: I('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'), w: 380, h: 540, render: renderNotesWidget },
   { id: 'homework', cat: 'homework', titleKey: 'w_homework', icon: I('<path d="M6 3h9l3 3v15H6z"/><path d="M9 8h6M9 12h6M9 16h4"/>'), w: 320, h: 440, render: renderHomework },
-  { id: 'theme', cat: 'settings', titleKey: 'w_theme', icon: I('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18c1.1 0 2-.6 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="8" r="1"/>'), w: 300, h: 260, render: renderTheme },
+  // Theme: its launcher is the palette button in the top bar (#theme-btn, left of Light / Dark and Settings, as in every suite app), never a dock
+  { id: 'theme', cat: 'settings', bar: '#theme-btn', titleKey: 'w_theme', icon: I('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18c1.1 0 2-.6 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="8" r="1"/>'), w: 300, h: 500, render: renderTheme },
   { id: 'settings', cat: 'settings', titleKey: 'w_settings', icon: I('<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.96 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.96a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.6a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/>'), w: 360, h: 620, render: renderSettings },
   // ---- Tier 1 widgets (js/tier1.js, v0.9.1). Where each launcher lives is DEFAULT_PLACEMENT + the layout mode; the app tray lists them all. ----
   { id: 'family', cat: 'overview', show: () => PD.getLinkedChildren().length >= 2, titleKey: 'w_family', icon: I('<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2.5 20c0-3.3 2.5-6 5.5-6s5.5 2.7 5.5 6M14.5 14.6c.8-.4 1.6-.6 2.5-.6 2.5 0 4.5 2.4 4.5 6"/>'), w: 380, h: 420, render: renderFamilyOverview },
@@ -1511,7 +1523,11 @@ function openWidget(id) {
   const clearL = drawerOn('left') ? 132 : 24, clearR = drawerOn('right') ? 112 : 0;   // keep new panels out from under a visible side drawer
   let x = clearL; floating.forEach(o => { x = Math.max(x, o.el.offsetLeft + o.el.offsetWidth + 16); });
   const fits = x + def.w <= wall.clientWidth - clearR, off = 30 + n * 32;
-  const L = ui.layout[id] = { x: fits ? x : clearL - 24 + off, y: fits ? 24 : off, w: def.w, h: def.h, min: false, ...ui.layout[id] };
+  let L = ui.layout[id] = { x: fits ? x : clearL - 24 + off, y: fits ? 24 : off, w: def.w, h: def.h, min: false, ...ui.layout[id] };
+  if (def.bar) {                                     // launched from a top bar button: open like a menu, right under that button, at full size
+    const b = $(def.bar).getBoundingClientRect(), wr = wall.getBoundingClientRect();
+    L = ui.layout[id] = { ...L, x: Math.round(b.right - wr.left - def.w), y: Math.max(0, Math.round(b.bottom - wr.top + 6)), w: def.w, h: def.h, min: false };
+  }
   const el = document.createElement('section'); el.className = 'widget' + (def.full ? ' full' : '') + (L.min ? ' min' : '');
   const top = clamp(L.y, 0, Math.max(0, wall.clientHeight - 44));
   if (def.full) el.style.zIndex = 1;   // raiseFull() below orders the full-screen widgets among themselves
@@ -1557,7 +1573,12 @@ function renderLangPill() {
 function setLang(code) {
   ui.lang = code; saveUI();
   rebuildAllDocks(); relabelPanels(); renderLangPill(); refreshAll();
+  if (modeToggle) modeToggle.relabel({ label: t('mode_title'), light: t('mode_light'), dark: t('mode_dark') });
+  labelThemeBtn();
 }
+function labelThemeBtn() { const b = $('#theme-btn'); b.title = t('w_theme'); b.setAttribute('aria-label', t('w_theme')); }
+// Light / Dark in the top bar, just left of Settings as in every suite app (js/mode.js, css/mode.css)
+let modeToggle = null;
 /* ---------- Layout modes, docks and the app tray ----------
    Ported from StudentDeck v0.9.0 (which ported it from TeachersDeck v0.14.1): same look, same rules, in ParentDeck's own shell.
    Every widget has exactly one launcher: the bottom dock (up to 10), the left or right side drawer (up to 5 each) or "hidden".
@@ -1576,11 +1597,11 @@ function setLang(code) {
 const LAYOUT_MODES = ['compact', 'cozy', 'custom'];
 const PLACES = ['bottom', 'left', 'right', 'hidden'];
 const DOCK_CAPS = { bottom: 10, left: 5, right: 5 };
-const DEFAULT_PLACEMENT = { summary: 'bottom', badges: 'bottom', notes: 'bottom', homework: 'bottom', progress: 'bottom', calendar: 'bottom', hwc: 'bottom', attend: 'bottom', pulse: 'left', wish: 'left', starters: 'left', digest: 'left', family: 'right', theme: 'right', settings: 'right' };
+const DEFAULT_PLACEMENT = { summary: 'bottom', badges: 'bottom', notes: 'bottom', homework: 'bottom', progress: 'bottom', calendar: 'bottom', hwc: 'bottom', attend: 'bottom', pulse: 'left', wish: 'left', starters: 'left', digest: 'left', family: 'right', settings: 'right' };   // theme: top bar since v0.25.0
 const TRAY_CATS = ['overview', 'homework', 'rewards', 'share', 'settings'];
 
 const isVisible = w => !w.show || w.show();                      // Family Overview only exists with two or more linked children
-const widgetsFor = loc => WIDGETS.filter(w => ui.dockPlacement[w.id] === loc && isVisible(w)).slice(0, DOCK_CAPS[loc] || 99);   // a dock never shows more than its cap
+const widgetsFor = loc => WIDGETS.filter(w => !w.bar && ui.dockPlacement[w.id] === loc && isVisible(w)).slice(0, DOCK_CAPS[loc] || 99);   // bar: launched from the top bar instead (Theme)   // a dock never shows more than its cap
 const placementCount = loc => widgetsFor(loc).length;
 function ensureDockPlacement() {                                  // first run, and any widget added in a later version: its default launcher (or hidden if that dock is full)
   let changed = false;
@@ -1674,7 +1695,7 @@ function renderLayoutSettings(host) {
     <div class="layout-mode-grid">${LAYOUT_MODES.map(m => `<button type="button" class="layout-mode-opt${ui.layoutMode === m ? ' active' : ''}" data-mode="${m}"><span class="layout-mode-name">${esc(t('lay_' + m))}</span><span class="layout-mode-desc">${esc(t('lay_' + m + '_d'))}</span></button>`).join('')}</div>
     <h4>${esc(t('lay_buttons'))}</h4><p class="muted" style="margin:0 0 6px">${esc(t('lay_buttons_hint'))}</p>
     ${locked ? `<p class="muted lock-hint">${esc(t('lay_locked'))}</p>` : ''}
-    <div class="dock-vis-list">${WIDGETS.filter(isVisible).map(w => `<div class="dock-vis-row placement-row${locked ? ' locked' : ''}"><span>${esc(t(w.titleKey))}</span><select data-place="${w.id}" ${locked ? 'disabled' : ''} aria-label="${esc(t(w.titleKey))}">${PLACES.map(pl => `<option value="${pl}" ${(ui.dockPlacement[w.id] || 'hidden') === pl ? 'selected' : ''}>${esc(t('place_' + pl))}</option>`).join('')}</select></div>`).join('')}</div>
+    <div class="dock-vis-list">${WIDGETS.filter(w => isVisible(w) && !w.bar).map(w => `<div class="dock-vis-row placement-row${locked ? ' locked' : ''}"><span>${esc(t(w.titleKey))}</span><select data-place="${w.id}" ${locked ? 'disabled' : ''} aria-label="${esc(t(w.titleKey))}">${PLACES.map(pl => `<option value="${pl}" ${(ui.dockPlacement[w.id] || 'hidden') === pl ? 'selected' : ''}>${esc(t('place_' + pl))}</option>`).join('')}</select></div>`).join('')}</div>
     <h4>${esc(t('lay_drawers'))}</h4>
     ${['left', 'right'].map(sd => `<label class="switch-row${locked ? ' locked' : ''}"><span>${esc(t('lay_' + sd))}</span><input type="checkbox" data-drawer="${sd}" ${effectiveSideVisible(sd) ? 'checked' : ''} ${locked ? 'disabled' : ''}></label>`).join('')}
     ${locked ? `<p class="muted lock-hint">${esc(t('lay_locked'))}</p>` : ''}
@@ -1706,9 +1727,11 @@ $('#app-tray-grid').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#app-tray-backdrop').hidden) closeAppTray(); });
 $('#ver').textContent = 'v' + VERSION;
-renderLangPill();
+renderLangPill(); labelThemeBtn();
+if (typeof DeckMode !== 'undefined') modeToggle = DeckMode.mountSwitch($('#mode-toggle'), { label: t('mode_title'), light: t('mode_light'), dark: t('mode_dark') }, { compact: true });
 applyThemePreset(ui.theme);
 $('#settings-btn').addEventListener('click', () => { panels.settings ? front(panels.settings.el) : openWidget('settings'); });
+$('#theme-btn').addEventListener('click', () => toggleWidget('theme'));   // the palette button: open the Theme panel, or close it if it is on top
 
 /* Re-render every open widget in place — used after sign-in/out, link/unlink, or a child switch. */
 function refreshAll() {

@@ -40,6 +40,7 @@ const SHELL_I18N = {
   pills_section_hint: {"en":"Where the language switch and theme button appear when the top drawer is on","vi":"Nơi hiển thị nút chuyển ngôn ngữ và nút giao diện khi ngăn trên cùng đang mở"},
   pill_lang_label: {"en":"Language switch","vi":"Nút chuyển ngôn ngữ"},
   pill_theme_label: {"en":"Theme button","vi":"Nút giao diện"},
+  pill_mode_label: {"en":"Light / Dark switch","vi":"Nút Sáng / Tối"},
   placement_shown: {"en":"Shown","vi":"Hiện"},
   placement_hidden: {"en":"Hidden","vi":"Ẩn"},
   placement_bottom: {"en":"Bottom dock","vi":"Thanh dock dưới"},

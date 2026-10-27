@@ -2045,17 +2045,28 @@ const PRESETS = [
 ];
 function applyTheme() {
   const p = PRESETS.find(p => p.id === state.theme) || PRESETS[0];
-  document.body.style.background = p.css;
+  document.body.style.background = presetBg(p);
   document.body.style.backgroundSize = 'cover';
 }
-function buildThemePop() {
+const presetBg = p => (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
+function buildThemePop() {                                          // Light / Dark on top (mounted once), the backgrounds below
   const pop = $('#theme-pop');
-  pop.innerHTML = `<div class="swatch-grid">${PRESETS.map(p => `<button class="swatch ${state.theme === p.id ? 'active' : ''}" data-theme="${p.id}" style="background:${p.css}" aria-label="Theme ${p.id}"></button>`).join('')}</div>`;
-  pop.querySelectorAll('[data-theme]').forEach(sw => sw.addEventListener('click', () => {
+  if (!pop.querySelector('.swatch-grid')) {
+    pop.innerHTML = `${typeof DeckMode !== 'undefined' ? '<p class="pop-label">Mode</p><div class="mode-switch"></div><p class="pop-label">Background</p>' : ''}<div class="swatch-grid"></div>`;
+    if (typeof DeckMode !== 'undefined') {
+      DeckMode.mountSwitch(pop.querySelector('.mode-switch'), { label: 'Mode', light: 'Light', dark: 'Dark' });
+      DeckMode.onChange(() => { applyTheme(); buildThemePop(); });
+    }
+  }
+  const grid = pop.querySelector('.swatch-grid');
+  grid.innerHTML = PRESETS.map(p => `<button class="swatch ${state.theme === p.id ? 'active' : ''}" data-theme="${p.id}" style="background:${presetBg(p)}" aria-label="Theme ${p.id}"></button>`).join('');
+  grid.querySelectorAll('[data-theme]').forEach(sw => sw.addEventListener('click', () => {
     state.theme = sw.dataset.theme; save(); applyTheme(); buildThemePop();
   }));
 }
 buildThemePop();
+// Light / Dark in the top bar, just left of Settings as in every suite app (js/mode.js, css/mode.css). UniStudentDeck gets it once its page has #mode-toggle.
+if (typeof DeckMode !== 'undefined') DeckMode.mountSwitch(document.getElementById('mode-toggle'), { label: 'Mode', light: 'Light', dark: 'Dark' }, { compact: true });
 $('#theme-pill').addEventListener('click', e => {
   e.stopPropagation();
   const open = $('#theme-pop').hidden;
