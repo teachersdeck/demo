@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi4YACyMvC3jZmk8rMNBmHPAGfUYKZWwott2adF6iHumr/k4NFSsMo9pYJ1T74WE8kDa7Ff657Kpt2eySWDm5YuiYkQooijO+s4RHkUeswGi4D6k8Upf5gD2dGgiyJlIczIaNKuaS8iMbT+O8LDknNCayP5chdgErA+VnxNO0KjyBt1kWj8SGVYczvBGLC2Fum3X1VcFWuFzz+c8d7OiQyPEqO4x2pvzKPnOBuG4QCvF0ecgNgEQozLanXRJmbTA6DF/eYaizuY/Gkn1OdhEW/TTuy5p8x8A/ZT9zb0a2IzvBFfszipRHTw6IOMi1nASpBdtP9rdUUydOetaBm5TQ/wIDAQAB",
   "name": "CampusDeck",
-  "version": "0.2.1",
-  "version_name": "0.2.1 beta",
+  "version": "0.3.0",
+  "version_name": "0.3.0 beta",
   "description": "For a university, faculty, department, program or single center: AdminDeck for courses per term, enrollment and anonymised grade distributions.",
   "chrome_url_overrides": {
     "newtab": "index.html"

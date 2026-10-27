@@ -19,3 +19,21 @@
 .cc-bar i{display:block;height:100%;background:var(--amber,#e8a33d)}
 @media (max-width:700px){.cc-tiles{grid-template-columns:repeat(2,1fr)}}
 html[data-mode="light"] .cc-bar{background:rgba(15,23,42,.1)}   /* Light mode (js/mode.js) */
+
+/* ---------- UniDeck phase 3: Campus stats, Course health, Teaching staff (js/campus-view.js) ---------- */
+.cc-tiles.cv-six{grid-template-columns:repeat(6,1fr)}
+@media (max-width:760px){.cc-tiles.cv-six{grid-template-columns:repeat(3,1fr)}}
+.cv-card{background:var(--ink-1);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.cv-k{font-weight:700;margin:0 0 4px}
+.cv-bands{display:inline-flex;align-items:flex-end;gap:2px;height:22px;vertical-align:middle}
+.cv-band{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;width:9px;height:100%}
+.cv-band i{display:block;width:100%;min-height:1px;background:var(--amber,#e8a33d);border-radius:2px 2px 0 0}
+.cv-bands.big{height:120px;gap:10px;width:100%;margin-top:6px}
+.cv-bands.big .cv-band{flex:1;width:auto;position:relative;padding-bottom:30px;box-sizing:border-box}
+.cv-bands.big .cv-band i{border-radius:4px 4px 0 0}
+.cv-bands.big em{font-style:normal;font-weight:700;font-size:12px;order:-1;margin-bottom:2px}
+.cv-bands.big small{position:absolute;bottom:4px;font-size:11px;color:var(--text-lo)}
+.cv-flags{list-style:none;margin:4px 0 0;padding:0}
+.cv-flags li{display:flex;gap:8px;padding:3px 0;font-size:13px}
+.cv-search{flex:1;font:inherit;color:var(--text-hi);background:var(--ink-0);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.cc-check select{font:inherit;color:var(--text-hi);background:var(--ink-0);border:1px solid var(--line);border-radius:8px;padding:4px 6px}
