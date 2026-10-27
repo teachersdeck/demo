@@ -1,5 +1,5 @@
 /* Course mode styles (js/course-mode.js). UniDeck's own file, used by two apps: LectureDeck (Course mode) and
-   UniStudentDeck (the TA desk). tools/sync_shared.py keeps unistudentdeck/css/course-mode.css identical to this one.
+   UniStudentDeck (TAdeck). tools/sync_shared.py keeps unistudentdeck/css/course-mode.css identical to this one.
    Colours come from TeachersDeck's variables; UniStudentDeck maps them onto its own inside .ta-desk (css/uni.css). */
 
 /* ---------- UniDeck phase 1: Course mode (js/course-mode.js) ---------- */

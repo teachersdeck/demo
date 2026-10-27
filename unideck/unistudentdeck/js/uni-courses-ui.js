@@ -65,12 +65,12 @@
   }
 
   /* A course where you are a TA (phase 3): your own Assignments, Grades and office-hour bookings don't apply there.
-     Shows the picker, a pointer to the TA desk, and returns true so the widget stops. */
+     Shows the picker, a pointer to TAdeck, and returns true so the widget stops. */
   function staffStop(body, list, cid, what) {
     const mine = list.find((c) => c.courseId === cid);
     if (!mine || mine.role === 'student') return false;
     body.innerHTML = `<div class="ud-pad">${picker(list, cid)}<div class="ud-card"><p class="ud-k">You’re a ${mine.role === 'ta' ? 'TA' : h(mine.role)} in ${h(mine.title)}</p>
-      <p class="muted">${h(what)}</p><div class="row"><button class="btn primary" data-tadesk>Open the TA desk →</button></div></div></div>`;
+      <p class="muted">${h(what)}</p><div class="row"><button class="btn primary" data-tadesk>Open TAdeck →</button></div></div></div>`;
     const sel = body.querySelector('[data-course]'); if (sel) sel.onchange = () => C.setCurrentCourse(sel.value);
     body.querySelector('[data-tadesk]').onclick = () => (typeof openWidget === 'function' ? openWidget('tadesk') : null);
     return true;
@@ -108,8 +108,8 @@
     async function home(el, cid, my, list) {
       const mine = (list || []).find((c) => c.courseId === cid);
       if (mine && mine.role === 'ta') {
-        el.innerHTML = `<div class="ud-card"><p class="ud-k">${h(mine.title)} · TA</p><p class="muted">Your instructor made you a TA here: you grade, run discussions and office hours, and post announcements from the TA desk.</p>
-          <div class="row"><button class="btn primary" data-w="tadesk">TA desk →</button><button class="btn" data-w="modules">Modules →</button><button class="btn" data-w="discuss">Discussions →</button></div></div>`;
+        el.innerHTML = `<div class="ud-card"><p class="ud-k">${h(mine.title)} · TA</p><p class="muted">Your instructor made you a TA here: you grade, run discussions and office hours, and post announcements from TAdeck.</p>
+          <div class="row"><button class="btn primary" data-w="tadesk">TAdeck →</button><button class="btn" data-w="modules">Modules →</button><button class="btn" data-w="discuss">Discussions →</button></div></div>`;
         el.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => (typeof openWidget === 'function' ? openWidget(b.dataset.w) : null); });
         return;
       }
@@ -143,7 +143,7 @@
       try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       const cid = await currentOf(list);
       if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
-      if (staffStop(body, list, cid, 'Students’ work to grade is in the TA desk’s Grader.')) return;
+      if (staffStop(body, list, cid, 'Students’ work to grade is in TAdeck’s Grader.')) return;
       body.innerHTML = '<p class="muted ud-pad">Loading…</p>';
       let as, subs, grades, course;
       try { [course, as, subs, grades] = await Promise.all([C.course(cid), C.assignments(cid), C.mySubmissions(cid), C.myGrades(cid)]); }
@@ -225,7 +225,7 @@
       try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       const cid = await currentOf(list);
       if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
-      if (staffStop(body, list, cid, 'Grades for the course are in the TA desk’s Gradebook.')) return;
+      if (staffStop(body, list, cid, 'Grades for the course are in TAdeck’s Gradebook.')) return;
       let course, as, grades;
       try { [course, as, grades] = await Promise.all([C.course(cid), C.assignments(cid), C.myGrades(cid)]); }
       catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
@@ -466,7 +466,7 @@
       try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       const cid = await currentOf(list);
       if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
-      if (staffStop(body, list, cid, 'You run office hours from the TA desk; booking is for students.')) return;
+      if (staffStop(body, list, cid, 'You run office hours from TAdeck; booking is for students.')) return;
       let slots, mine;
       try { [slots, mine] = await Promise.all([C.slots(cid), C.myBookings(cid)]); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       if (my !== seq) return;
@@ -491,7 +491,7 @@
   }
 
 
-  /* ---------------- TA desk (phase 3) ----------------
+  /* ---------------- TAdeck (phase 3) ----------------
      For a student the instructor made a TA. The screens are LectureDeck's Course mode (js/course-mode.js, the same file),
      opened here under UniStudentDeck's sign-in; they list only the courses where you are course staff. */
   const TA_TABS = [['grader', '✅ Grader'], ['gradebook', '📒 Gradebook'], ['discussions', '💬 Discussions'], ['announcements', '📣 Announcements'], ['office', '🙋 Office hours']];
@@ -506,7 +506,7 @@
       try { list = (await C.myCourses()).filter((c) => c.role === 'ta' || c.role === 'instructor'); } catch (e) { end(); body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       if (my !== seq) return;
       if (!list.length) { end(); body.innerHTML = '<div class="ud-empty"><p><b>No TA courses yet</b></p><p class="muted">When an instructor makes you a TA in one of your courses, grading, discussions and office hours for it appear here.</p></div>'; return; }
-      if (!window.CourseMode) { end(); body.innerHTML = '<p class="ud-pad muted">The TA desk didn’t load. Reload the page.</p>'; return; }
+      if (!window.CourseMode) { end(); body.innerHTML = '<p class="ud-pad muted">TAdeck didn’t load. Reload the page.</p>'; return; }
       if (body.querySelector('.ta-desk')) return;   // already showing; the course-mode screen redraws itself
       end();
       body.innerHTML = `<div class="ta-desk"><div class="ta-tabs" role="tablist">${TA_TABS.map(([id, label]) => `<button class="chip ${id === tab ? 'on' : ''}" role="tab" aria-selected="${id === tab}" data-tab="${id}">${label}</button>`).join('')}</div><div class="ta-body"></div></div>`;
@@ -537,6 +537,6 @@
     { id: 'discuss', title: '💬 Discussions', iconPath: P.chat, w: 420, h: 580, render: renderDiscussions, cat: 'cloud' },
     { id: 'ucal', title: '📅 Calendar', iconPath: P.cal, w: 760, h: 580, render: renderCalendar, cat: 'cloud' },
     { id: 'office', title: '🙋 Office hours', iconPath: P.office, w: 400, h: 540, render: renderOfficeHours, cat: 'cloud' },
-    { id: 'tadesk', title: '🧑‍🏫 TA desk', iconPath: P.ta, w: 840, h: 640, render: renderTaDesk, cat: 'cloud' },
+    { id: 'tadesk', title: '🧑‍🏫 TAdeck', iconPath: P.ta, w: 840, h: 640, render: renderTaDesk, cat: 'cloud' },
   ];
 })();

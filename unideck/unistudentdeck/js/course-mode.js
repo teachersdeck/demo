@@ -3,14 +3,14 @@
    UniDeck's own file, not shared with TeachersDeck. The same file runs in two apps (tools/sync_shared.py keeps
    unistudentdeck/js/course-mode.js identical to lecturedeck/js/course-mode.js):
    - LectureDeck: it lists the widgets in window.UNI_WIDGETS; the shared js/app.js adds them to a "Courses" category.
-   - UniStudentDeck (v0.5.0, phase 3): a student the instructor made a TA uses the staff screens from the TA desk.
+   - UniStudentDeck (v0.5.0, phase 3): a student the instructor made a TA uses the staff screens from TAdeck.
      Here it lists nothing; it exposes window.CourseMode, and UniStudentDeck's js/uni-courses-ui.js signs the student in. Data: js/unicourses.js (shared
    with UniStudentDeck); maths: js/coursemath.js (the same file the backend runs). Loaded before js/app.js. */
 (function () {
   const C = window.UniCourses, M = window.CourseMath;
   if (!C || !M) return;
   const TA_HOST = !!window.SD_EDITION;   // UniStudentDeck (StudentDeck's code) rather than LectureDeck (TeachersDeck's)
-  // The course these screens show. In the TA desk it is kept apart from the student's own current course, so grading
+  // The course these screens show. In TAdeck it is kept apart from the student's own current course, so grading
   // one course doesn't switch the student's Assignments or Modules to it.
   const EVT = TA_HOST ? 'ud-ta-course' : 'ud-course';
   const sel = TA_HOST
@@ -25,7 +25,7 @@
 
   function gate(body, redraw) {
     const s = C.state();
-    if (TA_HOST) {   // UniStudentDeck's TA desk has already signed the student in; staffCourses() keeps only TA courses
+    if (TA_HOST) {   // UniStudentDeck's TAdeck has already signed the student in; staffCourses() keeps only TA courses
       if (s.user && s.role === 'unistudent') return true;
       body.innerHTML = '<div class="cm-empty"><p>Sign in from 🏛️ Courses first.</p></div>';
       return false;

@@ -81,7 +81,7 @@ html.uni .dock-item>span:last-child{letter-spacing:-.3px;hyphens:auto;-webkit-hy
 .ud-slots li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .ud-slots form input{font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:6px 8px;min-width:200px}
 
-/* ---------- UniDeck phase 3: the TA desk (LectureDeck's Course mode screens, css/course-mode.css) ----------
+/* ---------- UniDeck phase 3: TAdeck (LectureDeck's Course mode screens, css/course-mode.css) ----------
    Course mode is styled with TeachersDeck's colour names; map them onto UniStudentDeck's inside the desk. */
 .ta-desk{--text-hi:var(--hi);--text-lo:var(--lo);--amber:var(--gold);--amber-hi:var(--gold-hi);--ink-0:rgba(0,0,0,.25);--ink-1:rgba(0,0,0,.2);--ink-2:var(--panel2);
   display:flex;flex-direction:column;height:100%;min-height:0}
