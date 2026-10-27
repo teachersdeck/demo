@@ -52,6 +52,9 @@ const LOCALE_MAP = { en:'en-US', vi:'vi-VN', es:'es-ES', fr:'fr-FR', zh:'zh-CN',
 const STRINGS = {
   settings_title: { en:'Settings', vi:'Cài đặt' },
   theme_title: { en:'Theme', vi:'Giao diện' },
+  mode_title: { en:'Mode', vi:'Chế độ' },
+  mode_light: { en:'Light', vi:'Sáng' },
+  mode_dark: { en:'Dark', vi:'Tối' },
   close: { en:'Close', vi:'Đóng' },
   app_tray_open: { en:'Open app tray', vi:'Mở khay ứng dụng' },
   app_tray_close: { en:'Close app tray', vi:'Đóng khay ứng dụng' },
@@ -680,13 +683,15 @@ const PRESETS = [
   { id:'slate', css:'linear-gradient(180deg,#20242c 0%, #2b3038 100%)' },
   { id:'plain', css:'#12161C' }
 ];
+const presetBg = p => (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
+let modeSwitch = null, modeToggle = null;   // the Light / Dark switch at the top of the Theme drawer, and its icon-only twin in the top bar (wireThemeDrawer)
 const bgLayer = document.getElementById('bg-layer');
 const bgOverlay = document.getElementById('bg-overlay');
 // A picked background shows immediately from the file itself; if it can't be saved (storage blocked) it lasts for this session only.
 let sessionBgUrl = null;
 function paintPreset(){
   const p = PRESETS.find(p=>p.id===state.theme) || PRESETS[0];
-  bgLayer.style.background = p.css;
+  bgLayer.style.background = presetBg(p);
   bgLayer.style.backgroundSize = 'cover';
 }
 function applyTheme(){
@@ -709,7 +714,7 @@ function buildPresetSwatches(){
   PRESETS.forEach(p=>{
     const sw = document.createElement('button');
     sw.className = 'swatch' + ((!state.customBg && !sessionBgUrl && state.theme===p.id) ? ' active' : '');
-    sw.style.background = p.css;
+    sw.style.background = presetBg(p);
     sw.setAttribute('aria-label', p.id); sw.title = p.id;
     sw.addEventListener('click', ()=>{
       state.theme = p.id; state.customBg = false;
@@ -731,6 +736,7 @@ function setLanguage(code){
   paintStatusPill(lastStatusKey, lastStatusCls);
   refreshWidgetTitles();
   buildLayoutModeSelector(); buildDockPlacementList(); updatePushPreview();
+  [modeSwitch, modeToggle].forEach(sw=>{ if(sw) sw.relabel({ label:t('mode_title'), light:t('mode_light'), dark:t('mode_dark') }); });
   if(widgetEls.schoolstats) ssRerender();
   // Re-render the other open widgets' bodies too, so their text changes language along with the title bar. The data comes from AD's
   // session cache, so nothing is refetched. (School Stats is excluded: it keeps its own focus/range state and has ssRerender above.)
@@ -1099,7 +1105,8 @@ function applyToolbarAutoHide(){
 const PILLS = [
   { id:'status', el: ()=> document.getElementById('status-pill') },
   { id:'lang',   el: ()=> document.getElementById('lang-toggle') },
-  { id:'theme',  el: ()=> document.getElementById('btn-theme') }
+  { id:'theme',  el: ()=> document.getElementById('btn-theme') },
+  { id:'mode',   el: ()=> document.getElementById('mode-toggle') }   // Light / Dark, just left of Settings as in every suite app
 ];
 function applyPills(){ PILLS.forEach(p=>{ const el = p.el(); if(el) el.style.display = (state.pillPlacement[p.id] || 'top') === 'hidden' ? 'none' : ''; }); }
 
@@ -1295,7 +1302,7 @@ function updatePushPreview(){
   const custom = !!(state.customBg || sessionBgUrl);
   const p = PRESETS.find(p=>p.id===state.theme) || PRESETS[0];
   const label = custom ? t('push_preview_image') : t('push_preview_preset', { name: p.id });
-  box.innerHTML = `<span class="thumb" style="background:${custom ? '#12161C' : p.css}"></span><span>${esc(label)} · ${esc(t(state.dim ? 'push_dim_on' : 'push_dim_off'))}</span>`;
+  box.innerHTML = `<span class="thumb" style="background:${custom ? '#12161C' : presetBg(p)}"></span><span>${esc(label)} · ${esc(t(state.dim ? 'push_dim_on' : 'push_dim_off'))}</span>`;
   if(custom){
     currentBackgroundBlob().then(b=>{
       if(!b) return;
@@ -1326,6 +1333,11 @@ async function pushTargets(){        // -> { ids: 'all' | [ids], n }
 }
 function wireThemeDrawer(){
   const drawer = document.getElementById('theme-drawer');
+  if(typeof DeckMode !== 'undefined'){            // Light / Dark (js/mode.js): only this AdminDeck's look; "Push to teachers" sends the background, not the mode
+    modeSwitch = DeckMode.mountSwitch(document.getElementById('mode-switch'), { label:t('mode_title'), light:t('mode_light'), dark:t('mode_dark') });
+    modeToggle = DeckMode.mountSwitch(document.getElementById('mode-toggle'), { label:t('mode_title'), light:t('mode_light'), dark:t('mode_dark') }, { compact:true });
+    DeckMode.onChange(()=>{ applyTheme(); buildPresetSwatches(); updatePushPreview(); });
+  }
   const status = document.getElementById('push-status'), confirmBox = document.getElementById('push-confirm');
   const setStatus = msg => { status.textContent = msg || ''; };
   document.getElementById('btn-theme').addEventListener('click', ()=>{

@@ -1,11 +1,22 @@
 'use strict';
 /* LectureDeck — Course mode: Course builder, Course assignments, Grader and Gradebook (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0), Discussions, Course calendar and Office hours (phase 2, v0.5.0).
-   LectureDeck's own file (not shared with TeachersDeck). It only lists the widgets in window.UNI_WIDGETS; the shared
-   js/app.js adds them to a "Courses" category when the edition is the university one. Data: js/unicourses.js (shared
+   UniDeck's own file, not shared with TeachersDeck. The same file runs in two apps (tools/sync_shared.py keeps
+   unistudentdeck/js/course-mode.js identical to lecturedeck/js/course-mode.js):
+   - LectureDeck: it lists the widgets in window.UNI_WIDGETS; the shared js/app.js adds them to a "Courses" category.
+   - UniStudentDeck (v0.5.0, phase 3): a student the instructor made a TA uses the staff screens from the TA desk.
+     Here it lists nothing; it exposes window.CourseMode, and UniStudentDeck's js/uni-courses-ui.js signs the student in. Data: js/unicourses.js (shared
    with UniStudentDeck); maths: js/coursemath.js (the same file the backend runs). Loaded before js/app.js. */
 (function () {
   const C = window.UniCourses, M = window.CourseMath;
   if (!C || !M) return;
+  const TA_HOST = !!window.SD_EDITION;   // UniStudentDeck (StudentDeck's code) rather than LectureDeck (TeachersDeck's)
+  // The course these screens show. In the TA desk it is kept apart from the student's own current course, so grading
+  // one course doesn't switch the student's Assignments or Modules to it.
+  const EVT = TA_HOST ? 'ud-ta-course' : 'ud-course';
+  const sel = TA_HOST
+    ? { get() { try { return localStorage.getItem('ud_ta_course') || ''; } catch (e) { return ''; } },
+        set(id) { try { localStorage.setItem('ud_ta_course', id || ''); } catch (e) {} window.dispatchEvent(new CustomEvent(EVT, { detail: id })); } }
+    : { get: () => C.currentCourse(), set: (id) => C.setCurrentCourse(id) };
   const h = (s) => String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const say = (m) => (typeof toast === 'function' ? toast(m, 3600) : alert(m));
   const when = (ms) => (ms ? new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No due date');
@@ -14,6 +25,11 @@
 
   function gate(body, redraw) {
     const s = C.state();
+    if (TA_HOST) {   // UniStudentDeck's TA desk has already signed the student in; staffCourses() keeps only TA courses
+      if (s.user && s.role === 'unistudent') return true;
+      body.innerHTML = '<div class="cm-empty"><p>Sign in from 🏛️ Courses first.</p></div>';
+      return false;
+    }
     if (!C.available()) {
       body.innerHTML = `<div class="cm-empty"><p>Course mode needs the UniDeck backend, which isn’t set up in this build.</p><div class="btn-row"><button class="wbtn primary" data-demo>Try the demo</button></div></div>`;
       body.querySelector('[data-demo]').onclick = () => (typeof TD_DEMO !== 'undefined' ? TD_DEMO.enter() : (location.search = '?demo=1'));
@@ -33,17 +49,17 @@
     return true;
   }
   async function pick(list) {
-    let cur = C.currentCourse();
-    if (!list.some((c) => c.courseId === cur)) { cur = list[0] ? list[0].courseId : ''; if (cur) C.setCurrentCourse(cur); }
+    let cur = sel.get();
+    if (!list.some((c) => c.courseId === cur)) { cur = list[0] ? list[0].courseId : ''; if (cur) sel.set(cur); }
     return cur;
   }
   const picker = (list, cur) => (list.length ? `<label class="cm-pick">Course <select data-course>${list.map((c) => `<option value="${h(c.courseId)}" ${c.courseId === cur ? 'selected' : ''}>${h(c.title)}${c.section ? ' · ' + h(c.section) : ''}</option>`).join('')}</select></label>` : '');
-  function wirePicker(body, extra) { const s = body.querySelector('[data-course]'); if (s) s.onchange = () => { if (extra) extra(); C.setCurrentCourse(s.value); }; }
+  function wirePicker(body, extra) { const s = body.querySelector('[data-course]'); if (s) s.onchange = () => { if (extra) extra(); sel.set(s.value); }; }
   function live(draw) {
     const off = C.onChange(() => draw());
     const on = () => draw();
-    window.addEventListener('ud-course', on);
-    return () => { off(); window.removeEventListener('ud-course', on); };
+    window.addEventListener(EVT, on);
+    return () => { off(); window.removeEventListener(EVT, on); };
   }
   function staffCourses(list) { return list.filter((c) => c.role === 'instructor' || c.role === 'ta'); }
 
@@ -75,7 +91,7 @@
           <p><span class="cm-lo">Grading:</span> ${Object.entries(course.weights || { assignments: 100 }).map(([k, w]) => `${CAT_NAMES[k] || h(k)} ${w}%`).join(' · ')}</p>
           <p><span class="cm-lo">Late work:</span> ${pol.mode === 'closed' ? 'not accepted' : pol.mode === 'penalty' ? `−${pol.perDayPct}% a day${pol.maxDays ? `, nothing after ${pol.maxDays} days` : ''}` : 'accepted, no penalty'}</p></div>
         <div class="cm-card"><p class="cm-k">People <span class="cm-lo">${students.length} student${students.length === 1 ? '' : 's'}${tas.length ? ` · ${tas.length} TA` : ''}</span></p>
-          ${roster.length ? `<table class="cm-tbl"><tbody>${roster.map((r) => `<tr><td>${h(r.name)}<br><span class="cm-lo">${h(r.email || '')}</span></td><td>${r.under18 ? '<span class="cm-tag">under 18</span>' : ''}</td><td>${mine.role === 'instructor' ? `<button class="wbtn" data-role="${h(r.uid)}" data-to="${r.role === 'ta' ? 'student' : 'ta'}">${r.role === 'ta' ? 'TA ✓' : 'Make TA'}</button>` : h(r.role)}</td></tr>`).join('')}</tbody></table>` : '<p class="cm-lo">Nobody has joined yet. Share the course code.</p>'}</div></div>`;
+          ${roster.length ? `<table class="cm-tbl"><tbody>${roster.map((r) => `<tr><td>${h(r.name)}<br><span class="cm-lo">${h(r.email || '')}</span></td><td>${r.under18 ? '<span class="cm-tag">under 18</span>' : ''}</td><td>${mine.role === 'instructor' && !(r.under18 && r.role !== 'ta') ? `<button class="wbtn" data-role="${h(r.uid)}" data-to="${r.role === 'ta' ? 'student' : 'ta'}">${r.role === 'ta' ? 'TA ✓' : 'Make TA'}</button>` : h(r.role)}</td></tr>`).join('')}</tbody></table>` : '<p class="cm-lo">Nobody has joined yet. Share the course code.</p>'}</div></div>`;
       wirePicker(body);
       body.querySelector('[data-new]').onclick = () => { mode = 'new'; draw(); };
       const ed = body.querySelector('[data-edit]'); if (ed) ed.onclick = () => { mode = 'edit'; draw(); };
@@ -109,7 +125,7 @@
         const data = { title: f.title.value, term: f.term.value, section: f.section.value, weights, latePolicy: { mode: f.mode.value, perDayPct: Number(f.perDayPct.value), maxDays: Number(f.maxDays.value) } };
         try {
           if (course) { if (f.archived) data.archived = f.archived.checked; await C.updateCourse(course.courseId, data); say('Course saved.'); }
-          else { const r = await C.createCourse(data); C.setCurrentCourse(r.courseId); say(`Course created. Code: ${r.code}`); }
+          else { const r = await C.createCourse(data); sel.set(r.courseId); say(`Course created. Code: ${r.code}`); }
           mode = 'view'; draw();
         } catch (er) { say(C.errText(er)); }
       };
@@ -430,7 +446,7 @@
         <div class="cm-text">${rich(th.body)}</div>
         ${res.posts.map((p) => `<div class="cm-post ${p.role !== 'student' ? 'staff' : ''}"><p class="cm-lo"><b>${h(p.name)}</b> · ${h(when(p.createdAtMs))}${p.editedAtMs && !p.removed ? ' · edited' : ''}</p>
           ${p.removed ? '<p class="cm-lo"><i>Reply removed.</i></p>' : `<div>${rich(p.body)}</div><div class="btn-row cm-left"><button class="cm-x" data-rm="${h(p.id)}" title="Remove this reply" aria-label="Remove reply">Remove</button></div>`}</div>`).join('') || '<p class="cm-lo">No replies yet.</p>'}
-        ${th.locked ? '' : '<form class="cm-card" data-reply><label class="cm-lbl">Reply as the instructor<textarea name="body" rows="3" maxlength="5000" required></textarea></label><div class="btn-row cm-left"><button class="wbtn primary">Post reply</button></div></form>'}</div>`;
+        ${th.locked ? '' : '<form class="cm-card" data-reply><label class="cm-lbl">Reply as course staff<textarea name="body" rows="3" maxlength="5000" required></textarea></label><div class="btn-row cm-left"><button class="wbtn primary">Post reply</button></div></form>'}</div>`;
       body.querySelector('[data-back]').onclick = () => { openT = null; draw(); };
       body.querySelector('[data-edit]').onclick = () => { form = th.id; draw(); };
       body.querySelector('[data-lock]').onclick = async () => { try { await C.saveThread(cid, { ...th, locked: !th.locked }); draw(); } catch (e) { say(C.errText(e)); } };
@@ -534,6 +550,8 @@
     return live(draw);
   }
 
+  window.CourseMode = { grader: renderGrader, gradebook: renderGradebook, discussions: renderDiscussions, announcements: renderAnnouncements, office: renderOfficeHours };
+  if (TA_HOST) return;
   window.UNI_WIDGETS = [
     { id: 'coursebuilder', cat: 'course', title: '🏛️ Course builder', desc: 'Create a university course: code, term, grading weights, late policy, people.', icon: 'people', w: 440, h: 600, render: renderBuilder },
     { id: 'courseassign', cat: 'course', title: '🗂️ Course assignments', desc: 'Assignments with due dates, rubrics, submission types and attempts.', icon: 'clipboard', w: 440, h: 600, render: renderAssignments },

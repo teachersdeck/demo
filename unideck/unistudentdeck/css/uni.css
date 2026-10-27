@@ -80,3 +80,26 @@ html.uni .dock-item>span:last-child{letter-spacing:-.3px;hyphens:auto;-webkit-hy
 .ud-slots{list-style:none;margin:4px 0 10px;padding:0}
 .ud-slots li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .ud-slots form input{font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:6px 8px;min-width:200px}
+
+/* ---------- UniDeck phase 3: the TA desk (LectureDeck's Course mode screens, css/course-mode.css) ----------
+   Course mode is styled with TeachersDeck's colour names; map them onto UniStudentDeck's inside the desk. */
+.ta-desk{--text-hi:var(--hi);--text-lo:var(--lo);--amber:var(--gold);--amber-hi:var(--gold-hi);--ink-0:rgba(0,0,0,.25);--ink-1:rgba(0,0,0,.2);--ink-2:var(--panel2);
+  display:flex;flex-direction:column;height:100%;min-height:0}
+.ta-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px 0}
+.ta-body{flex:1;min-height:0;overflow:hidden}
+.ta-body>.cm-pad,.ta-body>div{height:100%}
+.ta-desk .wbtn{font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--hi);border-radius:10px;padding:6px 11px;cursor:pointer}
+.ta-desk .wbtn:hover{border-color:var(--gold)}
+.ta-desk .wbtn.primary{background:var(--gold);border-color:var(--gold);color:#231604;font-weight:700}
+.ta-desk .wbtn:disabled{opacity:.5;cursor:default}
+.ta-desk .btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+/* ---------- Light mode (html[data-mode=light], js/mode.js): UniDeck's own widgets ---------- */
+html[data-mode="light"] .ud-lbl input[type=date]{color-scheme:light}
+html[data-mode="light"] .ud-card{background:rgba(15,23,42,.035)}
+html[data-mode="light"] .ud-lbl input,html[data-mode="light"] .ud-lbl select,html[data-mode="light"] .ud-pick select{background:var(--panel2)}
+html[data-mode="light"] .ud-tag.s{color:#2f7d43;border-color:rgba(47,125,67,.45)}
+html[data-mode="light"] .ud-tag.m{color:#b4532a;border-color:rgba(180,83,42,.45)}
+html[data-mode="light"] .ud-tag.g{background:rgba(15,23,42,.07)}
+html[data-mode="light"] .ud-tiles div,html[data-mode="light"] .ud-instr{background:rgba(15,23,42,.045)}
+html[data-mode="light"] .ta-desk{--ink-0:var(--panel2);--ink-1:rgba(15,23,42,.035)}

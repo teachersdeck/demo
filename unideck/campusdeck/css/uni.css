@@ -18,3 +18,4 @@
 .cc-bar{display:inline-block;width:70px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);vertical-align:middle;overflow:hidden}
 .cc-bar i{display:block;height:100%;background:var(--amber,#e8a33d)}
 @media (max-width:700px){.cc-tiles{grid-template-columns:repeat(2,1fr)}}
+html[data-mode="light"] .cc-bar{background:rgba(15,23,42,.1)}   /* Light mode (js/mode.js) */
