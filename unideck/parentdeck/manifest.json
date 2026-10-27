@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArDPmlOlI+uhMheFwZMtAaSqcMO4lrfbAqjW+CamAg/E7SyVs4AjHjrHVhJA2PKfFtyNfysjpYuZHbxNiYPUOCtAiKIMPp/uTd6wpfhAd9KeMR6Mhk9dqxeDaLHFh8cr3DPyzD+kauOtnXXioSIW1JWs8KLSMAewRMpHhPhTIAMEcSzlio8wXayyN2BNQWAL4ZzzK7S3GXibxwYveQLujVJuwEoaFedkaaxoDaiEyErWeuBBINghIc7VxWOpvCK9jnFeYvUGaVxMZ6vXenSxD5hRdE8GgSGmATsRRNOv1HBp6FV1Fmvj1TFaL8ZXykUR2xFB0DdqWGjlwx5G9GlSIbwIDAQAB",
   "name": "ParentDeck (UniDeck family view)",
-  "version": "0.1.2",
-  "version_name": "0.1.2 beta",
+  "version": "0.2.0",
+  "version_name": "0.2.0 beta",
   "description": "UniDeck's family view: ParentDeck for adult students' families, who see only what the student turns on, chooses to share, and can revoke.",
   "chrome_url_overrides": {
     "newtab": "index.html"

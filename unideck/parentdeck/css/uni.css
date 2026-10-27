@@ -1,2 +1,24 @@
 /* ParentDeck's own styles, loaded after the shared stylesheets (which come from ParentDeck through tools/sync_shared.py).
    Anything only ParentDeck needs goes here, scoped under html.uni. Empty for now: the shell looks like ParentDeck. */
+
+/* ---------- UniDeck phase 3: the family view (js/uni-family.js) ---------- */
+.uf-pad{padding:12px 14px;overflow:auto;height:100%;box-sizing:border-box}
+.uf-empty{padding:18px;text-align:center}.uf-empty p{margin:6px 0}
+.uf-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.uf-card{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.uf-split{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.uf-k{font-weight:700;font-size:15px;margin:2px 0}
+.uf-h{font-weight:600;margin:10px 0 2px;color:var(--lo);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+.uf-total{margin:4px 0}
+.uf-list{list-style:none;margin:4px 0;padding:0}
+.uf-list li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 2px;border-bottom:1px solid var(--line)}
+.uf-tag{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap;color:var(--lo)}
+.uf-tag.s{color:#8fd19e;border-color:rgba(143,209,158,.5)}.uf-tag.l{color:var(--gold-hi);border-color:var(--gold)}.uf-tag.m{color:#f08a7e;border-color:rgba(240,138,126,.5)}
+.uf-join{display:flex;gap:8px;margin:10px auto;max-width:360px}
+.uf-join input{flex:1;font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:7px 10px;min-width:0}
+.uf-more{margin-top:14px}.uf-more summary{cursor:pointer}
+html[data-mode="light"] .uf-card{background:rgba(15,23,42,.035)}
+html[data-mode="light"] .uf-join input{background:var(--panel2)}
+html[data-mode="light"] .uf-tag.s{color:#2f7d43;border-color:rgba(47,125,67,.45)}
+html[data-mode="light"] .uf-tag.m{color:#b4532a;border-color:rgba(180,83,42,.45)}
+html[data-mode="light"] .uf-tag.l{color:#94610c}

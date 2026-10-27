@@ -541,6 +541,13 @@ function proSectionHtml() {
 }
 function openAccountModal() {
   accountModalOpen = true;
+  if (UNI) {   // UniDeck: students link this account from their own UniStudentDeck (an invite code entered in the family view)
+    openModal(t('acct_title'), `<p class="muted">${t('acct_signed_in_email', { email: esc(PD.getSession().email) })}</p>
+      <p class="muted">The students who shared with you are in the family view. They choose what you see and can stop sharing at any time.</p>
+      <div class="row" style="margin-top:16px"><button class="btn" id="a-signout">${t('acct_signout')}</button></div>`);
+    $('#a-signout').addEventListener('click', () => { PD.signOut(); closeModal(); toast(t('acct_signed_out')); refreshAll(); });
+    return;
+  }
   const kids = PD.getLinkedChildren();
   const rows = kids.map(k => `<div class="srow"><span>${esc(k.displayName)} <span class="muted">· ${esc(k.className)}</span></span><button class="x" data-unlink="${esc(k.studentId)}" aria-label="Unlink ${esc(k.displayName)}">×</button></div>`).join('') || `<p class="muted">${t('acct_no_children')}</p>`;
   openModal(t('acct_title'), `
@@ -585,6 +592,7 @@ function openAccountModal() {
 function renderKids() { renderKidsInner(); bindXpPill(); }
 function renderKidsInner() {
   const el = $('#kids'), kids = PD.getLinkedChildren();
+  if (UNI) { el.innerHTML = ''; return; }   // UniDeck: the family view widget picks the student
   if (!PD.getSession()) { el.innerHTML = ''; return; }
   if (!kids.length) { el.innerHTML = `<button class="chip" id="k-add">${t('kids_add')}</button>`; $('#k-add').addEventListener('click', openAccountModal); return; }
   if (!ui.currentChild || !kids.some(k => k.studentId === ui.currentChild)) ui.currentChild = kids[0].studentId;
@@ -1493,6 +1501,18 @@ const WIDGETS = [
   { id: 'keepdeck', cat: 'share', titleKey: 'w_keepdeck', icon: I('<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>'), w: 380, h: 640, full: true, render: renderKeepDeck }
 ];
 
+/* UniDeck (UNI): the family view of an adult student. School widgets go (they read a linked child's class data); UniDeck's
+   ParentDeck lists its own widgets in window.UNI_WIDGETS ({ id, title, iconPath, w, h, render, cat?, full? }) from its own
+   js/uni-family.js. Theme, Settings and KeepDeck (on this device only) stay. ParentDeck never loads that file. */
+const UNI_KEEP = ['theme', 'settings', 'keepdeck'];
+if (UNI) {
+  for (let i = WIDGETS.length - 1; i >= 0; i--) if (!UNI_KEEP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
+  (window.UNI_WIDGETS || []).slice().reverse().forEach(w => {
+    STRINGS['uw_' + w.id] = STRINGS['uw_' + w.id] || { en: w.title };
+    WIDGETS.unshift({ id: w.id, cat: w.cat || 'overview', titleKey: 'uw_' + w.id, icon: I(w.iconPath || '<circle cx="12" cy="12" r="8"/>'), w: w.w, h: w.h, full: !!w.full, render: w.render });
+  });
+}
+
 /* ---------- Shell: panels, drag, resize, dock (same pattern as TeachersDeck/StudentDeck) ---------- */
 const wall = $('#wall'), panels = {}; let topZ = 10;
 function front(el) { if (el.classList.contains('full')) return; if (+el.style.zIndex !== topZ) el.style.zIndex = ++topZ; }   // full-screen widgets stay underneath
@@ -1598,6 +1618,7 @@ const LAYOUT_MODES = ['compact', 'cozy', 'custom'];
 const PLACES = ['bottom', 'left', 'right', 'hidden'];
 const DOCK_CAPS = { bottom: 10, left: 5, right: 5 };
 const DEFAULT_PLACEMENT = { summary: 'bottom', badges: 'bottom', notes: 'bottom', homework: 'bottom', progress: 'bottom', calendar: 'bottom', hwc: 'bottom', attend: 'bottom', pulse: 'left', wish: 'left', starters: 'left', digest: 'left', family: 'right', settings: 'right' };   // theme: top bar since v0.25.0
+if (UNI) (window.UNI_WIDGETS || []).forEach(w => { DEFAULT_PLACEMENT[w.id] = 'bottom'; });   // UniDeck's family view widgets
 const TRAY_CATS = ['overview', 'homework', 'rewards', 'share', 'settings'];
 
 const isVisible = w => !w.show || w.show();                      // Family Overview only exists with two or more linked children
@@ -1780,4 +1801,4 @@ PD.onBadgeEarned((student, badge) => {
   toast(t('toast_badge', { name: student.displayName, badge: BC.clip(badge.name, 40) }), 4200);
 });
 renderAcct(); renderKids();
-(Object.keys(ui.active || {}).length ? WIDGETS.map(w => w.id).filter(id => ui.active[id]) : ['summary']).forEach(openWidget);   // v0.9.3: first run opens Student Summary (was `Object.keys.length`, always true, so nothing opened)
+(WIDGETS.some(w => w.id in (ui.active || {})) ? WIDGETS.map(w => w.id).filter(id => ui.active[id]) : [UNI ? WIDGETS[0].id : 'summary']).forEach(openWidget);   // v0.9.3: first run opens Student Summary (was `Object.keys.length`, always true, so nothing opened)

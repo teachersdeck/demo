@@ -551,6 +551,44 @@
     return live(body, draw);
   }
 
+  /* ---------------- Family view (phase 3) ----------------
+     Off unless you turn it on. You choose what your family sees, invite them with a one-time code (they use UniDeck's
+     ParentDeck), see who is linked and when they last looked, and remove anyone at any time. */
+  const FAM_ITEMS = [['courses', 'The courses I take', 'Course names and terms'], ['deadlines', 'Deadlines and whether I submitted', 'Due dates for the last two weeks and the next three, marked submitted, late or missing'],
+    ['grades', 'Released grades and course totals', 'Scores your instructors have released, not their feedback'], ['calendar', 'Class times and exams', 'The next two weeks']];
+  function renderFamily(body) {
+    let seq = 0;
+    const ago = (ms) => { if (!ms) return 'not yet'; const d0 = (x) => { const d = new Date(x); d.setHours(0, 0, 0, 0); return d.getTime(); }; const d = Math.round((d0(Date.now()) - d0(ms)) / 864e5); return d <= 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`; };   // calendar days
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let st;
+      try { st = await C.familyStatus(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      body.innerHTML = `<div class="ud-pad">
+        <label class="ud-switch"><input type="checkbox" data-on ${st.enabled ? 'checked' : ''}> <b>Share with my family</b></label>
+        <p class="muted">${st.enabled ? 'Your family sees only what is ticked below, through UniDeck’s ParentDeck.' : 'Off: nobody in your family sees anything. Turn it on to choose what to share.'}</p>
+        <div class="ud-card ${st.enabled ? '' : 'ud-dim'}"><p class="ud-k">What they see</p>
+          ${FAM_ITEMS.map(([k, label, note]) => `<label class="ud-check"><input type="checkbox" data-share="${k}" ${st.share[k] ? 'checked' : ''} ${st.enabled ? '' : 'disabled'}> <span>${h(label)}<br><span class="muted">${h(note)}</span></span></label>`).join('')}
+          <p class="muted ud-foot">Never shared: your work, feedback, discussions, groups, files, notes, journal and study stats.</p></div>
+        <div class="ud-card"><p class="ud-k">People who can see it</p>
+          ${st.guardians.length ? `<ul class="ud-list">${st.guardians.map((g) => `<li><span style="flex:1"><b>${h(g.name)}</b> <span class="muted">${h(g.email)}</span><br><span class="muted">Linked ${h(ago(g.linkedAtMs))} · last looked ${h(ago(g.lastViewedAtMs))}</span></span><button class="btn" data-rm="${h(g.uid)}">Remove</button></li>`).join('')}</ul>` : '<p class="muted">Nobody yet.</p>'}
+          ${st.invite ? `<div class="ud-invite"><p>Invite code: <b class="ud-code">${h(st.invite.code)}</b></p><p class="muted">Works once, until ${h(new Date(st.invite.expiresAtMs).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }))}. Your family member installs UniDeck’s ParentDeck, signs in with Google and enters it in the family view.</p><div class="row"><button class="btn" data-copy>Copy code</button><button class="btn" data-cancel>Cancel invite</button></div></div>`
+            : `<div class="row"><button class="btn primary" data-invite ${st.enabled ? '' : 'disabled'}>Invite a family member</button></div>`}
+          <p class="muted ud-foot">Up to four people. Removing someone takes effect at once.</p></div></div>`;
+      const on = body.querySelector('[data-on]');
+      const save = async (enabled, share) => { try { await C.setFamilySharing({ enabled, share }); draw(); } catch (e) { say(C.errText(e)); draw(); } };
+      on.onchange = () => save(on.checked, st.share);
+      body.querySelectorAll('[data-share]').forEach((b) => { b.onchange = () => save(true, { ...st.share, [b.dataset.share]: b.checked }); });
+      const inv = body.querySelector('[data-invite]'); if (inv) inv.onclick = async () => { try { await C.createFamilyInvite(); draw(); } catch (e) { say(C.errText(e)); } };
+      const cancel = body.querySelector('[data-cancel]'); if (cancel) cancel.onclick = async () => { try { await C.cancelFamilyInvite(); draw(); } catch (e) { say(C.errText(e)); } };
+      const copy = body.querySelector('[data-copy]'); if (copy) copy.onclick = () => { try { navigator.clipboard.writeText(st.invite.code); say('Code copied.'); } catch (e) { say(st.invite.code); } };
+      body.querySelectorAll('[data-rm]').forEach((b) => { b.onclick = async () => { if (!confirm('Remove this person? They stop seeing anything at once.')) return; try { await C.removeFamilyLink(b.dataset.rm); say('Removed.'); draw(); } catch (e) { say(C.errText(e)); } }; });
+    }
+    draw();
+    return live(body, draw);
+  }
+
   /* ---------------- TAdeck (phase 3) ----------------
      For a student the instructor made a TA. The screens are LectureDeck's Course mode (js/course-mode.js, the same file),
      opened here under UniStudentDeck's sign-in; they list only the courses where you are course staff. */
@@ -587,6 +625,7 @@
     chat: '<path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
     cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     office: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    family: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M12 20v-5"/><circle cx="12" cy="12" r="1.5"/>',
     group: '<circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2 20a6 6 0 0 1 12 0M10 20a6 6 0 0 1 12 0"/>',
     ta: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/><path d="M22 9v6"/>' };
   window.UNI_WIDGETS = [
@@ -599,6 +638,7 @@
     { id: 'ucal', title: '📅 Calendar', iconPath: P.cal, w: 760, h: 580, render: renderCalendar, cat: 'cloud' },
     { id: 'office', title: '🙋 Office hours', iconPath: P.office, w: 400, h: 540, render: renderOfficeHours, cat: 'cloud' },
     { id: 'ugroup', title: '👥 Group project', iconPath: P.group, w: 420, h: 600, render: renderGroup, cat: 'cloud' },
+    { id: 'ufamily', title: '👪 Family view', iconPath: P.family, w: 420, h: 640, render: renderFamily, cat: 'me' },
     { id: 'tadesk', title: '🧑‍🏫 TAdeck', iconPath: P.ta, w: 840, h: 640, render: renderTaDesk, cat: 'cloud' },
   ];
 })();
