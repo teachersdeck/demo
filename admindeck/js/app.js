@@ -1273,7 +1273,7 @@ function wireSettingsDrawer(){
   document.getElementById('reset-layout').addEventListener('click', ()=>{
     Object.keys(widgetEls).forEach(id=> closeWidget(id));
     state.layout = {};
-    state.active.schoolstats = true;                       // the default window always comes back
+    state.active[DEFAULT_WINDOW] = true;                   // the default window always comes back
     WIDGETS.forEach(w=> state.active[w.id] && openWidget(w.id));
     saveState(); syncDock();
     toast(t('refreshed'));
@@ -2055,8 +2055,15 @@ const WIDGETS = [
 /* UniDeck phase 1 (CampusDeck): CampusDeck's own js/campus-courses.js lists its widgets in window.UNI_WIDGETS
    ({ id, title, icon, w, h, render, full? }). They join the registry only in the university edition, with their
    labels added to STRINGS (English for now). AdminDeck never loads that file. */
+/* v0.14.1: in the university edition (CampusDeck) the school widgets go — they read classes, students' points, homework,
+   join codes and families, which universities don't have. CampusDeck shows its own campus widgets instead (courses,
+   campus stats, course health, teaching staff), and keeps the People Directory. */
+const UNI_KEEP = ['directory'];
+if(UNI) for(let i = WIDGETS.length - 1; i >= 0; i--) if(!UNI_KEEP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
+const DEFAULT_WINDOW = UNI ? ((window.UNI_WIDGETS || [])[0] || { id:'directory' }).id : 'schoolstats';   // first run and Reset layout
 if(UNI) (window.UNI_WIDGETS || []).forEach(w => {
   if(WIDGETS.some(x => x.id === w.id)) return;
+  if(!DEFAULT_PLACEMENT[w.id]) DEFAULT_PLACEMENT[w.id] = 'bottom';
   STRINGS['uw_' + w.id] = STRINGS['uw_' + w.id] || { en: w.title };
   WIDGETS.push({ id:w.id, labelKey:'uw_' + w.id, icon:w.icon || 'school', w:w.w, h:w.h, full:!!w.full, render:w.render });
 });
@@ -2076,7 +2083,7 @@ function init(){
   localizeNode(document);
   // First run on a device: School Stats is the default window (v0.8.0 — it was School Snapshot, which is now inactive; its six numbers are School Stats' overview row).
   // Closing it afterwards sticks. Windows open in dock order and full-screen widgets sit under every floating window.
-  if(!state.snapSeeded){ state.active.schoolstats = true; state.snapSeeded = true; state.statsSeeded = true; saveState(); }
+  if(!state.snapSeeded){ state.active[DEFAULT_WINDOW] = true; state.snapSeeded = true; state.statsSeeded = true; saveState(); }
   WIDGETS.forEach(w=>{ if(state.active[w.id] && widgetOn(w.id)) openWidget(w.id); });
   syncFullscreen();                                      // School Stats open? then the toolbar is hidden and the free band starts at the top
   rescueWidgets();                                       // pull back any window an older build left with its title bar under the top bar / dock
