@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwIdNkJcdJIEBe7Sr73WGfT3KS8AAwZkv4rky3aMU6l2RBL2HTDzS1yYqGjv/61ldVI646UOKIVuvJor2ZzTNPYZBGApiIn1UxrMG2cENzOxhhufG5fiVSA+Peaf9fPkvawNz7RdBH82HTWmtO2T/LLJRIKDbUI03ga32eBqu3Edg+/JkGF6u+77EKbebqrbapjhtTLB2YA3lRAPYHB/M5K9ZaHyy4EwUy1XRT4s4FxwS7iBK+Eiq4P+yWgZFQ/9ogdwJFUW6R2YrkUIlEaitwLUcrLVgFxMXzpaeeZmQYs6qfcGIccIZ/HG5GZxvLJsd14f3VwDV81J/dSgMYH5LcQIDAQAB",
   "name": "LectureDeck",
-  "version": "0.5.0",
-  "version_name": "0.5.0 beta",
+  "version": "0.6.0",
+  "version_name": "0.6.0 beta",
   "description": "For lecturers, instructors and TAs: TeachersDeck for university courses. Course mode (course builder, modules, assignments with rubrics, grader, gradebook, office hours) comes next.",
   "chrome_url_overrides": {
     "newtab": "index.html"

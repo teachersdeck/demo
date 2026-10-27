@@ -150,10 +150,10 @@
       catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       if (my !== seq) return;
       const a = openId && as.find((x) => x.id === openId);
-      if (a) return detail(a, course, subs[a.id], grades[a.id], cid);
+      if (a) { const grp = a.group ? await C.myGroup(cid).catch(() => null) : null; if (my !== seq) return; return detail(a, course, subs[a.id], grades[a.id], cid, grp); }
       body.innerHTML = `<div class="ud-pad">${picker(list, cid)}
         <ul class="ud-list">${as.map((x) => { const st = status(x, subs[x.id], grades[x.id]);
-          return `<li><button class="ud-linkbtn" data-a="${h(x.id)}"><b>${h(x.title)}</b><span class="muted">${h(when(x.dueAtMs))} · ${x.points} pts</span></button><span class="ud-tag ${st.cls}">${st.label}</span></li>`; }).join('') || '<li class="muted">No assignments yet.</li>'}</ul></div>`;
+          return `<li><button class="ud-linkbtn" data-a="${h(x.id)}"><b>${h(x.title)}</b><span class="muted">${h(when(x.dueAtMs))} · ${x.points} pts${x.group ? ' · 👥 group' : ''}</span></button><span class="ud-tag ${st.cls}">${st.label}</span></li>`; }).join('') || '<li class="muted">No assignments yet.</li>'}</ul></div>`;
       wirePicker();
       body.querySelectorAll('[data-a]').forEach((b) => { b.onclick = () => { openId = b.dataset.a; draw(); }; });
     }
@@ -164,31 +164,34 @@
       return { cls: '', label: 'To do' };
     }
     function wirePicker() { const s = body.querySelector('[data-course]'); if (s) s.onchange = () => { openId = null; C.setCurrentCourse(s.value); }; }
-    function detail(a, course, sub, g, cid) {
+    function detail(a, course, sub, g, cid, grp) {
       const pol = M.cleanLatePolicy(a.latePolicy || course.latePolicy);
       const late = a.dueAtMs && Date.now() > a.dueAtMs;
       const closed = !M.acceptsSubmission(pol, a.dueAtMs, Date.now());
       const used = sub ? sub.attempt : 0;
       const left = a.attempts ? a.attempts - used : Infinity;
-      const can = !closed && left > 0;
+      const can = !closed && left > 0 && (!a.group || !!grp);
+      const others = grp ? grp.memberUids.filter((u) => u !== C.state().user.uid).map((u) => grp.memberNames[u] || '') : [];
       const polText = pol.mode === 'closed' ? 'No late work.' : pol.mode === 'penalty' ? `Late work loses ${pol.perDayPct}% a day${pol.maxDays ? `, nothing after ${pol.maxDays} days` : ''}.` : 'Late work accepted.';
       const allowText = a.submitType === 'any' ? 'text, a link or files' : a.submitType === 'file' ? 'a file (PDF, Word or image, up to 25 MB)' : a.submitType;
       body.innerHTML = `<div class="ud-pad"><button class="ud-linkbtn ud-back" data-back>← All assignments</button>
         <h3 class="ud-h">${h(a.title)}</h3>
         <p class="muted">Due ${h(when(a.dueAtMs))} · ${a.points} points · ${h(polText)}${a.attempts ? ` · ${a.attempts} submission${a.attempts === 1 ? '' : 's'} allowed` : ''}</p>
+        ${a.group ? `<div class="ud-card ud-groupnote"><p class="ud-k">👥 Group assignment${grp ? ` · ${h(grp.name)}` : ''}</p><p class="muted">${grp ? `With ${h(others.join(', ') || 'nobody else yet')}. One of you submits for everyone; you all see it and get the grade.` : 'You’re not in a group in this course yet. Your instructor puts you in one.'}</p>${grp ? '<div class="row"><button class="btn" data-w="ugroup">Group project →</button></div>' : ''}</div>` : ''}
         ${a.instructions ? `<div class="ud-instr">${h(a.instructions).replace(/\n/g, '<br>')}</div>` : ''}
         ${a.rubric && a.rubric.length ? `<table class="ud-tbl"><thead><tr><th>Rubric</th><th>Points</th>${g ? '<th>You</th>' : ''}</tr></thead><tbody>${a.rubric.map((r) => `<tr><td>${h(r.criterion)}</td><td>${r.points}</td>${g ? `<td>${g.rubricScores[r.id] ?? ''}</td>` : ''}</tr>`).join('')}</tbody></table>` : ''}
         ${g ? `<div class="ud-card ud-grade"><p class="ud-k">Grade: ${g.finalScore} / ${a.points}</p>${g.latePenaltyPct ? `<p class="muted">${g.score} before a ${g.latePenaltyPct}% late penalty.</p>` : ''}${g.feedback ? `<p>${h(g.feedback).replace(/\n/g, '<br>')}</p>` : ''}${g.needsRegrade ? '<p class="muted">You resubmitted after this grade; your instructor will look again.</p>' : ''}</div>` : ''}
-        ${sub ? `<div class="ud-card"><p class="ud-k">Your submission${sub.attempt > 1 ? ` (attempt ${sub.attempt})` : ''}</p><p class="muted">${h(when(sub.submittedAtMs))}${sub.late ? ` · ${sub.lateDays} day${sub.lateDays === 1 ? '' : 's'} late` : ' · on time'}</p>
+        ${sub ? `<div class="ud-card"><p class="ud-k">${sub.groupId ? 'Your group’s submission' : 'Your submission'}${sub.attempt > 1 ? ` (attempt ${sub.attempt})` : ''}</p><p class="muted">${sub.submittedByName ? `By ${h(sub.submittedBy === C.state().user.uid ? 'you' : sub.submittedByName)} · ` : ''}${h(when(sub.submittedAtMs))}${sub.late ? ` · ${sub.lateDays} day${sub.lateDays === 1 ? '' : 's'} late` : ' · on time'}</p>
           ${sub.text ? `<div class="ud-instr">${h(sub.text).replace(/\n/g, '<br>')}</div>` : ''}${sub.link ? `<p><a href="${h(sub.link)}" target="_blank" rel="noopener">${h(sub.link)}</a></p>` : ''}
           ${(sub.files || []).map((f) => `<p>📎 ${h(f.name)} <span class="muted">${kb(f.size || 0)}</span></p>`).join('')}</div>` : ''}
-        ${can ? form(a, sub, late) : `<p class="muted">${closed ? 'The due date has passed; this assignment does not take late work.' : 'You have used every submission this assignment allows.'}</p>`}</div>`;
+        ${can ? form(a, sub, late, grp) : a.group && !grp ? '' : `<p class="muted">${closed ? 'The due date has passed; this assignment does not take late work.' : 'You have used every submission this assignment allows.'}</p>`}</div>`;
       body.querySelector('[data-back]').onclick = () => { openId = null; draw(); };
+      body.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => (typeof openWidget === 'function' ? openWidget(b.dataset.w) : null); });
       if (can) wireForm(a, cid);
     }
-    function form(a, sub, late) {
+    function form(a, sub, late, grp) {
       const t = a.submitType;
-      return `<form class="ud-card" data-sub><p class="ud-k">${sub ? 'Resubmit' : 'Submit your work'}</p>${late ? '<p class="ud-warn">This will be late.</p>' : ''}
+      return `<form class="ud-card" data-sub><p class="ud-k">${sub ? 'Resubmit' : grp ? `Submit for ${h(grp.name)}` : 'Submit your work'}</p>${late ? '<p class="ud-warn">This will be late.</p>' : ''}
         ${t === 'text' || t === 'any' ? '<label class="ud-lbl">Written answer<textarea name="text" rows="6" maxlength="50000"></textarea></label>' : ''}
         ${t === 'link' || t === 'any' ? '<label class="ud-lbl">Link (Google Docs, a website…)<input type="url" name="link" placeholder="https://"></label>' : ''}
         ${t === 'file' || t === 'any' ? '<label class="ud-lbl">Files (PDF, Word or images, up to 25 MB each, 5 at most)<input type="file" name="files" multiple accept=".pdf,.docx,image/png,image/jpeg,image/gif,image/webp"></label><div class="ud-prog muted" data-prog></div>' : ''}
@@ -206,7 +209,7 @@
           const prog = f.querySelector('[data-prog]'), files = [];
           for (const x of picked) files.push(await C.uploadFile(cid, a.id, x, (p) => { if (prog) prog.textContent = `Uploading ${x.name}… ${p}%`; }));
           const r = await C.submit(cid, a.id, { text: f.text ? f.text.value : '', link: f.link ? f.link.value.trim() : '', files });
-          say(r.late ? `Submitted (${r.lateDays} day${r.lateDays === 1 ? '' : 's'} late).` : 'Submitted.');
+          say((r.members > 1 ? `Submitted for your group (${r.members} people)` : 'Submitted') + (r.late ? ` (${r.lateDays} day${r.lateDays === 1 ? '' : 's'} late).` : '.'));
           draw();
         } catch (er) { say(C.errText(er)); go.disabled = false; }
       };
@@ -491,10 +494,67 @@
   }
 
 
+  /* ---------------- Group project (phase 3) ----------------
+     Your group in the current course, its shared task list (anyone in the group adds, assigns, ticks and deletes), and the
+     course's group assignments with who submitted. Groups are set by course staff in LectureDeck or TAdeck. */
+  function renderGroup(body) {
+    let seq = 0;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await currentOf(list);
+      if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
+      if (staffStop(body, list, cid, 'Groups for this course are in TAdeck’s Groups tab.')) return;
+      let grp, as, subs, grades;
+      try { [grp, as, subs, grades] = await Promise.all([C.myGroup(cid), C.assignments(cid), C.mySubmissions(cid), C.myGrades(cid)]); }
+      catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      if (!grp) {
+        body.innerHTML = `<div class="ud-pad">${picker(list, cid)}<div class="ud-empty"><p><b>No group yet</b></p><p class="muted">When your instructor puts you in a group for this course, your group, its task list and group assignments appear here.</p></div></div>`;
+        const sel = body.querySelector('[data-course]'); if (sel) sel.onchange = () => C.setCurrentCourse(sel.value);
+        return;
+      }
+      let tasks = [];
+      try { tasks = await C.tasks(cid, grp.id); } catch (e) { /* shown as an empty list */ }
+      if (my !== seq) return;
+      const me = C.state().user.uid, now = Date.now();
+      const people = grp.memberUids.map((u) => ({ uid: u, name: grp.memberNames[u] || '' }));
+      const ga = as.filter((a) => a.group);
+      const open = tasks.filter((t) => !t.done), done = tasks.filter((t) => t.done);
+      const row = (t) => `<li class="ud-task ${t.done ? 'done' : ''}"><label><input type="checkbox" data-done="${h(t.id)}" ${t.done ? 'checked' : ''}> <span>${h(t.title)}</span></label>
+          <span class="muted">${t.assigneeUid ? (t.assigneeUid === me ? 'you' : h(t.assigneeName)) : 'anyone'}${t.dueAtMs ? ` · <span class="${!t.done && t.dueAtMs < now ? 'ud-warn' : ''}">${h(new Date(t.dueAtMs).toLocaleDateString([], { month: 'short', day: 'numeric' }))}</span>` : ''}</span>
+          <button class="ud-x" title="Delete task" aria-label="Delete ${h(t.title)}" data-del="${h(t.id)}">×</button></li>`;
+      body.innerHTML = `<div class="ud-pad">${picker(list, cid)}
+        <div class="ud-card"><p class="ud-k">👥 ${h(grp.name)}</p><p class="ud-people">${people.map((p) => `<span class="ud-tag ${p.uid === me ? 'g' : ''}">${h(p.uid === me ? `${p.name} (you)` : p.name)}</span>`).join(' ')}</p></div>
+        <p class="ud-k">Tasks <span class="muted">${done.length} of ${tasks.length} done</span></p>
+        <ul class="ud-list ud-tasks">${open.map(row).join('') || '<li class="muted">Nothing open. Add the next step below.</li>'}</ul>
+        <form class="ud-card" data-add><div class="row"><input type="text" name="title" maxlength="200" placeholder="Add a task, e.g. Find three sources" style="flex:1" aria-label="New task" required></div>
+          <div class="row"><label class="ud-pick">For <select name="who"><option value="">Anyone</option>${people.map((p) => `<option value="${h(p.uid)}">${h(p.uid === me ? 'Me' : p.name)}</option>`).join('')}</select></label>
+          <label class="ud-pick">Due <input type="date" name="due"></label><button class="btn primary">Add</button></div></form>
+        ${done.length ? `<details class="ud-done"><summary class="muted">Done (${done.length})</summary><ul class="ud-list ud-tasks">${done.map(row).join('')}</ul></details>` : ''}
+        ${ga.length ? `<p class="ud-k">Group assignments</p><ul class="ud-list">${ga.map((a) => { const sb = subs[a.id], g = grades[a.id];
+          const st = g ? `<span class="ud-tag g">${g.finalScore}/${a.points}</span>` : sb ? `<span class="ud-tag s">By ${h(sb.submittedBy === me ? 'you' : sb.submittedByName || 'your group')}</span>` : a.dueAtMs && a.dueAtMs < now ? '<span class="ud-tag m">Missing</span>' : '<span class="ud-tag">To do</span>';
+          return `<li><button class="ud-linkbtn" data-asg="${h(a.id)}"><b>${h(a.title)}</b><span class="muted">${h(when(a.dueAtMs))}</span></button>${st}</li>`; }).join('')}</ul>` : ''}
+        <p class="muted ud-foot">Only your group and course staff see this list.</p></div>`;
+      const sel = body.querySelector('[data-course]'); if (sel) sel.onchange = () => C.setCurrentCourse(sel.value);
+      const f = body.querySelector('[data-add]');
+      f.onsubmit = async (e) => { e.preventDefault();
+        const due = f.due.value ? new Date(f.due.value + 'T23:59').getTime() : null;
+        try { await C.saveTask(cid, grp.id, { title: f.title.value.trim(), assigneeUid: f.who.value || null, dueAtMs: due }); draw(); } catch (er) { say(C.errText(er)); } };
+      body.querySelectorAll('[data-done]').forEach((b) => { b.onchange = async () => { try { await C.setTaskDone(cid, grp.id, b.dataset.done, b.checked); draw(); } catch (er) { say(C.errText(er)); b.checked = !b.checked; } }; });
+      body.querySelectorAll('[data-del]').forEach((b) => { b.onclick = async () => { if (!confirm('Delete this task for the whole group?')) return; try { await C.deleteTask(cid, grp.id, b.dataset.del); draw(); } catch (er) { say(C.errText(er)); } }; });
+      body.querySelectorAll('[data-asg]').forEach((b) => { b.onclick = () => (typeof openWidget === 'function' ? openWidget('uassign') : null); });
+    }
+    draw();
+    return live(body, draw);
+  }
+
   /* ---------------- TAdeck (phase 3) ----------------
      For a student the instructor made a TA. The screens are LectureDeck's Course mode (js/course-mode.js, the same file),
      opened here under UniStudentDeck's sign-in; they list only the courses where you are course staff. */
-  const TA_TABS = [['grader', '✅ Grader'], ['gradebook', '📒 Gradebook'], ['discussions', '💬 Discussions'], ['announcements', '📣 Announcements'], ['office', '🙋 Office hours']];
+  const TA_TABS = [['grader', '✅ Grader'], ['gradebook', '📒 Gradebook'], ['groups', '👥 Groups'], ['discussions', '💬 Discussions'], ['announcements', '📣 Announcements'], ['office', '🙋 Office hours']];
   function renderTaDesk(body) {
     let seq = 0, tab = 'grader', stop = null;
     try { tab = localStorage.getItem('ud_tadesk_tab') || 'grader'; } catch (e) {}
@@ -527,6 +587,7 @@
     chat: '<path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
     cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     office: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    group: '<circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2 20a6 6 0 0 1 12 0M10 20a6 6 0 0 1 12 0"/>',
     ta: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/><path d="M22 9v6"/>' };
   window.UNI_WIDGETS = [
     { id: 'courses', title: '🏛️ Courses', iconPath: P.book, w: 340, h: 520, render: renderCourses, cat: 'cloud' },
@@ -537,6 +598,7 @@
     { id: 'discuss', title: '💬 Discussions', iconPath: P.chat, w: 420, h: 580, render: renderDiscussions, cat: 'cloud' },
     { id: 'ucal', title: '📅 Calendar', iconPath: P.cal, w: 760, h: 580, render: renderCalendar, cat: 'cloud' },
     { id: 'office', title: '🙋 Office hours', iconPath: P.office, w: 400, h: 540, render: renderOfficeHours, cat: 'cloud' },
+    { id: 'ugroup', title: '👥 Group project', iconPath: P.group, w: 420, h: 600, render: renderGroup, cat: 'cloud' },
     { id: 'tadesk', title: '🧑‍🏫 TAdeck', iconPath: P.ta, w: 840, h: 640, render: renderTaDesk, cat: 'cloud' },
   ];
 })();

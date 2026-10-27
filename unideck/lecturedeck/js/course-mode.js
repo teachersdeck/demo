@@ -149,7 +149,7 @@
       if (my !== seq) return;
       if (editing) return form(course, editing === 'new' ? null : as.find((a) => a.id === editing), cid);
       body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}<button class="wbtn primary" data-add>＋ New</button></div>
-        <ul class="cm-list">${as.map((a) => `<li><button class="cm-linkbtn" data-ed="${h(a.id)}"><b>${h(a.title)}</b><span class="cm-lo">Due ${h(when(a.dueAtMs))} · ${a.points} pts · ${h(CAT_NAMES[a.category] || a.category)}${a.rubric && a.rubric.length ? ` · rubric (${a.rubric.length})` : ''} · ${h(a.submitType)}</span></button>
+        <ul class="cm-list">${as.map((a) => `<li><button class="cm-linkbtn" data-ed="${h(a.id)}"><b>${h(a.title)}</b><span class="cm-lo">Due ${h(when(a.dueAtMs))} · ${a.points} pts · ${h(CAT_NAMES[a.category] || a.category)}${a.rubric && a.rubric.length ? ` · rubric (${a.rubric.length})` : ''} · ${h(a.submitType)}${a.group ? ' · 👥 group' : ''}</span></button>
           <button class="cm-x" data-del="${h(a.id)}" aria-label="Delete ${h(a.title)}" title="Delete">×</button></li>`).join('') || '<li class="cm-lo">No assignments yet.</li>'}</ul></div>`;
       wirePicker(body);
       body.querySelector('[data-add]').onclick = () => { editing = 'new'; draw(); };
@@ -167,6 +167,7 @@
         <label class="cm-lbl">Category<select name="category">${cats.map((k) => `<option value="${k}" ${a && a.category === k ? 'selected' : ''}>${CAT_NAMES[k] || k}</option>`).join('')}</select></label></div>
         <div class="cm-two"><label class="cm-lbl">Students submit<select name="submitType">${[['any', 'Text, a link or files'], ['text', 'Text only'], ['file', 'A file'], ['link', 'A link']].map(([v, l]) => `<option value="${v}" ${(a ? a.submitType : 'any') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label class="cm-lbl">Submissions allowed (0 = unlimited)<input type="number" min="0" max="20" name="attempts" value="${a ? a.attempts : 1}"></label></div>
+        <label class="cm-check"><input type="checkbox" name="group" ${a && a.group ? 'checked' : ''}> 👥 Group assignment: one submission per group, shared by its members (set groups in 👥 Groups)</label>
         <label class="cm-lbl">Late work<select name="late"><option value="">Course policy</option>${[['accept', 'Accept, no penalty'], ['penalty', 'Penalty: same rate as the course'], ['closed', 'Don’t accept']].map(([v, l]) => `<option value="${v}" ${pol && pol.mode === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <p class="cm-lo">Rubric (optional — its rows add up to the points)</p><div data-rub></div>
         <div class="btn-row cm-left"><button type="button" class="wbtn" data-addrow>＋ Rubric row</button></div>
@@ -187,7 +188,7 @@
         e.preventDefault();
         const late = f.late.value;
         const data = { id: a ? a.id : undefined, title: f.title.value, instructions: f.instructions.value, dueAtMs: f.due.value ? new Date(f.due.value).getTime() : null,
-          category: f.category.value, submitType: f.submitType.value, attempts: Number(f.attempts.value) || 0, rubric, points: Number(f.points.value),
+          category: f.category.value, submitType: f.submitType.value, attempts: Number(f.attempts.value) || 0, rubric, points: Number(f.points.value), group: f.group.checked,
           latePolicy: late ? { ...M.cleanLatePolicy(course.latePolicy), mode: late } : null };
         try { await C.saveAssignment(cid, data); say('Assignment saved.'); editing = null; draw(); } catch (er) { say(C.errText(er)); }
       };
@@ -231,7 +232,9 @@
       if (!st) return;
       const pen = s ? M.latePenaltyPct(a.latePolicy || course.latePolicy, s.lateDays) : 0;
       const files = await Promise.all(((s && s.files) || []).map(async (f) => ({ ...f, url: await C.fileUrl(f.path).catch(() => null) })));
-      el.innerHTML = `<p class="cm-k">${h(st.name)}</p>
+      const grp = a.group && s && s.groupId ? s : null;
+      el.innerHTML = `<p class="cm-k">${h(st.name)}${grp ? ` <span class="cm-tag">👥 ${h(grp.groupName || 'group')}</span>` : ''}</p>
+        ${grp ? `<p class="cm-lo">Group submission by ${h(grp.submittedByName || '')} for ${(grp.groupUids || []).length} students.</p>` : a.group ? '<p class="cm-lo">Group assignment: no submission from this student’s group yet.</p>' : ''}
         ${s ? `<p class="cm-lo">Submitted ${h(when(s.submittedAtMs))}${s.attempt > 1 ? ` · attempt ${s.attempt}` : ''}${s.late ? ` · <b class="cm-late">${s.lateDays} day${s.lateDays === 1 ? '' : 's'} late (−${pen}%)</b>` : ' · on time'}</p>
           ${s.text ? `<div class="cm-text">${h(s.text).replace(/\n/g, '<br>')}</div>` : ''}${s.link ? `<p><a href="${h(s.link)}" target="_blank" rel="noopener">${h(s.link)}</a></p>` : ''}
           ${files.map((f) => `<p>📎 ${f.url ? `<a href="${h(f.url)}" target="_blank" rel="noopener">${h(f.name)}</a>` : h(f.name)}</p>`).join('')}` : '<p class="cm-lo">No submission. You can still enter a grade.</p>'}
@@ -239,6 +242,7 @@
           : `<label class="cm-lbl">Score (out of ${a.points})<input type="number" min="0" max="${a.points}" step="0.5" name="score" value="${g ? g.score : ''}" required></label>`}
           <p class="cm-lo" data-calc></p>
           <label class="cm-lbl">Feedback<textarea name="feedback" rows="4" maxlength="5000">${h(g ? g.feedback : '')}</textarea></label>
+          ${grp && (grp.groupUids || []).length > 1 ? `<label class="cm-check"><input type="checkbox" name="whole" checked> Give this grade to the whole group (${grp.groupUids.length} students)</label>` : ''}
           <div class="btn-row cm-left"><button class="wbtn primary">Save grade</button>${g ? `<span class="cm-lo">${g.released ? 'Released to the student' : 'Draft: not released yet'}</span>` : ''}</div></form>`;
       const f = el.querySelector('[data-g]');
       const calc = () => {
@@ -248,9 +252,9 @@
       f.oninput = calc; calc();
       f.onsubmit = async (e) => {
         e.preventDefault();
-        const data = { feedback: f.feedback.value };
+        const data = { feedback: f.feedback.value, wholeGroup: !!(f.whole && f.whole.checked) };
         if (a.rubric && a.rubric.length) data.rubricScores = Object.fromEntries(a.rubric.map((r) => [r.id, Number(f['r_' + r.id].value) || 0])); else data.score = Number(f.score.value);
-        try { const r = await C.grade(cid, a.id, st.uid, data); say(`Saved: ${r.finalScore}/${a.points}.`); draw(); } catch (er) { say(C.errText(er)); }
+        try { const r = await C.grade(cid, a.id, st.uid, data); say(`Saved: ${r.finalScore}/${a.points}${r.graded > 1 ? ` for ${r.graded} students` : ''}.`); draw(); } catch (er) { say(C.errText(er)); }
       };
     }
     draw();
@@ -550,7 +554,69 @@
     return live(draw);
   }
 
-  window.CourseMode = { grader: renderGrader, gradebook: renderGradebook, discussions: renderDiscussions, announcements: renderAnnouncements, office: renderOfficeHours };
+  /* ---------------- Groups (phase 3) ----------------
+     Course staff set the course's groups (one group per student): by hand, or "make groups of N" at random, then Save.
+     Each group's shared task list shows here read-only, with a delete for anything that shouldn't be there. */
+  function renderGroups(body) {
+    let seq = 0, draft = null, openG = null;
+    const shuffle = (xs) => { const a = [...xs]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await pick(list);
+      if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
+      let roster, groups, as;
+      try { [roster, groups, as] = await Promise.all([C.roster(cid), C.allGroups(cid), C.assignments(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const students = roster.filter((r) => r.role === 'student');
+      const tasks = {};
+      await Promise.all(groups.map(async (g) => { tasks[g.id] = await C.tasks(cid, g.id).catch(() => []); }));
+      if (my !== seq) return;
+      if (draft) return editor(cid, list, students);
+      const grouped = new Set(groups.flatMap((g) => g.memberUids));
+      const ungrouped = students.filter((s) => !grouped.has(s.uid));
+      const gas = as.filter((a) => a.group);
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}<button class="wbtn primary" data-edit>${groups.length ? 'Edit groups' : 'Make groups'}</button></div>
+        <p class="cm-lo">${groups.length} group${groups.length === 1 ? '' : 's'} · ${students.length - ungrouped.length} of ${students.length} students in a group${gas.length ? ` · group assignments: ${gas.map((a) => h(a.title)).join(', ')}` : ' · no group assignments yet (tick “Group assignment” in Course assignments)'}</p>
+        ${ungrouped.length && groups.length ? `<p class="cm-lo">Not in a group: ${ungrouped.map((s) => h(s.name)).join(', ')}</p>` : ''}
+        ${groups.map((g) => { const ts = tasks[g.id] || [], dn = ts.filter((t) => t.done).length;
+          return `<div class="cm-card"><div class="cm-split"><p class="cm-k">👥 ${h(g.name)}</p><button class="cm-x cm-mini" data-open="${h(g.id)}" title="Show tasks">${openG === g.id ? '▾' : '▸'} ${dn}/${ts.length} tasks</button></div>
+            <p>${g.memberUids.map((u) => `<span class="cm-tag">${h(g.memberNames[u] || '')}</span>`).join(' ') || '<span class="cm-lo">Nobody yet</span>'}</p>
+            ${openG === g.id ? `<ul class="cm-list">${ts.map((t) => `<li><span style="flex:1">${t.done ? '✅' : '⬜'} ${h(t.title)} <span class="cm-lo">${t.assigneeName ? '· ' + h(t.assigneeName) : ''}${t.dueAtMs ? ' · ' + h(new Date(t.dueAtMs).toLocaleDateString([], { month: 'short', day: 'numeric' })) : ''}</span></span><button class="cm-x" data-deltask="${h(g.id)}|${h(t.id)}" title="Delete task">×</button></li>`).join('') || '<li class="cm-lo">No tasks yet.</li>'}</ul>` : ''}</div>`; }).join('')
+          || '<p class="cm-lo">No groups yet. Make groups to give students a shared task list and group assignments.</p>'}</div>`;
+      wirePicker(body, () => { draft = null; openG = null; });
+      body.querySelector('[data-edit]').onclick = () => { draft = groups.map((g) => ({ id: g.id, name: g.name, memberUids: [...g.memberUids] })); if (!draft.length) draft = [{ name: 'Group 1', memberUids: [] }, { name: 'Group 2', memberUids: [] }]; draw(); };
+      body.querySelectorAll('[data-open]').forEach((b) => { b.onclick = () => { openG = openG === b.dataset.open ? null : b.dataset.open; draw(); }; });
+      body.querySelectorAll('[data-deltask]').forEach((b) => { b.onclick = async () => { const [g, t] = b.dataset.deltask.split('|'); if (!confirm('Delete this task from the group’s list?')) return; try { await C.deleteTask(cid, g, t); draw(); } catch (e) { say(C.errText(e)); } }; });
+    }
+    function editor(cid, list, students) {
+      const where = (u) => draft.findIndex((g) => g.memberUids.includes(u));
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}</div>
+        <div class="cm-card"><p class="cm-k">Make groups at random</p><div class="cm-row"><label class="cm-pick" style="flex:0 1 auto">Students per group <input type="number" min="2" max="20" value="3" data-size style="width:64px"></label><button class="wbtn" data-auto>Shuffle into groups</button></div><p class="cm-lo">Starts new groups (their task lists start empty); you can still move people before saving.</p></div>
+        <div class="cm-card"><p class="cm-k">Groups</p>${draft.map((g, i) => `<div class="cm-row"><input class="cm-gname" data-name="${i}" value="${h(g.name)}" maxlength="60" aria-label="Group name"><span class="cm-lo">${g.memberUids.length} student${g.memberUids.length === 1 ? '' : 's'}</span><button class="cm-x" data-rm="${i}" title="Remove group">×</button></div>`).join('')}
+          <div class="btn-row cm-left"><button class="wbtn" data-addg>＋ Group</button></div></div>
+        <table class="cm-tbl"><thead><tr><th>Student</th><th>Group</th></tr></thead><tbody>${students.map((s) => `<tr><td>${h(s.name)}</td><td><select data-who="${h(s.uid)}"><option value="-1">No group</option>${draft.map((g, i) => `<option value="${i}" ${where(s.uid) === i ? 'selected' : ''}>${h(g.name)}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table>
+        <div class="btn-row cm-left"><button class="wbtn primary" data-save>Save groups</button><button class="wbtn" data-cancel>Cancel</button></div>
+        <p class="cm-lo">Removing a group deletes its task list. Students see only their own group.</p></div>`;
+      const names = () => body.querySelectorAll('[data-name]').forEach((x) => { draft[Number(x.dataset.name)].name = x.value; });
+      wirePicker(body, () => { draft = null; });
+      body.querySelector('[data-auto]').onclick = () => { names(); const n = Math.max(2, Math.min(20, Number(body.querySelector('[data-size]').value) || 3));
+        const sh = shuffle(students.map((s) => s.uid)), k = Math.max(1, Math.round(sh.length / n));
+        draft = Array.from({ length: k }, (_, i) => ({ name: (draft[i] && draft[i].name) || `Group ${i + 1}`, memberUids: [] }));   // new groups: old task lists go
+        sh.forEach((u, i) => draft[i % k].memberUids.push(u)); editor(cid, list, students); };
+      body.querySelector('[data-addg]').onclick = () => { names(); draft.push({ name: `Group ${draft.length + 1}`, memberUids: [] }); editor(cid, list, students); };
+      body.querySelectorAll('[data-rm]').forEach((b) => { b.onclick = () => { names(); draft.splice(Number(b.dataset.rm), 1); editor(cid, list, students); }; });
+      body.querySelectorAll('[data-who]').forEach((sel) => { sel.onchange = () => { names(); const u = sel.dataset.who; draft.forEach((g) => { g.memberUids = g.memberUids.filter((x) => x !== u); }); const i = Number(sel.value); if (i >= 0) draft[i].memberUids.push(u); editor(cid, list, students); }; });
+      body.querySelector('[data-cancel]').onclick = () => { draft = null; draw(); };
+      body.querySelector('[data-save]').onclick = async () => { names();
+        try { const r = await C.saveGroups(cid, draft); say(`Saved ${r.groups.length} group${r.groups.length === 1 ? '' : 's'}${r.ungrouped ? ` · ${r.ungrouped} not in a group` : ''}.`); draft = null; draw(); } catch (e) { say(C.errText(e)); } };
+    }
+    draw();
+    return live(draw);
+  }
+
+  window.CourseMode = { grader: renderGrader, gradebook: renderGradebook, groups: renderGroups, discussions: renderDiscussions, announcements: renderAnnouncements, office: renderOfficeHours };
   if (TA_HOST) return;
   window.UNI_WIDGETS = [
     { id: 'coursebuilder', cat: 'course', title: '🏛️ Course builder', desc: 'Create a university course: code, term, grading weights, late policy, people.', icon: 'people', w: 440, h: 600, render: renderBuilder },
@@ -561,6 +627,7 @@
     { id: 'coursediscuss', cat: 'course', title: '💬 Discussions', desc: 'Start course discussions, post-first prompts, pin, close, moderate.', icon: 'report', w: 520, h: 640, render: renderDiscussions },
     { id: 'coursecal', cat: 'course', title: '📅 Course calendar', desc: 'Class times, exams and events for every student’s Calendar.', icon: 'clipboard', w: 480, h: 600, render: renderCourseCalendar },
     { id: 'courseoffice', cat: 'course', title: '🙋 Office hours', desc: 'Open bookable slots, see who booked and why.', icon: 'people', w: 480, h: 600, render: renderOfficeHours },
+    { id: 'coursegroups', cat: 'course', title: '👥 Groups', desc: 'Put students in groups for group projects; see each group’s task list.', icon: 'people', w: 520, h: 640, render: renderGroups },
     { id: 'gradebook', cat: 'course', title: '📒 Gradebook', desc: 'Students by assignments, weighted totals, CSV export.', icon: 'stats', w: 760, h: 560, render: renderGradebook },
   ];
 })();

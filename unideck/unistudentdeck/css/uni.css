@@ -103,3 +103,15 @@ html[data-mode="light"] .ud-tag.m{color:#b4532a;border-color:rgba(180,83,42,.45)
 html[data-mode="light"] .ud-tag.g{background:rgba(15,23,42,.07)}
 html[data-mode="light"] .ud-tiles div,html[data-mode="light"] .ud-instr{background:rgba(15,23,42,.045)}
 html[data-mode="light"] .ta-desk{--ink-0:var(--panel2);--ink-1:rgba(15,23,42,.035)}
+
+/* ---------- UniDeck phase 3: Group project ---------- */
+.ud-people{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.ud-tasks li{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:6px 2px;border-bottom:1px solid var(--line)}
+.ud-task label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;min-width:0}
+.ud-task label span{overflow-wrap:anywhere}
+.ud-task.done label span{text-decoration:line-through;color:var(--lo)}
+.ud-task .muted{font-size:12px;white-space:nowrap}
+.ud-done summary{cursor:pointer;margin:10px 0 4px}
+.ud-groupnote{border-color:var(--gold)}
+.ud-pick input[type=date]{font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:6px 8px;color-scheme:dark}
+html[data-mode="light"] .ud-pick input[type=date]{color-scheme:light;background:var(--panel2)}

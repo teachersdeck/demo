@@ -64,3 +64,8 @@ html[data-mode="light"] .cm-tag.s{color:#2f7d43}
 html[data-mode="light"] .cm-tag.r{color:#b4532a}
 html[data-mode="light"] .cm-tag.g{background:rgba(15,23,42,.07)}
 html[data-mode="light"] .cm-tag.l,html[data-mode="light"] .cm-tag.d,html[data-mode="light"] .cm-late{color:#94610c}
+
+/* ---------- UniDeck phase 3: Groups ---------- */
+.cm-gname{font:inherit;color:var(--text-hi);background:var(--ink-0);border:1px solid var(--line);border-radius:8px;padding:6px 8px;flex:1;min-width:0}
+.cm-tbl select{font:inherit;color:var(--text-hi);background:var(--ink-0);border:1px solid var(--line);border-radius:8px;padding:4px 6px}
+.cm-x.cm-mini{font-size:12px;padding:2px 6px}

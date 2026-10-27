@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo7AjnYIjUEHkCXczXwvm7YYiW8d8lGi798t94rt/Du75aM6i7m+un9WGrdry+0tTr/1uP5vdTUdZ2cxM/2ihKU6utCxkrKiha3o5EdLA9n1fzEuBUdfHNOedzJOkf6IdcvOX+BzJZf4R7GmBH9HzJMqREkhCaFgejGefrNQ7D1jKRB7wmL9BDYL6XbhAVJvjwvAXzidIJ5ozZHHVPoJewkPA1fnYwsrNJkCU/fOomyMrOFTwKjZyC0Q7SKAh+csJRTlvN46iyh3l4kUz7UGq3bQiJrES9T4wmUY/mW/N+IEBQz8uSI2xUoZ0ex7XsbEc8xYE7pfOnP0rJgPWYYgeGwIDAQAB",
   "name": "UniStudentDeck",
-  "version": "0.5.1",
-  "version_name": "0.5.1 beta",
+  "version": "0.6.0",
+  "version_name": "0.6.0 beta",
   "description": "UniDeck for students: a calm study dashboard for undergraduate and graduate students. Assignments, reading list, notes, focus timer, Files viewer for PDFs and Google docs, Translate, Dictionary, Flashcards, study stats and a private journal.",
   "chrome_url_overrides": {
     "newtab": "index.html"
