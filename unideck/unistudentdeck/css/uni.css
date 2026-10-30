@@ -126,20 +126,21 @@ html[data-mode="light"] .ud-pick input[type=date]{color-scheme:light;background:
 .ud-code{font-family:ui-monospace,Menlo,monospace;font-size:18px;letter-spacing:1px;color:var(--gold-hi)}
 .btn:disabled{opacity:.5;cursor:default}
 
-/* ---------- Phones (web app, UniDeck phase 3): one widget at a time, full width ----------
-   Below 700 px the floating widget wall doesn't fit, so each open widget fills the space between the top bar and the
-   dock; the last one opened (or tapped in the dock) is on top, and closing it shows the one underneath. */
+/* ---------- Phones (web app, UniDeck phase 3) ----------
+   Phones and tablets show live tiles (css/bento.css and js/bento.js, shared with StudentDeck). The rules under
+   html:not(.bento) are the older one-widget-at-a-time layout, kept for Settings → Tiles → Off on a phone: each open widget
+   fills the space between the top bar and the dock, the last one opened (or tapped in the dock) on top. */
 @media (max-width:700px){
   .top{padding:0 10px}
   .top .brand{font-size:15px;gap:6px}
   .hright{gap:6px}
   .hright>.ver{display:none}
-  #wall{bottom:96px}
-  .widget:not(.full){left:6px !important;right:6px !important;top:6px !important;width:auto !important;height:calc(100% - 12px) !important;min-width:0}
-  .widget:not(.full).min{height:auto !important}
-  .widget .grip,.widget .resize{display:none}
-  .dock-wrap{bottom:calc(8px + env(safe-area-inset-bottom));max-width:calc(100vw - 12px)}
-  .dock-item{width:64px}
+  html:not(.bento) #wall{bottom:96px}
+  html:not(.bento) .widget:not(.full){left:6px !important;right:6px !important;top:6px !important;width:auto !important;height:calc(100% - 12px) !important;min-width:0}
+  html:not(.bento) .widget:not(.full).min{height:auto !important}
+  html:not(.bento) .widget .grip,html:not(.bento) .widget .resize{display:none}
+  html:not(.bento) .dock-wrap{bottom:calc(8px + env(safe-area-inset-bottom));max-width:calc(100vw - 12px)}
+  html:not(.bento) .dock-item{width:64px}
   .ud-pad{padding:10px}
   .ud-tasks li{grid-template-columns:1fr auto}
   .ud-tasks li>.muted{grid-column:1;grid-row:2}

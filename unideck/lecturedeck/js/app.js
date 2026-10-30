@@ -2131,6 +2131,7 @@ function toggleWidget(id){
   }else{
     openWidget(id);
     const od = dayRec(); od.opens = od.opens || {}; od.opens[id] = (od.opens[id] || 0) + 1; xSave();
+    if(window.TDUsage) window.TDUsage.track('widget_open', { widget: id });   // anonymous usage statistics (js/usage.js)
   }
   saveState();
   syncDock();
@@ -2158,6 +2159,7 @@ function openWidget(id){
   const el = document.createElement('section');
   el.className = 'widget' + (def.full ? ' widget-full' : '') + (layout.minimized && !def.full ? ' minimized' : '') + (pinnedNow ? ' is-pinned' : '');
   el.dataset.onTop = pinnedNow ? '1' : '0';
+  el.dataset.wid = id;   // which widget this is (js/bento.js: tile sizes and order on phones and tablets)
   if(!def.full){          // a full-screen widget is sized by CSS (.widget-full), not by a saved layout
     el.style.left = layout.x+'px';
     el.style.top = layout.y+'px';
