@@ -7,6 +7,7 @@
 <title>🏛️ CampusDeck</title>
 <script src="js/mode.js?v=0.3.0"></script>   <!-- first: Light or Dark before anything paints (the same file in every suite app) -->
 <script src="js/edition.js?v=0.3.0"></script>   <!-- first: says which app this is (js/app.js is shared with AdminDeck) -->
+<script src="js/usage.js?v=0.3.0"></script>   <!-- anonymous usage statistics; Settings can turn it off (the same file as AdminDeck) -->
 <link rel="stylesheet" href="css/style.css?v=0.3.0">
 <link rel="stylesheet" href="css/mode.css?v=0.3.0">
 <link rel="stylesheet" href="css/light.css?v=0.3.0">   <!-- Light mode only (html[data-mode=light]); generated in the suite by tools/gen_light_css.py -->
@@ -159,6 +160,7 @@
 
       <p class="drawer-label" data-i18n="emoji_section" style="margin-top:20px">Widget icons</p>
       <label class="switch-row"><span data-i18n="show_emojis_label">Show emoji icons</span><input type="checkbox" id="show-emojis-toggle"></label>
+      <label class="switch-row"><span data-usage-label>Share anonymous usage statistics (no names or class data)</span><input type="checkbox" id="usage-stats-toggle"></label>
       <p class="dock-vis-hint lock-hint" id="emoji-lock-hint" data-i18n="layout_lock_hint" hidden>Set by the layout mode above.</p>
 
       <p class="drawer-label" data-i18n="dock_buttons" style="margin-top:20px">Dock buttons</p>
