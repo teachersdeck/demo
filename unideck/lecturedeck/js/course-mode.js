@@ -22,6 +22,8 @@
   const when = (ms) => (ms ? new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No due date');
   const localInput = (ms) => { if (!ms) return ''; const d = new Date(ms); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
   const CAT_NAMES = { assignments: 'Assignments', quizzes: 'Quizzes', exams: 'Exams', participation: 'Participation' };
+  /* Phase 4: published quizzes count like assignments in the Gradebook, totals and Course stats (grades/{quizId}_{uid}). */
+  const quizItems = (qs) => (qs || []).filter((q) => q.published).map((q) => ({ id: q.id, title: `📝 ${q.title}`, points: q.points, category: q.category, dueAtMs: q.dueAtMs || null, kind: 'quiz' }));
 
   function gate(body, redraw) {
     const s = C.state();
@@ -271,9 +273,10 @@
       try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
       const cid = await pick(list);
       if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
-      let course, as, roster, grades;
-      try { [course, as, roster, grades] = await Promise.all([C.course(cid), C.assignments(cid), C.roster(cid), C.grades(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      let course, as, roster, grades, qz;
+      try { [course, as, roster, grades, qz] = await Promise.all([C.course(cid), C.assignments(cid), C.roster(cid), C.grades(cid), C.quizzes(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
       if (my !== seq) return;
+      as = [...as, ...quizItems(qz)].sort((a, b) => (a.dueAtMs || 9e15) - (b.dueAtMs || 9e15));
       const students = roster.filter((r) => r.role === 'student');
       const cell = (a, u) => grades.find((g) => g.assignmentId === a.id && g.uid === u);
       const avg = (a) => { const gs = grades.filter((g) => g.assignmentId === a.id); return gs.length ? M.round2(gs.reduce((s, g) => s + g.finalScore, 0) / gs.length) : null; };
@@ -633,8 +636,10 @@
       if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
       let course, as, roster, grades, mods, prog, subs;
       try {
-        [course, as, roster, grades, mods, prog] = await Promise.all([C.course(cid), C.assignments(cid), C.roster(cid), C.grades(cid), C.modules(cid), C.progressAll(cid)]);
+        let qz;
+        [course, as, roster, grades, mods, prog, qz] = await Promise.all([C.course(cid), C.assignments(cid), C.roster(cid), C.grades(cid), C.modules(cid), C.progressAll(cid), C.quizzes(cid)]);
         subs = (await Promise.all(as.map((a) => C.submissions(cid, a.id)))).flat();
+        as = [...as, ...quizItems(qz)];   // a quiz has no submissions: its grade (made when submitted) counts as handed in
       } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
       if (my !== seq) return;
       const now = Date.now();
@@ -653,7 +658,7 @@
       const rows = as.map((a) => {
         const s = students.map((st) => sub.get(key(a.id, st.uid))).filter(Boolean);
         const gs = students.map((st) => gr.get(key(a.id, st.uid))).filter(Boolean);
-        return { a, past: !!(a.dueAtMs && a.dueAtMs <= now), subN: s.length, onTime: rate(s.filter((x) => !x.late).length, s.length),
+        return { a, past: !!(a.dueAtMs && a.dueAtMs <= now), subN: a.kind === 'quiz' ? gs.length : s.length, onTime: a.kind === 'quiz' ? null : rate(s.filter((x) => !x.late).length, s.length),
           graded: gs.length, avg: mean(gs.map((g) => pctOf(g, a)).filter((x) => x !== null)) };
       });
       let inPairs = 0, dueSubs = 0, dueLate = 0;
@@ -769,7 +774,7 @@
   }
 
   function renderQuizBuilder(body) {
-    let seq = 0, tab = 'quizzes', editing = null;   // editing: null | 'new' | an id
+    let seq = 0, tab = 'quizzes', editing = null, results = null, openAtt = null;   // editing: null | 'new' | an id; results: a quiz id
     async function draw() {
       const my = ++seq;
       if (!gate(body, draw)) return;
@@ -781,6 +786,16 @@
       try { [course, quizzes, banks] = await Promise.all([C.course(cid), C.quizzes(cid), C.banks(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
       if (my !== seq) return;
       const mine = list.find((c) => c.courseId === cid);
+      if (results && tab === 'quizzes') {
+        const q = quizzes.find((x) => x.id === results);
+        if (q) {
+          let res, key, roster;
+          try { [res, key, roster] = await Promise.all([C.quizResults(cid, q.id), C.quizKey(cid, q.id), C.roster(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+          if (my !== seq) return;
+          return resultsView(cid, q, res, key, roster.filter((r) => r.role === 'student').length);
+        }
+        results = null;
+      }
       if (editing && tab === 'quizzes') {
         const q = editing === 'new' ? null : quizzes.find((x) => x.id === editing);
         let qs = [];
@@ -794,11 +809,12 @@
         <div class="cm-seg" role="tablist"><button role="tab" data-tab="quizzes" aria-selected="${tab === 'quizzes'}">Quizzes (${quizzes.length})</button><button role="tab" data-tab="banks" aria-selected="${tab === 'banks'}">Question banks (${banks.length})</button></div>
         ${tab === 'quizzes' ? `<ul class="cm-list">${quizzes.map((q) => `<li><button class="cm-linkbtn" data-ed="${h(q.id)}"><b>${h(q.title)} ${q.published ? '<span class="cm-tag s">Published</span>' : '<span class="cm-tag d">Draft</span>'}</b>
             <span class="cm-lo">${q.questionCount} question${q.questionCount === 1 ? '' : 's'} · ${q.points} pt${q.points === 1 ? '' : 's'} · ${h(limits(q))} · ${q.dueAtMs ? `Due ${h(when(q.dueAtMs))}` : 'No due date'}${q.openAtMs ? ` · opens ${h(when(q.openAtMs))}` : ''}</span></button>
-            ${mine.role === 'instructor' ? `<button class="cm-x" data-del="${h(q.id)}" aria-label="Delete ${h(q.title)}" title="Delete">×</button>` : ''}</li>`).join('') || '<li class="cm-lo">No quizzes yet. Students see a quiz once you publish it.</li>'}</ul>`
+            ${q.published ? `<button class="wbtn" data-res="${h(q.id)}">Results</button>` : ''}${mine.role === 'instructor' ? `<button class="cm-x" data-del="${h(q.id)}" aria-label="Delete ${h(q.title)}" title="Delete">×</button>` : ''}</li>`).join('') || '<li class="cm-lo">No quizzes yet. Students see a quiz once you publish it.</li>'}</ul>`
         : `<ul class="cm-list">${banks.map((b) => `<li><button class="cm-linkbtn" data-ed="${h(b.id)}"><b>${h(b.title)}</b><span class="cm-lo">${b.count} question${b.count === 1 ? '' : 's'} · only staff see banks</span></button>
             <button class="cm-x" data-del="${h(b.id)}" aria-label="Delete ${h(b.title)}" title="Delete">×</button></li>`).join('') || '<li class="cm-lo">No question banks yet. A bank keeps questions to reuse: add them to any quiz in this course.</li>'}</ul>`}</div>`;
       wirePicker(body);
       body.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => { tab = b.dataset.tab; draw(); }; });
+      body.querySelectorAll('[data-res]').forEach((b) => { b.onclick = () => { results = b.dataset.res; openAtt = null; draw(); }; });
       body.querySelector('[data-add]').onclick = () => { editing = 'new'; draw(); };
       body.querySelectorAll('[data-ed]').forEach((b) => { b.onclick = () => { editing = b.dataset.ed; draw(); }; });
       body.querySelectorAll('[data-del]').forEach((b) => {
@@ -807,6 +823,53 @@
           try { await (tab === 'quizzes' ? C.deleteQuiz(cid, b.dataset.del) : C.deleteBank(cid, b.dataset.del)); draw(); } catch (e) { say(C.errText(e)); }
         };
       });
+    }
+
+    /* A quiz's results (backend v2.20.0): every attempt, answers marked right or wrong, short answers to grade by hand,
+       and releasing the scores to students. A student's grade is their best attempt. */
+    function resultsView(cid, q, res, key, nStudents) {
+      const byId = new Map(key.map((x) => [x.id, x]));
+      const done = res.attempts.filter((a) => a.status === 'submitted'), open = res.attempts.filter((a) => a.status === 'open');
+      const best = new Map();
+      done.forEach((a) => { const b = best.get(a.uid); if (!b || a.score > b.score) best.set(a.uid, a); });
+      const avg = best.size ? Math.round([...best.values()].reduce((s, a) => s + (a.points ? (a.score / a.points) * 100 : 0), 0) / best.size) : null;
+      const pending = done.reduce((s, a) => s + (a.pending || 0), 0);
+      const shown = (x, ans) => {
+        if (x.type === 'mc') { const ids = Array.isArray(ans) ? ans : []; return ids.length ? ids.map((id) => (x.options.find((o) => o.id === id) || { text: '?' }).text).join('; ') : '—'; }
+        if (x.type === 'tf') return ans === true ? 'True' : ans === false ? 'False' : '—';
+        return ans ? String(ans) : '—';
+      };
+      const rightText = (x) => (x.type === 'mc' ? x.correct.map((id) => (x.options.find((o) => o.id === id) || { text: '?' }).text).join('; ') : x.type === 'tf' ? (x.answer ? 'True' : 'False') : (x.accept || []).join(' / ') || 'graded by hand');
+      const tile = (v, label) => `<div class="cm-tile"><b>${v}</b><span>${label}</span></div>`;
+      body.innerHTML = `<div class="cm-pad"><button class="cm-linkbtn" data-back>← All quizzes</button>
+        <div class="cm-split"><p class="cm-k">${h(q.title)} · results</p>${res.released ? '<span class="cm-tag s">Released to students</span>' : `<button class="wbtn primary" data-release ${done.length ? '' : 'disabled'}>Release results</button>`}</div>
+        <div class="cm-tiles">${tile(`${best.size}/${nStudents}`, 'students submitted')}${tile(avg === null ? '–' : avg + '%', 'average (best attempt)')}${tile(pending, 'answers to grade by hand')}${tile(open.length, 'in progress')}</div>
+        ${pending ? '<p class="cm-warn">Some short answers need a grade from you. Their points count as 0 until you grade them.</p>' : ''}
+        <div class="cm-scroll"><table class="cm-tbl"><thead><tr><th>Student</th><th>Attempt</th><th>Submitted</th><th>Score</th><th></th></tr></thead><tbody>
+        ${res.attempts.map((a) => `<tr><td>${h(a.name)}${best.get(a.uid) === a && res.attempts.filter((x) => x.uid === a.uid).length > 1 ? ' <span class="cm-tag g">best</span>' : ''}</td><td>${a.attempt}</td>
+          <td class="cm-lo">${a.status === 'open' ? 'in progress' : h(when(a.submittedAtMs))}${a.timedOut ? ' · time ran out' : ''}</td>
+          <td>${a.status === 'open' ? '–' : `<b>${a.score}</b>/${a.points}${a.pending ? ` <span class="cm-tag d">${a.pending} to grade</span>` : ''}`}</td>
+          <td>${a.status === 'submitted' ? `<button class="wbtn" data-att="${h(a.id)}">${openAtt === a.id ? 'Hide' : 'Answers'}</button>` : ''}</td></tr>
+          ${openAtt === a.id ? `<tr><td colspan="5"><div class="cm-card">${(a.order || key.map((x) => x.id)).map((id, i) => { const x = byId.get(id); if (!x) return ''; const r = (a.results || {})[id] || { score: 0 };
+            return `<div class="cm-ans"><p><b>${i + 1}. ${h(x.text)}</b> <span class="cm-lo">(${x.points} pt${x.points === 1 ? '' : 's'})</span></p>
+              <p>${r.pending ? '⏳' : r.score >= x.points ? '✅' : r.score > 0 ? '◐' : '❌'} ${h(shown(x, (a.answers || {})[id]))}</p>
+              <p class="cm-lo">Right answer: ${h(rightText(x))}</p>
+              <label class="cm-qpts">Score <input type="number" min="0" max="${x.points}" step="0.5" value="${r.pending ? '' : r.score}" data-gq="${h(id)}" data-ga="${h(a.id)}" placeholder="–"> / ${x.points}${r.by ? ' · graded by hand' : ''}</label></div>`; }).join('')}</div></td></tr>` : ''}`).join('')
+          || '<tr><td colspan="5" class="cm-lo">Nobody has taken this quiz yet.</td></tr>'}</tbody></table></div>
+        <p class="cm-lo">Students see their scores, and which questions they got right, only after you release the results; they never see the right answers. Later attempts are released as they come in. Change any score above to grade by hand.</p></div>`;
+      body.querySelector('[data-back]').onclick = () => { results = null; openAtt = null; draw(); };
+      body.querySelectorAll('[data-att]').forEach((b) => { b.onclick = () => { openAtt = openAtt === b.dataset.att ? null : b.dataset.att; draw(); }; });
+      body.querySelectorAll('[data-gq]').forEach((el) => {
+        el.onchange = async () => {
+          if (el.value === '') return;
+          try { const r = await C.gradeQuizAnswer(cid, el.dataset.ga, el.dataset.gq, Number(el.value)); say(`Saved. Attempt score ${r.score}${r.pending ? `, ${r.pending} still to grade` : ''}.`); draw(); } catch (e) { say(C.errText(e)); }
+        };
+      });
+      const rel = body.querySelector('[data-release]');
+      if (rel) rel.onclick = async () => {
+        if (!confirm(`Release the results of “${q.title}”? Students see their scores and which questions they got right (not the right answers).${pending ? `\n\n${pending} answer${pending === 1 ? ' is' : 's are'} still to grade by hand and count as 0 until you do.` : ''}`)) return;
+        try { const r = await C.releaseQuizResults(cid, q.id); say(`Results released to ${r.released} student${r.released === 1 ? '' : 's'}.`); draw(); } catch (e) { say(C.errText(e)); }
+      };
     }
 
     function quizForm(course, cid, q, qs, banks) {

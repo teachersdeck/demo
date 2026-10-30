@@ -125,7 +125,7 @@
           ${next ? `<p>Next due: <b>${h(next.title)}</b><br><span class="muted">${h(when(next.dueAtMs))}</span></p>` : '<p class="muted">Nothing due right now.</p>'}
           ${week ? `<p>This week: <b>${h(week.title)}</b></p>` : ''}
           ${latest ? `<div class="ud-ann-mini"><span class="muted">${latest.pinned ? '📌 ' : ''}Latest announcement${unread ? ` · <b>${unread} unread</b>` : ''}</span><br><b>${h(latest.title)}</b></div>` : ''}
-          <div class="row"><button class="btn" data-w="modules">Modules →</button><button class="btn" data-w="announce">Announcements →</button><button class="btn" data-w="uassign">Assignments →</button><button class="btn" data-w="grades">Grades →</button></div></div>`;
+          <div class="row"><button class="btn" data-w="modules">Modules →</button><button class="btn" data-w="announce">Announcements →</button><button class="btn" data-w="uassign">Assignments →</button><button class="btn" data-w="uquiz">Quizzes →</button><button class="btn" data-w="grades">Grades →</button></div></div>`;
         el.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => (typeof openWidget === 'function' ? openWidget(b.dataset.w) : null); });
       } catch (e) { el.innerHTML = `<p class="muted">${h(C.errText(e))}</p>`; }
     }
@@ -229,10 +229,12 @@
       const cid = await currentOf(list);
       if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
       if (staffStop(body, list, cid, 'Grades for the course are in TAdeck’s Gradebook.')) return;
-      let course, as, grades;
-      try { [course, as, grades] = await Promise.all([C.course(cid), C.assignments(cid), C.myGrades(cid)]); }
+      let course, as, grades, quizzes;
+      try { [course, as, grades, quizzes] = await Promise.all([C.course(cid), C.assignments(cid), C.myGrades(cid), C.quizzes(cid).catch(() => [])]); }
       catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       if (my !== seq) return;
+      as = [...as, ...quizzes.map((q) => ({ id: q.id, title: `📝 ${q.title}`, points: q.points, category: q.category, dueAtMs: q.dueAtMs || null }))]   // phase 4: quizzes count like assignments
+        .sort((a, b) => (a.dueAtMs || 9e15) - (b.dueAtMs || 9e15));
       const gl = Object.values(grades);
       const tot = M.courseTotal(course.weights, as, gl);
       const cats = Object.entries(course.weights || { assignments: 100 });
@@ -617,7 +619,124 @@
     return () => { end(); off(); };
   }
 
-  const P = { book: '<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v13"/>',
+  /* ---------------- Quizzes (UniDeck phase 4, v0.11.0; backend v2.20.0) ----------------
+     Published quizzes in the current course. Taking one: the questions come from the server without their answers, every
+     change is saved there as you go (so a closed widget or a dropped connection loses nothing), and the attempt is
+     submitted at the time limit if you haven't. Scores and which answers were right show once the instructor releases
+     the results. No AI anywhere in here: UniDeck's AI tools are never available inside a quiz. */
+  const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  function renderQuizzes(body) {
+    let seq = 0, taking = null, opened = null, tick = null, saveTimer = null;
+    const stopTick = () => { if (tick) clearInterval(tick); tick = null; };
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      if (taking) return paintTaking();
+      stopTick();
+      let list;
+      try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await currentOf(list);
+      if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
+      if (staffStop(body, list, cid, 'Quizzes are written in LectureDeck’s Quiz builder; students take them here.')) return;
+      body.innerHTML = '<p class="muted ud-pad">Loading…</p>';
+      let r;
+      try { r = await C.myQuizzes(cid); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq || taking) return;
+      const skew = r.nowMs - Date.now();
+      const now = Date.now() + skew;
+      body.innerHTML = `<div class="ud-pad">${picker(list, cid)}
+        <ul class="ud-list ud-quizzes">${r.quizzes.map((q) => { const st = quizState(q, now); return `<li class="ud-qcard"><div class="ud-qhead"><button class="ud-linkbtn" data-more="${h(q.id)}"><b>${h(q.title)}</b>
+            <span class="muted">${q.questionCount} question${q.questionCount === 1 ? '' : 's'} · ${q.points} pts · ${q.timeLimitMin ? `${q.timeLimitMin} min` : 'no time limit'} · ${q.attempts ? `${q.used}/${q.attempts} attempts` : `${q.used} attempt${q.used === 1 ? '' : 's'}`}<br>${q.dueAtMs ? `Due ${h(when(q.dueAtMs))}` : 'No due date'}${q.openAtMs && now < q.openAtMs ? ` · opens ${h(when(q.openAtMs))}` : ''}</span></button>
+            <span class="ud-tag ${st.cls}">${h(st.label)}</span></div>
+            ${opened === q.id ? more(q) : ''}
+            ${st.go ? `<div class="row"><button class="btn ${q.open ? 'primary' : ''}" data-go="${h(q.id)}">${h(st.go)}</button></div>` : ''}</li>`; }).join('') || '<li class="muted">No quizzes in this course yet.</li>'}</ul></div>`;
+      const s = body.querySelector('[data-course]'); if (s) s.onchange = () => { opened = null; C.setCurrentCourse(s.value); };
+      body.querySelectorAll('[data-more]').forEach((b) => { b.onclick = () => { opened = opened === b.dataset.more ? null : b.dataset.more; draw(); }; });
+      body.querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => begin(cid, r.quizzes.find((q) => q.id === b.dataset.go)); });
+    }
+    function quizState(q, now) {
+      const left = q.attempts ? q.attempts - q.used : Infinity;
+      const closed = q.dueAtMs && now >= q.dueAtMs, notYet = q.openAtMs && now < q.openAtMs;
+      if (q.open) return { cls: 'l', label: 'In progress', go: 'Go back to it →' };
+      const go = !closed && !notYet && left > 0 ? (q.used ? 'Try again' : 'Start') : '';
+      if (q.released && q.best !== null) return { cls: 'g', label: `${q.best}/${q.points}`, go };
+      if (q.used) return { cls: 's', label: q.released ? 'Submitted' : 'Submitted · results not out yet', go };
+      if (notYet) return { cls: '', label: 'Not open yet', go: '' };
+      if (closed) return { cls: 'm', label: 'Closed', go: '' };
+      return { cls: '', label: 'To do', go };
+    }
+    function more(q) {
+      return `<div class="ud-card">${q.instructions ? `<p>${h(q.instructions).replace(/\n/g, '<br>')}</p>` : ''}
+        ${q.attemptsDone.map((a) => `<p class="ud-k">Attempt ${a.attempt}${typeof a.score === 'number' ? ` · ${a.score}/${a.points}` : ''}</p><p class="muted">Submitted ${h(when(a.submittedAtMs))}${a.timedOut ? ' · time ran out' : ''}${a.pending ? ` · ${a.pending} answer${a.pending === 1 ? '' : 's'} still being graded` : ''}</p>
+          ${(a.questions || []).map((x, i) => `<p class="ud-qres">${x.pending ? '⏳' : x.right ? '✅' : '❌'} ${i + 1}. ${h(x.text)} <span class="muted">${x.pending ? 'being graded' : `${x.score}/${x.points}`}</span></p>`).join('')}`).join('')
+        || '<p class="muted">You haven’t taken this quiz yet.</p>'}
+        ${q.attemptsDone.length && !q.released ? '<p class="muted">Your instructor releases the results; your score shows here then.</p>' : ''}</div>`;
+    }
+    async function begin(cid, q) {
+      if (!q.open) {
+        const parts = [q.timeLimitMin ? `You have ${q.timeLimitMin} minutes once you start, and the clock keeps running if you close this.` : 'There is no time limit.',
+          q.attempts ? `This uses attempt ${q.used + 1} of ${q.attempts}.` : '', q.dueAtMs ? `It closes ${when(q.dueAtMs)}.` : ''].filter(Boolean);
+        if (!confirm(`Start “${q.title}”?\n\n${parts.join('\n')}`)) return;
+      }
+      try {
+        const r = await C.startQuiz(cid, q.id);
+        taking = { cid, quiz: q, attemptId: r.attemptId, attempt: r.attempt, endsAtMs: r.endsAtMs, skew: r.nowMs - Date.now(), questions: r.questions, answers: r.answers || {}, dirty: false, saving: false, done: false };
+        if (r.resumed) say('Back to your attempt: your saved answers are below.');
+        draw();
+      } catch (e) { say(C.errText(e)); draw(); }
+    }
+    function paintTaking() {
+      const t = taking;
+      const answered = t.questions.filter((q) => has(t.answers[q.id])).length;
+      body.innerHTML = `<div class="ud-pad ud-taking"><div class="ud-qbar"><div><b>${h(t.quiz.title)}</b><br><span class="muted" data-st>${answered}/${t.questions.length} answered · saved</span></div>${t.endsAtMs ? '<span class="ud-timer" data-timer role="timer" aria-live="off"></span>' : ''}</div>
+        ${t.questions.map((q, i) => `<div class="ud-card ud-q"><p class="ud-k">${i + 1}. ${h(q.text).replace(/\n/g, '<br>')} <span class="muted">(${q.points} pt${q.points === 1 ? '' : 's'})</span></p>
+          ${q.type === 'mc' ? `${q.multiple ? '<p class="muted">Select all that apply.</p>' : ''}${q.options.map((o) => `<label class="ud-check"><input type="${q.multiple ? 'checkbox' : 'radio'}" name="a_${h(q.id)}" data-q="${h(q.id)}" value="${h(o.id)}" ${(t.answers[q.id] || []).includes(o.id) ? 'checked' : ''}> <span>${h(o.text)}</span></label>`).join('')}`
+          : q.type === 'tf' ? ['true', 'false'].map((v) => `<label class="ud-check"><input type="radio" name="a_${h(q.id)}" data-q="${h(q.id)}" value="${v}" ${t.answers[q.id] === (v === 'true') ? 'checked' : ''}> <span>${v === 'true' ? 'True' : 'False'}</span></label>`).join('')
+          : `<input type="text" class="ud-qtext" data-q="${h(q.id)}" maxlength="2000" value="${h(t.answers[q.id] || '')}" aria-label="Your answer to question ${i + 1}" autocomplete="off" spellcheck="false">`}</div>`).join('')}
+        <div class="row"><button class="btn primary" data-submit>Submit</button><button class="btn" data-later>Save and leave</button></div>
+        <p class="muted">Answers are saved as you go.${t.endsAtMs ? ' When the time is up, the quiz is submitted with what you’ve answered.' : ''}</p></div>`;
+      body.querySelectorAll('[data-q]').forEach((el) => {
+        const on = () => {
+          const q = t.questions.find((x) => x.id === el.dataset.q);
+          if (q.type === 'mc') t.answers[q.id] = [...body.querySelectorAll(`[data-q="${CSS.escape(q.id)}"]:checked`)].map((x) => x.value);
+          else if (q.type === 'tf') t.answers[q.id] = el.value === 'true';
+          else t.answers[q.id] = el.value;
+          t.dirty = true; status();
+          clearTimeout(saveTimer); saveTimer = setTimeout(() => save(false), q.type === 'short' ? 1500 : 300);
+        };
+        el.oninput = on; el.onchange = on;
+      });
+      body.querySelector('[data-submit]').onclick = () => {
+        const blank = t.questions.length - t.questions.filter((q) => has(t.answers[q.id])).length;
+        if (!confirm(blank ? `${blank} question${blank === 1 ? ' is' : 's are'} unanswered. Submit anyway?` : 'Submit your answers? You can’t change them after this.')) return;
+        save(true);
+      };
+      body.querySelector('[data-later]').onclick = async () => { await save(false); leave('Saved. Go back to it from the list before the time runs out.'); };
+      stopTick();
+      if (t.endsAtMs) { const run = () => { const left = t.endsAtMs - (Date.now() + t.skew); const el = body.querySelector('[data-timer]');
+        if (el) { el.textContent = `⏱ ${mmss(left)}`; el.classList.toggle('low', left < 60000); } if (left <= 0 && !t.done) save(true, true); }; run(); tick = setInterval(run, 1000); }
+    }
+    const has = (v) => (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== '');
+    function status(text) { const el = body.querySelector('[data-st]'); if (!el || !taking) return; const t = taking;
+      el.textContent = `${t.questions.filter((q) => has(t.answers[q.id])).length}/${t.questions.length} answered · ${text || (t.saving ? 'saving…' : t.dirty ? 'not saved yet' : 'saved')}`; }
+    async function save(submit, timeUp) {
+      const t = taking; if (!t || t.done) return;
+      clearTimeout(saveTimer);
+      if (submit) t.done = true;
+      t.saving = true; status();
+      try {
+        const r = await C.saveQuizAnswers(t.cid, t.attemptId, t.answers, submit);
+        t.saving = false; t.dirty = false; status();
+        if (r.submitted) leave(r.timedOut ? 'Time’s up: your quiz was submitted with the answers saved by then.' : 'Submitted. Your score shows when your instructor releases the results.');
+      } catch (e) { t.saving = false; if (submit && !timeUp) t.done = false; status('not saved: check your connection'); say(C.errText(e)); }
+    }
+    function leave(msg) { stopTick(); opened = taking ? taking.quiz.id : null; taking = null; if (msg) say(msg); draw(); }
+    draw();
+    const off = live(body, draw);
+    return () => { if (taking && taking.dirty) save(false); stopTick(); clearTimeout(saveTimer); off(); };
+  }
+
+  const P = { quiz: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="M13 17l2 2 4-4"/>', book: '<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v13"/>',
     task: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12l2 2 4-4"/>',
     grade: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/><path d="M14 5l2 2 4-4"/>',
     mods: '<rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="11" width="16" height="4" rx="1.5"/><rect x="4" y="17" width="16" height="4" rx="1.5"/>',
@@ -631,6 +750,7 @@
   window.UNI_WIDGETS = [
     { id: 'courses', title: '🏛️ Courses', iconPath: P.book, w: 340, h: 520, render: renderCourses, cat: 'cloud' },
     { id: 'uassign', title: '🗂️ Assignments', iconPath: P.task, w: 400, h: 560, render: renderAssign, cat: 'cloud' },
+    { id: 'uquiz', title: '📝 Quizzes', iconPath: P.quiz, w: 440, h: 600, render: renderQuizzes, cat: 'cloud' },
     { id: 'grades', title: '🎯 Grades', iconPath: P.grade, w: 380, h: 520, render: renderGrades, cat: 'cloud' },
     { id: 'modules', title: '🧭 Modules', iconPath: P.mods, w: 420, h: 580, render: renderModules, cat: 'cloud' },
     { id: 'announce', title: '📣 Announcements', iconPath: P.ann, w: 380, h: 520, render: renderAnnouncements, cat: 'cloud' },
