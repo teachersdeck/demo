@@ -108,7 +108,7 @@
     async function home(el, cid, my, list) {
       const mine = (list || []).find((c) => c.courseId === cid);
       if (mine && mine.role === 'ta') {
-        el.innerHTML = `<div class="ud-card"><p class="ud-k">${h(mine.title)} · TA</p><p class="muted">Your instructor made you a TA here: you grade, run discussions and office hours, and post announcements from TAdeck.</p>
+        el.innerHTML = `<div class="ud-card"><p class="ud-k">${h(mine.title)} · TA</p><p class="muted">Your instructor made you a TA here: you grade, write and grade quizzes, run discussions and office hours, and post announcements from TAdeck.</p>
           <div class="row"><button class="btn primary" data-w="tadesk">TAdeck →</button><button class="btn" data-w="modules">Modules →</button><button class="btn" data-w="discuss">Discussions →</button></div></div>`;
         el.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => (typeof openWidget === 'function' ? openWidget(b.dataset.w) : null); });
         return;
@@ -594,7 +594,7 @@
   /* ---------------- TAdeck (phase 3) ----------------
      For a student the instructor made a TA. The screens are LectureDeck's Course mode (js/course-mode.js, the same file),
      opened here under UniStudentDeck's sign-in; they list only the courses where you are course staff. */
-  const TA_TABS = [['grader', '✅ Grader'], ['gradebook', '📒 Gradebook'], ['stats', '📊 Course stats'], ['groups', '👥 Groups'], ['discussions', '💬 Discussions'], ['announcements', '📣 Announcements'], ['office', '🙋 Office hours']];
+  const TA_TABS = [['grader', '✅ Grader'], ['gradebook', '📒 Gradebook'], ['stats', '📊 Course stats'], ['quizzes', '📝 Quizzes'], ['groups', '👥 Groups'], ['discussions', '💬 Discussions'], ['announcements', '📣 Announcements'], ['office', '🙋 Office hours']];
   function renderTaDesk(body) {
     let seq = 0, tab = 'grader', stop = null;
     try { tab = localStorage.getItem('ud_tadesk_tab') || 'grader'; } catch (e) {}
@@ -605,7 +605,7 @@
       let list;
       try { list = (await C.myCourses()).filter((c) => c.role === 'ta' || c.role === 'instructor'); } catch (e) { end(); body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       if (my !== seq) return;
-      if (!list.length) { end(); body.innerHTML = '<div class="ud-empty"><p><b>No TA courses yet</b></p><p class="muted">When an instructor makes you a TA in one of your courses, grading, discussions and office hours for it appear here.</p></div>'; return; }
+      if (!list.length) { end(); body.innerHTML = '<div class="ud-empty"><p><b>No TA courses yet</b></p><p class="muted">When an instructor makes you a TA in one of your courses, grading, quizzes, discussions and office hours for it appear here.</p></div>'; return; }
       if (!window.CourseMode) { end(); body.innerHTML = '<p class="ud-pad muted">TAdeck didn’t load. Reload the page.</p>'; return; }
       if (body.querySelector('.ta-desk')) return;   // already showing; the course-mode screen redraws itself
       end();
@@ -637,7 +637,7 @@
       try { list = await C.myCourses(); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }
       const cid = await currentOf(list);
       if (!cid) { body.innerHTML = '<p class="ud-pad muted">Join a course in the Courses widget first.</p>'; return; }
-      if (staffStop(body, list, cid, 'Quizzes are written in LectureDeck’s Quiz builder; students take them here.')) return;
+      if (staffStop(body, list, cid, 'You write quizzes, see results and grade them in TAdeck’s Quizzes tab.')) return;
       body.innerHTML = '<p class="muted ud-pad">Loading…</p>';
       let r;
       try { r = await C.myQuizzes(cid); } catch (e) { body.innerHTML = `<p class="ud-pad">${h(C.errText(e))}</p>`; return; }

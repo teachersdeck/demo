@@ -927,7 +927,7 @@
         const data = { id: q ? q.id : undefined, title: f.title.value, instructions: f.instructions.value, category: f.category.value,
           openAtMs: f.open.value ? new Date(f.open.value).getTime() : null, dueAtMs: f.due.value ? new Date(f.due.value).getTime() : null,
           timeLimitMin: Number(f.time.value) || 0, attempts: Number(f.attempts.value) || 0, shuffle: f.shuffle.checked, published: f.published.checked, questions: qs };
-        try { const r = await C.saveQuiz(cid, data); say(`Quiz saved: ${r.points} pts${data.published ? ', published' : ', draft'}.`); editing = null; draw(); } catch (er) { say(C.errText(er)); }
+        try { const r = await C.saveQuiz(cid, data); say(`Quiz saved: ${r.points} pt${r.points === 1 ? '' : 's'}${data.published ? ', published' : ', draft'}.`); editing = null; draw(); } catch (er) { say(C.errText(er)); }
       };
     }
 
