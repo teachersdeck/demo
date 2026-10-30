@@ -504,10 +504,18 @@ if (window.Watermark) Watermark.configure({ identity: () => { const s = PD.getSe
   return `PD::${(p.info && p.info.key) || 'free'}::${(s && (s.uid || s.email)) || 'signed-out'}`; } });
 /* ---- Official-build check (anti-theft, v0.21.5) ----
    The extension ID comes from the manifest's "key" (konabbakfllochlfepachaijclndabam), so a copy republished under another ID shows a notice and
-   cannot activate Pro. Update OFFICIAL_IDS if the Chrome Web Store assigns a different ID when you publish. Pages served
-   outside an extension (demo/testing over http) are not checked. */
+   cannot activate Pro. Update OFFICIAL_IDS if the Chrome Web Store assigns a different ID when you publish.
+   v0.26.0, the web app: a page outside an extension is official only on our own addresses (parent.myteachersdeck.com and the
+   other *.myteachersdeck.com apps, the teachersdeck-* Firebase Hosting sites), the demo site, or this computer while testing.
+   A copy of the web app put up anywhere else shows the notice and can't activate Pro. */
 const OFFICIAL_IDS = ['konabbakfllochlfepachaijclndabam'];
-function isOfficialBuild(){ try{ return !(window.chrome && chrome.runtime && chrome.runtime.id) || OFFICIAL_IDS.includes(chrome.runtime.id); }catch(e){ return true; } }
+const OFFICIAL_HOSTS = [/(^|\.)myteachersdeck\.com$/, /^teachersdeck-[a-z]+\.(web\.app|firebaseapp\.com)$/, /^teachersdeck\.github\.io$/, /^(localhost|127\.0\.0\.1)$/];
+function isOfficialBuild(){
+  try{
+    if(window.chrome && chrome.runtime && chrome.runtime.id) return OFFICIAL_IDS.includes(chrome.runtime.id);
+    return location.protocol === 'file:' || OFFICIAL_HOSTS.some(rx => rx.test(location.hostname));
+  }catch(e){ return true; }
+}
 if(!isOfficialBuild()) document.addEventListener('DOMContentLoaded', ()=>{
   const n = document.createElement('div'); n.className = 'unofficial-build'; n.setAttribute('role', 'alert');
   n.textContent = 'This copy of ParentDeck is not an official build. Pro and licence activation are switched off. Please install the official version.';
@@ -522,7 +530,7 @@ function renderAcct() {
     $('#a-demo').addEventListener('click', () => PD_DEMO.enter());   // js/demo.js — sample family, no sign-in needed
     $('#a-signin').addEventListener('click', async () => {
       toast(t('acct_signing_in'));
-      try { const sess = await PD.signInWithGoogle(); toast(t('acct_signed_in_as', { name: sess.displayName || sess.email })); refreshAll(); }
+      try { const sess = await PD.signInWithGoogle(); if (!sess) return;   /* a redirect sign-in: the page is leaving */ toast(t('acct_signed_in_as', { name: sess.displayName || sess.email })); refreshAll(); }
       catch (e) { toast(e.message || String(e)); }
     });
     return;
@@ -1549,6 +1557,7 @@ function openWidget(id) {
     L = ui.layout[id] = { ...L, x: Math.round(b.right - wr.left - def.w), y: Math.max(0, Math.round(b.bottom - wr.top + 6)), w: def.w, h: def.h, min: false };
   }
   const el = document.createElement('section'); el.className = 'widget' + (def.full ? ' full' : '') + (L.min ? ' min' : '');
+  el.dataset.wid = id;   // which widget this is (js/bento.js: tile sizes and order on phones and tablets)
   const top = clamp(L.y, 0, Math.max(0, wall.clientHeight - 44));
   if (def.full) el.style.zIndex = 1;   // raiseFull() below orders the full-screen widgets among themselves
   else el.style.cssText = `left:${clamp(L.x, 0, Math.max(0, wall.clientWidth - 150))}px;top:${top}px;width:${L.w}px;height:${Math.max(140, Math.min(L.h, wall.clientHeight - top - 8))}px`;

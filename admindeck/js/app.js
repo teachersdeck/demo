@@ -896,6 +896,7 @@ function openWidget(id){
 
   const el = document.createElement('section');
   el.className = 'widget' + (def.full ? ' full' : '') + (layout.minimized ? ' minimized' : '');
+  el.dataset.wid = id;   // which widget this is (js/bento.js: tile sizes and order on phones and tablets)
   if(!def.full){
     el.style.left = layout.x+'px'; el.style.top = layout.y+'px'; el.style.width = layout.w+'px';
     if(layout.h && !layout.minimized) el.style.height = layout.h+'px';
