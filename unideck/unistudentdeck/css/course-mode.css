@@ -36,6 +36,16 @@
 .cm-tbl td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 .cm-tbl input{width:64px}
 .cm-rrow{display:grid;grid-template-columns:1fr 80px auto;gap:6px;margin:4px 0;align-items:center}
+/* Quiz builder (phase 4, v0.12.0): tabs, question cards, choices */
+.cm-seg{display:flex;gap:4px;margin:8px 0;border-bottom:1px solid var(--line)}
+.cm-seg button{all:unset;cursor:pointer;padding:6px 10px;font-size:13px;color:var(--text-lo);border-bottom:2px solid transparent}
+.cm-seg button[aria-selected="true"]{color:var(--text-hi);border-bottom-color:var(--amber-hi)}.cm-seg button:focus-visible{outline:2px solid var(--amber-hi)}
+.cm-q .cm-split{gap:8px;align-items:center}.cm-q .cm-split select{flex:1;max-width:180px}
+.cm-q textarea,.cm-q select,.cm-opt input:not([type]),.cm-qpts input{font:inherit;color:var(--text-hi);background:var(--ink-0);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0}
+.cm-q textarea{width:100%;margin:6px 0;resize:vertical}
+.cm-qpts{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--text-lo)}.cm-qpts input{width:64px}
+.cm-opt{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;margin:4px 0}
+.cm-col{flex-direction:column;align-items:stretch}
 .cm-cols{display:grid;grid-template-columns:minmax(200px,34%) 1fr;gap:12px;margin-top:8px;min-height:0}
 .cm-people{max-height:480px;overflow:auto;margin:0}
 .cm-sub{min-width:0}

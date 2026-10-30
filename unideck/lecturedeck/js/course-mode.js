@@ -701,7 +701,197 @@
     return live(draw);
   }
 
-  window.CourseMode = { grader: renderGrader, gradebook: renderGradebook, stats: renderStats, groups: renderGroups, discussions: renderDiscussions, announcements: renderAnnouncements, office: renderOfficeHours };
+  /* ---------------- Quiz builder (phase 4, UniDeck v0.12.0, backend v2.19.0) ----------------
+     Quizzes and question banks. The answers are saved apart from the quiz (the backend's quizKeys), which students never
+     read; taking a quiz comes in UniStudentDeck next. A question is { id, type: 'mc'|'tf'|'short', text, points } plus
+     options + correct (mc), answer (tf) or accept (short; none = graded by hand). Poll and Exit Ticket questions can be
+     brought in, and questions copied from a bank. */
+  const QTYPES = { mc: 'Multiple choice', tf: 'True / false', short: 'Short answer' };
+  const rid = (p) => p + Math.random().toString(36).slice(2, 8);
+  const newQ = (type) => (type === 'mc' ? { id: rid('q'), type, text: '', points: 1, options: [{ id: rid('o'), text: '' }, { id: rid('o'), text: '' }], correct: [] }
+    : type === 'tf' ? { id: rid('q'), type, text: '', points: 1, answer: true } : { id: rid('q'), type, text: '', points: 1, accept: [] });
+  const copyQ = (q) => ({ ...JSON.parse(JSON.stringify(q)), id: rid('q') });
+  const qPoints = (qs) => M.round2(qs.reduce((a, q) => a + (Number(q.points) || 0), 0));
+  /* What the open TeachersDeck widgets hold: the Poll's question and choices, the Exit Ticket's prompt (js/app.js state). */
+  function fromWidgets() {
+    const out = [];
+    const st = typeof state !== 'undefined' ? state : null;   // js/app.js's top-level state (LectureDeck only)
+    if (st && st.poll && String(st.poll.question || '').trim()) {
+      const opts = (st.poll.options || []).map((o) => String(o.text || '').trim()).filter(Boolean);
+      if (opts.length >= 2) out.push({ from: '📊 Poll', q: { id: rid('q'), type: 'mc', text: st.poll.question.trim(), points: 1, options: opts.map((t) => ({ id: rid('o'), text: t })), correct: [] } });
+    }
+    if (st && st.exitTicket && String(st.exitTicket.question || '').trim()) {
+      out.push({ from: '🎟️ Exit Ticket', q: { id: rid('q'), type: 'short', text: st.exitTicket.question.trim(), points: 1, accept: [] } });
+    }
+    return out;
+  }
+
+  /* The question list editor, used for quizzes and banks. qs is edited in place; onChange after every edit. */
+  function questionEditor(box, qs, onChange) {
+    function paint() {
+      box.innerHTML = qs.map((q, i) => `<div class="cm-card cm-q" data-q="${i}">
+        <div class="cm-split"><span class="cm-k">${i + 1}.</span>
+          <select data-k="type" aria-label="Question type">${Object.entries(QTYPES).map(([v, l]) => `<option value="${v}" ${q.type === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+          <label class="cm-qpts">Points <input type="number" min="0.5" max="100" step="0.5" data-k="points" value="${q.points}"></label>
+          <span class="cm-ord"><button type="button" class="cm-x" data-mv="-1" ${i ? '' : 'disabled'} aria-label="Move up">▲</button><button type="button" class="cm-x" data-mv="1" ${i < qs.length - 1 ? '' : 'disabled'} aria-label="Move down">▼</button></span>
+          <button type="button" class="cm-x" data-rmq aria-label="Remove question ${i + 1}" title="Remove">×</button></div>
+        <textarea data-k="text" rows="2" maxlength="2000" placeholder="The question" aria-label="Question ${i + 1}">${h(q.text)}</textarea>
+        ${q.type === 'mc' ? `<p class="cm-lo">Tick the right choice${(q.correct || []).length > 1 ? 's — students select all that apply' : ' (tick more than one for “select all that apply”)'}.</p>
+          ${q.options.map((o, j) => `<div class="cm-opt"><input type="checkbox" data-ok="${j}" ${q.correct.includes(o.id) ? 'checked' : ''} aria-label="Choice ${j + 1} is right"><input data-opt="${j}" maxlength="500" placeholder="Choice ${j + 1}" value="${h(o.text)}"><button type="button" class="cm-x" data-rmo="${j}" ${q.options.length > 2 ? '' : 'disabled'} aria-label="Remove choice ${j + 1}">×</button></div>`).join('')}
+          ${q.options.length < 8 ? '<button type="button" class="wbtn" data-addo>＋ Choice</button>' : ''}`
+        : q.type === 'tf' ? `<div class="cm-checks"><label class="cm-check"><input type="radio" name="tf${i}" data-tf="1" ${q.answer === true ? 'checked' : ''}> True</label><label class="cm-check"><input type="radio" name="tf${i}" data-tf="0" ${q.answer === false ? 'checked' : ''}> False</label></div>`
+        : `<label class="cm-lbl">Accepted answers, one per line (capitals, spaces and a final full stop don’t matter; leave empty to grade by hand)<textarea data-k="accept" rows="2">${h((q.accept || []).join('\n'))}</textarea></label>`}
+        </div>`).join('') || '<p class="cm-lo">No questions yet.</p>';
+      box.querySelectorAll('[data-q]').forEach((card) => {
+        const q = qs[Number(card.dataset.q)];
+        card.querySelectorAll('[data-k]').forEach((el) => {
+          el.oninput = el.onchange = () => {
+            const k = el.dataset.k;
+            if (k === 'type') { if (el.value === q.type) return; const n = newQ(el.value); n.id = q.id; n.text = q.text; n.points = q.points; qs[Number(card.dataset.q)] = n; paint(); return; }
+            if (k === 'points') q.points = Number(el.value);
+            else if (k === 'accept') q.accept = el.value.split('\n').map((s) => s.trim()).filter(Boolean);
+            else q[k] = el.value;
+            onChange();
+          };
+        });
+        card.querySelectorAll('[data-opt]').forEach((el) => { el.oninput = () => { q.options[Number(el.dataset.opt)].text = el.value; onChange(); }; });
+        card.querySelectorAll('[data-ok]').forEach((el) => { el.onchange = () => { const id = q.options[Number(el.dataset.ok)].id; q.correct = el.checked ? [...q.correct, id] : q.correct.filter((x) => x !== id); paint(); }; });
+        card.querySelectorAll('[data-rmo]').forEach((b) => { b.onclick = () => { const [o] = q.options.splice(Number(b.dataset.rmo), 1); q.correct = q.correct.filter((x) => x !== o.id); paint(); }; });
+        const ao = card.querySelector('[data-addo]'); if (ao) ao.onclick = () => { q.options.push({ id: rid('o'), text: '' }); paint(); };
+        card.querySelectorAll('[data-tf]').forEach((el) => { el.onchange = () => { q.answer = el.dataset.tf === '1'; onChange(); }; });
+        card.querySelectorAll('[data-mv]').forEach((b) => { b.onclick = () => { const i = Number(card.dataset.q), j = i + Number(b.dataset.mv); [qs[i], qs[j]] = [qs[j], qs[i]]; paint(); }; });
+        card.querySelector('[data-rmq]').onclick = () => { if (q.text && !confirm('Remove this question?')) return; qs.splice(Number(card.dataset.q), 1); paint(); };
+      });
+      onChange();
+    }
+    paint();
+    return { paint, add(q) { qs.push(q); paint(); const last = box.querySelector('[data-q]:last-child textarea'); if (last) last.focus(); } };
+  }
+
+  function renderQuizBuilder(body) {
+    let seq = 0, tab = 'quizzes', editing = null;   // editing: null | 'new' | an id
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await pick(list);
+      if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
+      let course, quizzes, banks;
+      try { [course, quizzes, banks] = await Promise.all([C.course(cid), C.quizzes(cid), C.banks(cid)]); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const mine = list.find((c) => c.courseId === cid);
+      if (editing && tab === 'quizzes') {
+        const q = editing === 'new' ? null : quizzes.find((x) => x.id === editing);
+        let qs = [];
+        if (q) { try { qs = await C.quizKey(cid, q.id); } catch (e) { say(C.errText(e)); } }
+        if (my !== seq) return;
+        return quizForm(course, cid, q, qs, banks);
+      }
+      if (editing && tab === 'banks') return bankForm(cid, editing === 'new' ? null : banks.find((b) => b.id === editing));
+      const limits = (q) => [q.timeLimitMin ? `${q.timeLimitMin} min` : 'no time limit', q.attempts ? `${q.attempts} attempt${q.attempts === 1 ? '' : 's'}` : 'unlimited attempts'].join(' · ');
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}<button class="wbtn primary" data-add>＋ New ${tab === 'quizzes' ? 'quiz' : 'bank'}</button></div>
+        <div class="cm-seg" role="tablist"><button role="tab" data-tab="quizzes" aria-selected="${tab === 'quizzes'}">Quizzes (${quizzes.length})</button><button role="tab" data-tab="banks" aria-selected="${tab === 'banks'}">Question banks (${banks.length})</button></div>
+        ${tab === 'quizzes' ? `<ul class="cm-list">${quizzes.map((q) => `<li><button class="cm-linkbtn" data-ed="${h(q.id)}"><b>${h(q.title)} ${q.published ? '<span class="cm-tag s">Published</span>' : '<span class="cm-tag d">Draft</span>'}</b>
+            <span class="cm-lo">${q.questionCount} question${q.questionCount === 1 ? '' : 's'} · ${q.points} pt${q.points === 1 ? '' : 's'} · ${h(limits(q))} · ${q.dueAtMs ? `Due ${h(when(q.dueAtMs))}` : 'No due date'}${q.openAtMs ? ` · opens ${h(when(q.openAtMs))}` : ''}</span></button>
+            ${mine.role === 'instructor' ? `<button class="cm-x" data-del="${h(q.id)}" aria-label="Delete ${h(q.title)}" title="Delete">×</button>` : ''}</li>`).join('') || '<li class="cm-lo">No quizzes yet. Students see a quiz once you publish it.</li>'}</ul>`
+        : `<ul class="cm-list">${banks.map((b) => `<li><button class="cm-linkbtn" data-ed="${h(b.id)}"><b>${h(b.title)}</b><span class="cm-lo">${b.count} question${b.count === 1 ? '' : 's'} · only staff see banks</span></button>
+            <button class="cm-x" data-del="${h(b.id)}" aria-label="Delete ${h(b.title)}" title="Delete">×</button></li>`).join('') || '<li class="cm-lo">No question banks yet. A bank keeps questions to reuse: add them to any quiz in this course.</li>'}</ul>`}</div>`;
+      wirePicker(body);
+      body.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => { tab = b.dataset.tab; draw(); }; });
+      body.querySelector('[data-add]').onclick = () => { editing = 'new'; draw(); };
+      body.querySelectorAll('[data-ed]').forEach((b) => { b.onclick = () => { editing = b.dataset.ed; draw(); }; });
+      body.querySelectorAll('[data-del]').forEach((b) => {
+        b.onclick = async () => {
+          if (!confirm(tab === 'quizzes' ? 'Delete this quiz?' : 'Delete this question bank? Quizzes keep the questions they took from it.')) return;
+          try { await (tab === 'quizzes' ? C.deleteQuiz(cid, b.dataset.del) : C.deleteBank(cid, b.dataset.del)); draw(); } catch (e) { say(C.errText(e)); }
+        };
+      });
+    }
+
+    function quizForm(course, cid, q, qs, banks) {
+      const cats = Object.keys(course.weights || { assignments: 100 });
+      const cat = q ? q.category : (cats.includes('quizzes') ? 'quizzes' : cats[0]);
+      const found = fromWidgets();
+      body.innerHTML = `<form class="cm-pad" data-f><p class="cm-k">${q ? 'Edit quiz' : 'New quiz'}</p>
+        <label class="cm-lbl">Title<input name="title" required maxlength="120" value="${h(q ? q.title : '')}" placeholder="e.g. Week 3 check: finding sources"></label>
+        <label class="cm-lbl">Instructions<textarea name="instructions" rows="2" maxlength="8000">${h(q ? q.instructions : '')}</textarea></label>
+        <div class="cm-two"><label class="cm-lbl">Opens<input type="datetime-local" name="open" value="${localInput(q && q.openAtMs)}"></label>
+        <label class="cm-lbl">Due<input type="datetime-local" name="due" value="${localInput(q && q.dueAtMs)}"></label></div>
+        <div class="cm-two"><label class="cm-lbl">Time limit in minutes (0 = none)<input type="number" min="0" max="600" name="time" value="${q ? q.timeLimitMin : 0}"></label>
+        <label class="cm-lbl">Attempts (0 = unlimited)<input type="number" min="0" max="20" name="attempts" value="${q ? q.attempts : 1}"></label></div>
+        <div class="cm-two"><label class="cm-lbl">Category<select name="category">${cats.map((k) => `<option value="${k}" ${cat === k ? 'selected' : ''}>${CAT_NAMES[k] || k}</option>`).join('')}</select></label>
+        <label class="cm-check"><input type="checkbox" name="shuffle" ${q && q.shuffle ? 'checked' : ''}> Shuffle questions and choices for each student</label></div>
+        <div class="cm-split"><p class="cm-k">Questions</p><span class="cm-lo" data-total></span></div>
+        <div data-qs></div>
+        <div class="btn-row cm-left">${Object.entries(QTYPES).map(([v, l]) => `<button type="button" class="wbtn" data-newq="${v}">＋ ${l}</button>`).join('')}</div>
+        <div class="btn-row cm-left">${banks.length ? '<button type="button" class="wbtn" data-frombank>From a question bank…</button>' : ''}
+          ${found.map((x, i) => `<button type="button" class="wbtn" data-import="${i}" title="${h(x.q.text)}">Bring in from ${x.from}</button>`).join('')}
+          <button type="button" class="wbtn" data-tobank>Save these questions to a new bank</button></div>
+        <div data-pickbank></div>
+        <label class="cm-check"><input type="checkbox" name="published" ${q && q.published ? 'checked' : ''}> Published: students in the course can see it${q && q.published ? '' : ' (leave unticked to keep a draft)'}</label>
+        <p class="cm-lo">Students never see the answers: they stay with course staff, and quizzes are scored on the server.</p>
+        <div class="btn-row cm-left"><button class="wbtn primary">Save quiz</button><button type="button" class="wbtn" data-cancel>Cancel</button></div></form>`;
+      const f = body.querySelector('[data-f]');
+      const total = f.querySelector('[data-total]');
+      const ed = questionEditor(f.querySelector('[data-qs]'), qs, () => { total.textContent = `${qs.length} question${qs.length === 1 ? '' : 's'} · ${qPoints(qs)} pt${qPoints(qs) === 1 ? '' : 's'}`; });
+      f.querySelectorAll('[data-newq]').forEach((b) => { b.onclick = () => ed.add(newQ(b.dataset.newq)); });
+      f.querySelectorAll('[data-import]').forEach((b) => { b.onclick = () => { const x = found[Number(b.dataset.import)]; ed.add(copyQ(x.q)); say(x.q.type === 'mc' ? 'Added. Tick the right choice.' : 'Added. Add accepted answers, or leave it to grade by hand.'); }; });
+      const fb = f.querySelector('[data-frombank]');
+      if (fb) fb.onclick = () => {
+        const box = f.querySelector('[data-pickbank]');
+        if (box.innerHTML) { box.innerHTML = ''; return; }
+        box.innerHTML = `<div class="cm-card"><label class="cm-lbl">Question bank<select data-bank>${banks.map((b, i) => `<option value="${i}">${h(b.title)} (${b.count})</option>`).join('')}</select></label>
+          <div data-bankqs class="cm-checks cm-col"></div><div class="btn-row cm-left"><button type="button" class="wbtn primary" data-addsel>Add the ticked questions</button><button type="button" class="wbtn" data-addall>Add all</button></div></div>`;
+        const bsel = box.querySelector('[data-bank]'), bq = box.querySelector('[data-bankqs]');
+        const show = () => { const b = banks[Number(bsel.value)]; bq.innerHTML = b.questions.map((x, i) => `<label class="cm-check"><input type="checkbox" data-bi="${i}"> <span>${h(x.text)} <span class="cm-lo">${QTYPES[x.type]} · ${x.points} pt${x.points === 1 ? '' : 's'}</span></span></label>`).join('') || '<p class="cm-lo">This bank is empty.</p>'; };
+        bsel.onchange = show; show();
+        const add = (all) => { const b = banks[Number(bsel.value)]; const pickd = b.questions.filter((x, i) => all || bq.querySelector(`[data-bi="${i}"]`).checked);
+          if (!pickd.length) { say('Tick a question first.'); return; } pickd.forEach((x) => qs.push(copyQ(x))); ed.paint(); box.innerHTML = ''; say(`${pickd.length} question${pickd.length === 1 ? '' : 's'} added.`); };
+        box.querySelector('[data-addsel]').onclick = () => add(false);
+        box.querySelector('[data-addall]').onclick = () => add(true);
+      };
+      const tb = f.querySelector('[data-tobank]');
+      if (tb) tb.onclick = async () => {
+        if (!qs.length) { say('Add a question first.'); return; }
+        const title = prompt('Name the new question bank:', f.title.value ? `${f.title.value} questions` : '');
+        if (!title) return;
+        try { const r = await C.saveBank(cid, { title, questions: qs.map(copyQ) }); say(`Saved ${r.count} question${r.count === 1 ? '' : 's'} to “${title}”.`); } catch (e) { say(C.errText(e)); }
+      };
+      f.querySelector('[data-cancel]').onclick = () => { editing = null; draw(); };
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        const data = { id: q ? q.id : undefined, title: f.title.value, instructions: f.instructions.value, category: f.category.value,
+          openAtMs: f.open.value ? new Date(f.open.value).getTime() : null, dueAtMs: f.due.value ? new Date(f.due.value).getTime() : null,
+          timeLimitMin: Number(f.time.value) || 0, attempts: Number(f.attempts.value) || 0, shuffle: f.shuffle.checked, published: f.published.checked, questions: qs };
+        try { const r = await C.saveQuiz(cid, data); say(`Quiz saved: ${r.points} pts${data.published ? ', published' : ', draft'}.`); editing = null; draw(); } catch (er) { say(C.errText(er)); }
+      };
+    }
+
+    function bankForm(cid, b) {
+      const qs = b ? b.questions.map((x) => JSON.parse(JSON.stringify(x))) : [];
+      body.innerHTML = `<form class="cm-pad" data-f><p class="cm-k">${b ? 'Edit question bank' : 'New question bank'}</p>
+        <label class="cm-lbl">Title<input name="title" required maxlength="120" value="${h(b ? b.title : '')}" placeholder="e.g. Citations and plagiarism"></label>
+        <div class="cm-split"><p class="cm-k">Questions</p><span class="cm-lo" data-total></span></div>
+        <div data-qs></div>
+        <div class="btn-row cm-left">${Object.entries(QTYPES).map(([v, l]) => `<button type="button" class="wbtn" data-newq="${v}">＋ ${l}</button>`).join('')}</div>
+        <p class="cm-lo">Only course staff see question banks. Editing a bank doesn’t change quizzes that already took its questions.</p>
+        <div class="btn-row cm-left"><button class="wbtn primary">Save bank</button><button type="button" class="wbtn" data-cancel>Cancel</button></div></form>`;
+      const f = body.querySelector('[data-f]');
+      const total = f.querySelector('[data-total]');
+      const ed = questionEditor(f.querySelector('[data-qs]'), qs, () => { total.textContent = `${qs.length} question${qs.length === 1 ? '' : 's'}`; });
+      f.querySelectorAll('[data-newq]').forEach((x) => { x.onclick = () => ed.add(newQ(x.dataset.newq)); });
+      f.querySelector('[data-cancel]').onclick = () => { editing = null; draw(); };
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        try { await C.saveBank(cid, { id: b ? b.id : undefined, title: f.title.value, questions: qs }); say('Question bank saved.'); editing = null; draw(); } catch (er) { say(C.errText(er)); }
+      };
+    }
+    draw();
+    return live(draw);
+  }
+
+  window.CourseMode = { quizzes: renderQuizBuilder, grader: renderGrader, gradebook: renderGradebook, stats: renderStats, groups: renderGroups, discussions: renderDiscussions, announcements: renderAnnouncements, office: renderOfficeHours };
   if (TA_HOST) return;
   window.UNI_WIDGETS = [
     { id: 'coursebuilder', cat: 'course', title: '🏛️ Course builder', desc: 'Create a university course: code, term, grading weights, late policy, people.', icon: 'people', w: 440, h: 600, render: renderBuilder },
@@ -713,6 +903,7 @@
     { id: 'coursecal', cat: 'course', title: '📅 Course calendar', desc: 'Class times, exams and events for every student’s Calendar.', icon: 'clipboard', w: 480, h: 600, render: renderCourseCalendar },
     { id: 'courseoffice', cat: 'course', title: '🙋 Office hours', desc: 'Open bookable slots, see who booked and why.', icon: 'people', w: 480, h: 600, render: renderOfficeHours },
     { id: 'coursegroups', cat: 'course', title: '👥 Groups', desc: 'Put students in groups for group projects; see each group’s task list.', icon: 'people', w: 520, h: 640, render: renderGroups },
+    { id: 'coursequiz', cat: 'course', title: '📝 Quiz builder', desc: 'Quizzes and question banks: multiple choice, true/false, short answer; time and attempt limits; bring in Poll and Exit Ticket questions.', icon: 'clipboard', w: 620, h: 660, render: renderQuizBuilder },
     { id: 'gradebook', cat: 'course', title: '📒 Gradebook', desc: 'Students by assignments, weighted totals, CSV export.', icon: 'stats', w: 760, h: 560, render: renderGradebook },
     { id: 'coursestats', cat: 'course', title: '📊 Course stats', desc: 'Who is behind, submission and on-time rates, averages; names hidden for shared screens.', icon: 'stats', w: 720, h: 620, render: renderStats },
   ];
