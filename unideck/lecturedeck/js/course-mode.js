@@ -1,5 +1,5 @@
 'use strict';
-/* LectureDeck — Course mode: Course builder, Course assignments, Grader and Gradebook (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0), Discussions, Course calendar and Office hours (phase 2, v0.5.0).
+/* LectureDeck — Course mode: Course builder, Course assignments, Grader and Gradebook (phase 1, UniDeck v0.3.0), Modules and Announcements (phase 2, v0.4.0), Discussions, Course calendar and Office hours (phase 2, v0.5.0), Groups and Course stats (phase 3).
    UniDeck's own file, not shared with TeachersDeck. The same file runs in two apps (tools/sync_shared.py keeps
    unistudentdeck/js/course-mode.js identical to lecturedeck/js/course-mode.js):
    - LectureDeck: it lists the widgets in window.UNI_WIDGETS; the shared js/app.js adds them to a "Courses" category.
@@ -616,7 +616,92 @@
     return live(draw);
   }
 
-  window.CourseMode = { grader: renderGrader, gradebook: renderGradebook, groups: renderGroups, discussions: renderDiscussions, announcements: renderAnnouncements, office: renderOfficeHours };
+  /* ---------------- Course stats (UniDeck phase 3) ----------------
+     Read-only: the Gradebook's reads plus each assignment's submissions and the module progress. Names stay hidden until
+     "Show names" is pressed, every time the screen opens, because a lecturer's screen is often on the projector.
+     Behind = missing work that is past its due date, a running total under 60%, or under half of the items in modules
+     open for a week or more. Ticking items done is optional, so the module rule only counts students who tick at all. */
+  const LOW_TOTAL = 60, LOW_MODULES = 50, WEEK = 7 * 86400000;
+  function renderStats(body) {
+    let seq = 0, names = false;
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = staffCourses(await C.myCourses()); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      const cid = await pick(list);
+      if (!cid) { body.innerHTML = '<p class="cm-pad cm-lo">Create a course in Course builder first.</p>'; return; }
+      let course, as, roster, grades, mods, prog, subs;
+      try {
+        [course, as, roster, grades, mods, prog] = await Promise.all([C.course(cid), C.assignments(cid), C.roster(cid), C.grades(cid), C.modules(cid), C.progressAll(cid)]);
+        subs = (await Promise.all(as.map((a) => C.submissions(cid, a.id)))).flat();
+      } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      const now = Date.now();
+      const students = roster.filter((r) => r.role === 'student'), n = students.length;
+      const isStudent = new Set(students.map((s) => s.uid));
+      const key = (a, u) => a + '|' + u;
+      const sub = new Map(subs.filter((s) => isStudent.has(s.uid)).map((s) => [key(s.assignmentId, s.uid), s]));
+      const gr = new Map(grades.filter((g) => isStudent.has(g.uid)).map((g) => [key(g.assignmentId, g.uid), g]));
+      const pctOf = (g, a) => (a.points ? (g.finalScore / a.points) * 100 : null);
+      const mean = (xs) => (xs.length ? Math.round(xs.reduce((s, x) => s + x, 0) / xs.length) : null);
+      const rate = (k, of) => (of ? Math.round((k / of) * 100) : null);
+      const show = (p) => (p === null ? '–' : p + '%');
+      const due = as.filter((a) => a.dueAtMs && a.dueAtMs <= now);
+      const handedIn = (a, u) => sub.has(key(a.id, u)) || gr.has(key(a.id, u));   // a grade without a submission counts (work handed in on paper)
+
+      const rows = as.map((a) => {
+        const s = students.map((st) => sub.get(key(a.id, st.uid))).filter(Boolean);
+        const gs = students.map((st) => gr.get(key(a.id, st.uid))).filter(Boolean);
+        return { a, past: !!(a.dueAtMs && a.dueAtMs <= now), subN: s.length, onTime: rate(s.filter((x) => !x.late).length, s.length),
+          graded: gs.length, avg: mean(gs.map((g) => pctOf(g, a)).filter((x) => x !== null)) };
+      });
+      let inPairs = 0, dueSubs = 0, dueLate = 0;
+      due.forEach((a) => students.forEach((st) => { if (handedIn(a, st.uid)) inPairs++; const s = sub.get(key(a.id, st.uid)); if (s) { dueSubs++; if (s.late) dueLate++; } }));
+      const allPct = [], byCat = {};
+      as.forEach((a) => students.forEach((st) => { const g = gr.get(key(a.id, st.uid)), p = g ? pctOf(g, a) : null; if (p === null) return; allPct.push(p); (byCat[a.category || 'assignments'] = byCat[a.category || 'assignments'] || []).push(p); }));
+      const cats = Object.keys(CAT_NAMES).filter((c) => byCat[c] || (course.weights && course.weights[c]));
+
+      const openItems = mods.filter((m) => !m.releaseAtMs || m.releaseAtMs <= now - WEEK).flatMap((m) => m.items.map((i) => i.id));
+      const doneMap = new Map(prog.filter((p) => Object.keys(p.done).length).map((p) => [p.uid, p.done]));
+      const people = students.map((st) => {
+        const missing = due.filter((a) => !handedIn(a, st.uid));
+        const late = as.filter((a) => { const s = sub.get(key(a.id, st.uid)); return s && s.late; }).length;
+        const mine = grades.filter((g) => g.uid === st.uid);
+        const total = mine.length ? M.courseTotal(course.weights, as, mine.map((g) => ({ ...g, released: true }))).percent : null;
+        const d = doneMap.get(st.uid);
+        const modPct = d && openItems.length ? rate(openItems.filter((i) => d[i]).length, openItems.length) : null;
+        const why = { missing: missing.length > 0, low: total !== null && total < LOW_TOTAL, mods: modPct !== null && modPct < LOW_MODULES };
+        return { st, missing, late, total, modPct, why, behind: why.missing || why.low || why.mods };
+      });
+      const behind = people.filter((p) => p.behind).sort((x, y) => (y.missing.length - x.missing.length) || ((x.total ?? 101) - (y.total ?? 101)));
+      const count = (f) => people.filter(f).length;
+
+      const tile = (v, label) => `<div class="cm-tile"><b>${v}</b><span>${label}</span></div>`;
+      const behindBody = !behind.length ? `<p class="cm-lo">Nobody is behind${due.length ? '' : ' (nothing is past its due date yet)'}.</p>`
+        : names ? `<div class="cm-scroll"><table class="cm-tbl"><thead><tr><th>Student</th><th>Missing (past due)</th><th>Late</th><th>Total</th><th>Modules</th></tr></thead><tbody>${behind.map((p) =>
+            `<tr><td>${h(p.st.name)}</td><td class="${p.why.missing ? 'cm-warn' : ''}" title="${h(p.missing.map((a) => a.title).join(', '))}">${p.missing.length ? `${p.missing.length}: ${h(p.missing.slice(0, 2).map((a) => a.title).join(', '))}${p.missing.length > 2 ? '…' : ''}` : '–'}</td>
+              <td>${p.late || '–'}</td><td class="${p.why.low ? 'cm-warn' : ''}">${show(p.total)}</td><td class="${p.why.mods ? 'cm-warn' : ''}">${show(p.modPct)}</td></tr>`).join('')}</tbody></table></div>`
+        : `<ul class="cm-facts"><li><b>${count((p) => p.missing.length >= 2)}</b> missing two or more past-due assignments</li><li><b>${count((p) => p.missing.length === 1)}</b> missing one</li>
+            <li><b>${count((p) => p.why.low)}</b> with a running total under ${LOW_TOTAL}%</li>${openItems.length ? `<li><b>${count((p) => p.why.mods)}</b> who tick module items and have done under half of those open a week or more</li>` : ''}</ul>`;
+
+      body.innerHTML = `<div class="cm-pad"><div class="cm-row">${picker(list, cid)}<button class="wbtn" data-names aria-pressed="${names}">${names ? '🙈 Hide names' : '👁 Show names'}</button></div>
+        <div class="cm-tiles">${tile(n, n === 1 ? 'student' : 'students')}${tile(show(rate(inPairs, due.length * n)), 'handed in (past due)')}${tile(show(rate(dueSubs - dueLate, dueSubs)), 'on time')}${tile(show(mean(allPct)), 'average grade')}${tile(behind.length, 'behind')}</div>
+        ${cats.length ? `<p class="cm-k">Averages by category</p><div class="cm-row">${cats.map((c) => `<span class="cm-tag g">${CAT_NAMES[c]}: ${show(mean(byCat[c] || []))}</span>`).join('')}</div>` : ''}
+        <p class="cm-k">Who is behind</p>${behindBody}
+        <p class="cm-k">Assignments</p>
+        <div class="cm-scroll"><table class="cm-tbl"><thead><tr><th>Assignment</th><th>Due</th><th>Handed in</th><th>On time</th><th>Graded</th><th>Average</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr><td>${h(r.a.title)}${r.a.group ? ' <span class="cm-tag">group</span>' : ''}</td><td class="cm-lo">${h(when(r.a.dueAtMs))}</td>
+          <td class="${r.past && n && r.subN < n ? 'cm-warn' : ''}">${r.subN}/${n}${n ? ` · ${rate(r.subN, n)}%` : ''}</td><td>${show(r.onTime)}</td><td>${r.graded}</td><td>${show(r.avg)}</td></tr>`).join('') || '<tr><td colspan="6" class="cm-lo">No assignments yet.</td></tr>'}</tbody></table></div>
+        <p class="cm-lo">${names ? 'Names are showing: hide them before you share your screen.' : 'Names are hidden, so this is safe on a shared screen.'} Averages count graded work, released or not. Behind: missing work past its due date, a running total under ${LOW_TOTAL}%, or (for students who tick items done) under ${LOW_MODULES}% of the items in modules open a week or more.</p></div>`;
+      wirePicker(body);
+      body.querySelector('[data-names]').onclick = () => { names = !names; draw(); };
+    }
+    draw();
+    return live(draw);
+  }
+
+  window.CourseMode = { grader: renderGrader, gradebook: renderGradebook, stats: renderStats, groups: renderGroups, discussions: renderDiscussions, announcements: renderAnnouncements, office: renderOfficeHours };
   if (TA_HOST) return;
   window.UNI_WIDGETS = [
     { id: 'coursebuilder', cat: 'course', title: '🏛️ Course builder', desc: 'Create a university course: code, term, grading weights, late policy, people.', icon: 'people', w: 440, h: 600, render: renderBuilder },
@@ -629,5 +714,6 @@
     { id: 'courseoffice', cat: 'course', title: '🙋 Office hours', desc: 'Open bookable slots, see who booked and why.', icon: 'people', w: 480, h: 600, render: renderOfficeHours },
     { id: 'coursegroups', cat: 'course', title: '👥 Groups', desc: 'Put students in groups for group projects; see each group’s task list.', icon: 'people', w: 520, h: 640, render: renderGroups },
     { id: 'gradebook', cat: 'course', title: '📒 Gradebook', desc: 'Students by assignments, weighted totals, CSV export.', icon: 'stats', w: 760, h: 560, render: renderGradebook },
+    { id: 'coursestats', cat: 'course', title: '📊 Course stats', desc: 'Who is behind, submission and on-time rates, averages; names hidden for shared screens.', icon: 'stats', w: 720, h: 620, render: renderStats },
   ];
 })();

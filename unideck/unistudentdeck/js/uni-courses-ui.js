@@ -592,7 +592,7 @@
   /* ---------------- TAdeck (phase 3) ----------------
      For a student the instructor made a TA. The screens are LectureDeck's Course mode (js/course-mode.js, the same file),
      opened here under UniStudentDeck's sign-in; they list only the courses where you are course staff. */
-  const TA_TABS = [['grader', '✅ Grader'], ['gradebook', '📒 Gradebook'], ['groups', '👥 Groups'], ['discussions', '💬 Discussions'], ['announcements', '📣 Announcements'], ['office', '🙋 Office hours']];
+  const TA_TABS = [['grader', '✅ Grader'], ['gradebook', '📒 Gradebook'], ['stats', '📊 Course stats'], ['groups', '👥 Groups'], ['discussions', '💬 Discussions'], ['announcements', '📣 Announcements'], ['office', '🙋 Office hours']];
   function renderTaDesk(body) {
     let seq = 0, tab = 'grader', stop = null;
     try { tab = localStorage.getItem('ud_tadesk_tab') || 'grader'; } catch (e) {}

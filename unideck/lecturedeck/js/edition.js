@@ -8,7 +8,7 @@
    The version lives here (tools/release.py checks it against manifest.json, the HTML pages and the README). */
 window.DECK_EDITION = Object.freeze({
   name: 'LectureDeck',
-  version: '0.7.0',
+  version: '0.8.0',
   uni: true,                  // the university edition
   officialIds: ['lglogedbdfjcncfhmkbgkehljfnokbjd']   // this build's extension ID (manifest key); js/app.js treats it as official
 });
