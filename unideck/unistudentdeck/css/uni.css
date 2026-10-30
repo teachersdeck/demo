@@ -133,6 +133,15 @@ html[data-mode="light"] .ud-pick input[type=date]{color-scheme:light;background:
 .ud-q .ud-check{margin:6px 0}
 .ud-qtext{width:100%;box-sizing:border-box;font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);padding:8px 10px;border-radius:10px}
 .ud-qres{margin:2px 0}
+/* Graduate tools (phase 5, v0.13.0; js/grad.js) */
+.ud-progress{height:8px;border-radius:999px;background:rgba(127,127,127,.2);overflow:hidden;margin:6px 0}.ud-progress span{display:block;height:100%;background:var(--gold)}
+.ud-chap input,.ud-chap select,.ud-act input,.ud-act select{font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:8px;padding:4px 6px;min-width:0;width:100%;box-sizing:border-box}
+.ud-chap td:nth-child(3),.ud-chap td:nth-child(4){width:80px}.ud-chap td:nth-child(5){width:130px}.ud-nowrap{white-space:nowrap}
+.ud-act{display:grid;grid-template-columns:auto 1fr 110px 130px auto;gap:6px;align-items:center;margin:4px 0}.ud-act input[type=checkbox]{width:auto}
+.ud-ref{line-height:1.5;padding-left:1.5em;text-indent:-1.5em;margin:4px 0 0}
+.ud-refs li,.ud-entry{display:block}.ud-clip{display:block;margin-top:2px}
+.ud-share .ud-list li{display:flex;justify-content:space-between;gap:8px;align-items:center}
+html[data-mode="light"] .ud-chap input,html[data-mode="light"] .ud-chap select,html[data-mode="light"] .ud-act input,html[data-mode="light"] .ud-act select{background:var(--panel2)}
 
 /* ---------- Phones (web app, UniDeck phase 3) ----------
    Phones and tablets show live tiles (css/bento.css and js/bento.js, shared with StudentDeck). The rules under

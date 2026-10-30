@@ -954,6 +954,67 @@
     return live(draw);
   }
 
+  /* ---------------- Supervision (phase 5, UniDeck v0.14.0; backend v2.21.0) ----------------
+     A graduate student's supervisor notes, read-only: the student keeps them in UniStudentDeck and chooses to share a
+     copy (meetings, and if they tick it their thesis progress) with a one-time code entered here. The student sees
+     when you last looked and can stop sharing at any time. Nothing here changes their notes. */
+  function renderSupervision(body) {
+    let seq = 0, open = null;
+    const dayOf = (ms) => (ms ? new Date(ms).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+    const STAT = { planned: 'Planned', drafting: 'Drafting', revising: 'Revising', done: 'Done' };
+    async function draw() {
+      const my = ++seq;
+      if (!gate(body, draw)) return;
+      let list;
+      try { list = (await C.mySupervisees()).students; } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+      if (my !== seq) return;
+      if (open && list.some((s) => s.studentUid === open)) {
+        let v;
+        try { v = await C.supervisionView(open); } catch (e) { body.innerHTML = `<p class="cm-pad">${h(C.errText(e))}</p>`; return; }
+        if (my !== seq) return;
+        return view(v, list.find((s) => s.studentUid === open));
+      }
+      body.innerHTML = `<div class="cm-pad">
+        <form class="cm-row" data-join><input name="code" placeholder="Code from your student, e.g. ABCD-2345" maxlength="12" autocomplete="off" aria-label="Code from your student" style="flex:1"><button class="wbtn primary">Link</button></form>
+        <ul class="cm-list">${list.map((s) => `<li><button class="cm-linkbtn" data-open="${h(s.studentUid)}"><b>${h(s.studentName)}</b><span class="cm-lo">${h(s.email || '')}${s.sharing ? (s.publishedAtMs ? ` · updated ${h(when(s.publishedAtMs))}` : ' · nothing shared yet') : ' · not sharing right now'}</span></button></li>`).join('')
+          || '<li class="cm-lo">No students yet. A graduate student turns on sharing in UniStudentDeck → 🧑‍🏫 Supervisor notes and gives you a code.</li>'}</ul>
+        <p class="cm-lo">You see a read-only copy of what each student chooses to share: their supervisor meetings and, if they include it, their thesis progress. Never their citations or lab log.</p></div>`;
+      const f = body.querySelector('[data-join]');
+      f.onsubmit = async (e) => { e.preventDefault(); const code = f.code.value.trim(); if (!code) return;
+        try { const r = await C.joinSupervision(code); say(`Linked: ${r.studentName}.`); open = r.studentUid; draw(); } catch (er) { say(C.errText(er)); } };
+      body.querySelectorAll('[data-open]').forEach((b) => { b.onclick = () => { open = b.dataset.open; draw(); }; });
+    }
+    function view(v, s) {
+      const t = v.thesis;
+      const words = t ? t.chapters.reduce((a, c) => a + (c.words || 0), 0) : 0;
+      const goal = t ? (t.wordGoal || t.chapters.reduce((a, c) => a + (c.goal || 0), 0)) : 0;
+      const pct = goal ? Math.min(100, Math.round((words / goal) * 100)) : 0;
+      const openActs = v.meetings.flatMap((m) => (m.actions || []).filter((a) => !a.done && a.owner === 'supervisor'));
+      body.innerHTML = `<div class="cm-pad"><button class="cm-linkbtn" data-back>← All students</button>
+        <div class="cm-split"><p class="cm-k">${h(v.studentName)} <span class="cm-lo">${h(v.email || '')}</span></p><button class="wbtn" data-leave>Unlink</button></div>
+        ${!v.sharing ? '<p class="cm-warn">Not sharing right now. The student has turned sharing off; you’ll see their notes again if they turn it back on.</p>'
+        : `<p class="cm-lo">${v.publishedAtMs ? `Updated ${h(when(v.publishedAtMs))}` : 'Nothing shared yet'} · read-only</p>
+          ${openActs.length ? `<div class="cm-card"><p class="cm-k">Waiting on you (${openActs.length})</p>${openActs.map((a) => `<p>• ${h(a.text)}${a.dueAtMs ? ` <span class="cm-lo">· by ${h(dayOf(a.dueAtMs))}</span>` : ''}</p>`).join('')}</div>` : ''}
+          ${t ? `<div class="cm-card"><p class="cm-k">🎓 ${h(t.title || 'Thesis')}</p><p class="cm-lo">${t.dueAtMs ? `Due ${h(dayOf(t.dueAtMs))} · ` : ''}${words.toLocaleString()}${goal ? ` of ${goal.toLocaleString()}` : ''} words${goal ? ` · ${pct}%` : ''}</p>
+            <div class="cm-bar"><span style="width:${pct}%"></span></div>
+            ${t.chapters.length ? `<table class="cm-tbl"><thead><tr><th>Chapter</th><th>Status</th><th>Words</th><th>Due</th></tr></thead><tbody>${t.chapters.map((c) => `<tr><td>${h(c.title)}</td><td><span class="cm-tag ${c.status === 'done' ? 's' : c.status === 'planned' ? '' : 'g'}">${STAT[c.status] || h(c.status)}</span></td><td>${(c.words || 0).toLocaleString()}${c.goal ? ` / ${c.goal.toLocaleString()}` : ''}</td><td class="cm-lo">${h(dayOf(c.dueAtMs))}</td></tr>`).join('')}</tbody></table>` : ''}
+            ${t.milestones.length ? `<p class="cm-lo">Milestones</p>${t.milestones.map((m) => `<p>${m.done ? '✅' : '⬜'} ${h(m.title)}${m.dueAtMs ? ` <span class="cm-lo">· ${h(dayOf(m.dueAtMs))}</span>` : ''}</p>`).join('')}` : ''}</div>` : ''}
+          <p class="cm-k">Meetings</p>
+          ${v.meetings.map((m) => `<div class="cm-card"><p class="cm-k">${h(m.title || 'Meeting')} <span class="cm-lo">· ${h(when(m.atMs))}</span></p>
+            ${(m.agenda || []).length ? `<p class="cm-lo">Agenda</p>${m.agenda.map((x) => `<p>• ${h(x)}</p>`).join('')}` : ''}
+            ${m.notes ? `<p class="cm-lo">Notes</p><p>${rich(m.notes)}</p>` : ''}
+            ${(m.actions || []).length ? `<p class="cm-lo">Action items</p>${m.actions.map((a) => `<p>${a.done ? '✅' : '⬜'} ${h(a.text)} <span class="cm-tag">${a.owner === 'supervisor' ? 'you' : 'student'}</span>${a.dueAtMs ? ` <span class="cm-lo">· by ${h(dayOf(a.dueAtMs))}</span>` : ''}</p>`).join('')}` : ''}</div>`).join('')
+            || '<p class="cm-lo">No meetings shared yet.</p>'}`}</div>`;
+      body.querySelector('[data-back]').onclick = () => { open = null; draw(); };
+      body.querySelector('[data-leave]').onclick = async () => {
+        if (!confirm(`Stop seeing ${v.studentName}’s supervisor notes? They can give you a new code later.`)) return;
+        try { await C.leaveSupervision(s.studentUid); open = null; draw(); } catch (e) { say(C.errText(e)); }
+      };
+    }
+    draw();
+    return live(draw);
+  }
+
   window.CourseMode = { quizzes: renderQuizBuilder, grader: renderGrader, gradebook: renderGradebook, stats: renderStats, groups: renderGroups, discussions: renderDiscussions, announcements: renderAnnouncements, office: renderOfficeHours };
   if (TA_HOST) return;
   window.UNI_WIDGETS = [
@@ -967,6 +1028,7 @@
     { id: 'courseoffice', cat: 'course', title: '🙋 Office hours', desc: 'Open bookable slots, see who booked and why.', icon: 'people', w: 480, h: 600, render: renderOfficeHours },
     { id: 'coursegroups', cat: 'course', title: '👥 Groups', desc: 'Put students in groups for group projects; see each group’s task list.', icon: 'people', w: 520, h: 640, render: renderGroups },
     { id: 'coursequiz', cat: 'course', title: '📝 Quiz builder', desc: 'Quizzes and question banks: multiple choice, true/false, short answer; time and attempt limits; bring in Poll and Exit Ticket questions.', icon: 'clipboard', w: 620, h: 660, render: renderQuizBuilder },
+    { id: 'supervision', cat: 'course', title: '🎓 Supervision', desc: 'Graduate students’ supervisor notes and thesis progress, shared with you read-only by a code.', icon: 'people', w: 560, h: 640, render: renderSupervision },
     { id: 'gradebook', cat: 'course', title: '📒 Gradebook', desc: 'Students by assignments, weighted totals, CSV export.', icon: 'stats', w: 760, h: 560, render: renderGradebook },
     { id: 'coursestats', cat: 'course', title: '📊 Course stats', desc: 'Who is behind, submission and on-time rates, averages; names hidden for shared screens.', icon: 'stats', w: 720, h: 620, render: renderStats },
   ];

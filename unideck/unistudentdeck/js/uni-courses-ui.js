@@ -16,6 +16,12 @@
   const MAX_FILE = 25 * 1048576, TYPES = /^(application\/pdf|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|image\/(png|jpeg|gif|webp))$/;
 
   /* Sign-in gate shared by all three widgets: Google, then a date of birth once. Returns true when ready. */
+  /* Phase 5: the graduate tools switch (js/grad.js). They work without an account, so it shows signed out too. */
+  const gradLink = () => (window.UDGrad ? `Graduate tools: <a href="#" data-grad>${window.UDGrad.on ? 'on' : 'off'}</a>` : '');
+  function wireGrad(body) {
+    const gr = body.querySelector('[data-grad]');
+    if (gr) gr.onclick = (e) => { e.preventDefault(); if (confirm(window.UDGrad.on ? 'Turn off graduate tools? Their widgets leave the dock; what you wrote stays on this device. The page reloads.' : 'Turn on graduate tools: Thesis tracker, Citations, Lab log and Supervisor notes? The page reloads.')) window.UDGrad.set(!window.UDGrad.on); };
+  }
   function gate(body, redraw) {
     const s = C.state();
     if (!C.available()) {
@@ -31,7 +37,8 @@
         return false;
       }
       body.innerHTML = `<div class="ud-empty"><p><b>Sign in to see your courses</b></p><p class="muted">Use your Google or university Google account.${C.demo ? ' (Demo: no real account is used.)' : ''}</p>
-        <div class="row center"><button class="btn primary" data-in ${s.busy ? 'disabled' : ''}>Sign in with Google</button></div></div>`;
+        <div class="row center"><button class="btn primary" data-in ${s.busy ? 'disabled' : ''}>Sign in with Google</button></div>${gradLink() ? `<p class="muted ud-foot">${gradLink()}</p>` : ''}</div>`;
+      wireGrad(body);
       body.querySelector('[data-in]').onclick = async () => { try { await C.signIn('student'); redraw(); } catch (e) { say(C.errText(e)); } };
       return false;
     }
@@ -94,7 +101,7 @@
         <ul class="ud-list">${list.map((c) => `<li class="${c.courseId === cur ? 'on' : ''}"><button class="ud-linkbtn" data-open="${h(c.courseId)}"><b>${h(c.title)}</b><span class="muted">${h([c.term, c.section].filter(Boolean).join(' · '))}${c.role !== 'student' ? ' · ' + h(c.role.toUpperCase()) : ''}</span></button>
           ${c.role === 'student' || c.role === 'ta' ? `<button class="ud-x" title="Leave course" aria-label="Leave ${h(c.title)}" data-leave="${h(c.courseId)}">×</button>` : ''}</li>`).join('')}</ul>
         <div data-home></div>
-        <p class="muted ud-foot">Signed in as ${h(s.user.email || s.user.name)}${s.under18 ? ' · under-18 account (AI tools off)' : ''} · <a href="#" data-out>Sign out</a></p></div>`;
+        <p class="muted ud-foot">Signed in as ${h(s.user.email || s.user.name)}${s.under18 ? ' · under-18 account (AI tools off)' : ''} · <a href="#" data-out>Sign out</a>${gradLink() ? ' · ' + gradLink() : ''}</p></div>`;
       const f = body.querySelector('[data-join]');
       f.onsubmit = async (e) => { e.preventDefault(); const code = f.code.value.trim(); if (!code) return;
         try { const r = await C.joinCourse(code); C.setCurrentCourse(r.courseId); say(r.alreadyIn ? `You’re already in ${r.title}.` : `Joined ${r.title}.`); } catch (er) { say(C.errText(er)); } };
@@ -103,6 +110,7 @@
         if (!confirm('Leave this course? Your submitted work and grades stay with your instructor.')) return;
         try { await C.leaveCourse(b.dataset.leave); C.setCurrentCourse(''); } catch (er) { say(C.errText(er)); } }; });
       body.querySelector('[data-out]').onclick = (e) => { e.preventDefault(); C.signOut(); };
+      wireGrad(body);
       if (cur) home(body.querySelector('[data-home]'), cur, my, list);
     }
     async function home(el, cid, my, list) {
