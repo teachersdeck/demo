@@ -26,7 +26,7 @@ const V = (en, vi) => { if (!/^vi/i.test(document.documentElement.lang || '')) r
 const LOC = () => (/^vi/i.test(document.documentElement.lang || '') ? 'vi-VN' : []);
 
 function fresh() {
-  return { active: {}, layout: {}, todo: [], hwDone: {}, hwPending: {}, theme: 'dusk',
+  return { active: {}, layout: {}, todo: [], hwDone: {}, hwPending: {}, theme: 'dusk', customBg: false, dim: false,
     timer: { dur: 1500, left: 1500, endsAt: 0, doneDate: '', doneCount: 0 },
     reading: { entries: [], startedAt: 0 },
     games: { plays: {}, scores: {} }, idiom: { learned: [], awardDate: '' }, journal: { entries: [] }, notes: { pages: [], current: '', lastAward: 0 }, scrap: { books: [], lastOpen: '', lastItemDay: '' }, badges: { earned: {}, init: false, bestStreak: 0 }, fsBar: false, docTime: {}, filesSort: 'recent', hwLinks: {}, hwCache: [], docToReading: true, pdfTools: false, docFocus: true, words: [], tr: { from: 'en', to: 'vi', hist: [] }, cardsBonusDate: '',
@@ -1249,17 +1249,18 @@ const idb = (() => {
   let db = null;
   const open = () => db ? Promise.resolve(db) : new Promise((res, rej) => {
     if (typeof indexedDB === 'undefined') return rej(new Error(V('IndexedDB isn\u2019t available here', 'Không dùng được IndexedDB ở đây')));
-    const q = indexedDB.open('StudentDeck', 1);
-    q.onupgradeneeded = e => { const d = e.target.result; if (!d.objectStoreNames.contains('files')) d.createObjectStore('files', { keyPath: 'id' }); };
+    const q = indexedDB.open('StudentDeck', 2);   // v2 (v0.23.0) adds 'images': the background photo, kept out of the Files list
+    q.onupgradeneeded = e => { const d = e.target.result; ['files', 'images'].forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n, { keyPath: 'id' }); }); };
     q.onsuccess = e => { db = e.target.result; db.onversionchange = () => { db.close(); db = null; }; res(db); };
     q.onerror = e => rej(e.target.error);
     q.onblocked = () => rej(new Error(V(`Another ${APP} tab is blocking an update \u2014 close it and reload`, `Một thẻ ${APP} khác đang chặn việc cập nhật \u2014 hãy đóng thẻ đó và tải lại`)));
   });
-  const run = (mode, fn) => open().then(d => new Promise((res, rej) => {
-    const tx = d.transaction('files', mode), r = fn(tx.objectStore('files'));
+  const run = (mode, fn, store = 'files') => open().then(d => new Promise((res, rej) => {
+    const tx = d.transaction(store, mode), r = fn(tx.objectStore(store));
     tx.oncomplete = () => res(r && r.result); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
   }));
-  return { put: rec => run('readwrite', st => st.put(rec)), delete: id => run('readwrite', st => st.delete(id)), getAll: () => run('readonly', st => st.getAll()) };
+  return { put: rec => run('readwrite', st => st.put(rec)), delete: id => run('readwrite', st => st.delete(id)), getAll: () => run('readonly', st => st.getAll()),
+    image: { put: rec => run('readwrite', st => st.put(rec), 'images'), get: id => run('readonly', st => st.get(id), 'images') } };
 })();
 
 const GOOGLE_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads';
@@ -2053,28 +2054,65 @@ const PRESETS = [
   { id: 'slate', css: 'linear-gradient(180deg,#20242c 0%, #2b3038 100%)' },
   { id: 'plain', css: '#12161C' }
 ];
+// v0.23.0: your own background photo, as in TeachersDeck's Theme drawer (free here: it isn't on StudentDeck's Pro list).
+// One slot, id 'background' in IndexedDB 'images'. bgUrl is its object URL; when storage is blocked it shows for this session only.
+let bgUrl = null;
+const BG_DIM = 'linear-gradient(rgba(6,9,14,.28),rgba(6,9,14,.28)),';   // the same dim as TeachersDeck's overlay
 function applyTheme() {
+  const dim = state.dim ? BG_DIM : '';
+  if (bgUrl) { document.body.style.background = `${dim}center/cover no-repeat url(${bgUrl})`; return; }
   const p = PRESETS.find(p => p.id === state.theme) || PRESETS[0];
-  document.body.style.background = presetBg(p);
+  document.body.style.background = dim + presetBg(p);
   document.body.style.backgroundSize = 'cover';
 }
 const presetBg = p => (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
-function buildThemePop() {                                          // Light / Dark on top (mounted once), the backgrounds below
+async function loadCustomBg() {
+  if (!state.customBg) return;
+  try {
+    const rec = await idb.image.get('background');
+    if (rec && rec.blob) { bgUrl = URL.createObjectURL(rec.blob); applyTheme(); buildThemePop(); }
+    else { state.customBg = false; save(); }                      // the saved photo is gone: back to the preset
+  } catch (e) { console.error('StudentDeck: failed to load the background photo', e); }
+}
+async function pickBg(file) {
+  if (!file) return;
+  if (bgUrl) URL.revokeObjectURL(bgUrl);
+  bgUrl = URL.createObjectURL(file);                                // 1) show it straight away, whatever storage does
+  applyTheme(); buildThemePop();
+  try {                                                             // 2) then remember it
+    await Promise.race([idb.image.put({ id: 'background', blob: file }), new Promise((_, rej) => setTimeout(() => rej(new Error('timed out saving background')), 6000))]);
+    state.customBg = true; save();
+    toast(V('Background updated', 'Đã cập nhật hình nền'));
+  } catch (e) {
+    console.error('StudentDeck: background applied but could not be saved', e);
+    toast(V('Background applied — but this window can’t save it, so it will reset on reload.', 'Đã áp dụng hình nền — nhưng cửa sổ này không thể lưu nên sẽ đặt lại khi tải lại.'), 5000);
+  }
+}
+function buildThemePop() {                                          // Light / Dark on top (mounted once), the backgrounds below, then your own photo
   const pop = $('#theme-pop');
   if (!pop.querySelector('.swatch-grid')) {
-    pop.innerHTML = `${typeof DeckMode !== 'undefined' ? `<p class="pop-label">${V('Mode', 'Chế độ')}</p><div class="mode-switch"></div><p class="pop-label">${V('Background', 'Hình nền')}</p>` : ''}<div class="swatch-grid"></div>`;
+    pop.innerHTML = `${typeof DeckMode !== 'undefined' ? `<p class="pop-label">${V('Mode', 'Chế độ')}</p><div class="mode-switch"></div><p class="pop-label">${V('Background', 'Hình nền')}</p>` : ''}<div class="swatch-grid"></div>
+      <p class="pop-label bg-own">${V('Your image', 'Ảnh của bạn')}</p>
+      <label class="upload-row"><span>${V('Upload a background image', 'Tải lên hình nền')}</span><input type="file" id="bg-upload" accept="image/*" hidden></label>
+      <label class="switch-row"><span>${V('Dim background (better contrast)', 'Làm tối nền (tăng độ tương phản)')}</span><input type="checkbox" id="dim-toggle"></label>`;
     if (typeof DeckMode !== 'undefined') {
       DeckMode.mountSwitch(pop.querySelector('.mode-switch'), { label: V('Mode', 'Chế độ'), light: V('Light', 'Sáng'), dark: V('Dark', 'Tối') });
       DeckMode.onChange(() => { applyTheme(); buildThemePop(); });
     }
+    $('#bg-upload', pop).addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; pickBg(f); });   // value cleared: the same file can be picked again
+    $('#dim-toggle', pop).addEventListener('change', e => { state.dim = e.target.checked; save(); applyTheme(); });
   }
+  $('#dim-toggle', pop).checked = !!state.dim;
   const grid = pop.querySelector('.swatch-grid');
-  grid.innerHTML = PRESETS.map(p => `<button class="swatch ${state.theme === p.id ? 'active' : ''}" data-theme="${p.id}" style="background:${presetBg(p)}" aria-label="${V('Theme', 'Giao diện')} ${p.id}"></button>`).join('');
+  grid.innerHTML = PRESETS.map(p => `<button class="swatch ${!bgUrl && state.theme === p.id ? 'active' : ''}" data-theme="${p.id}" style="background:${presetBg(p)}" aria-label="${V('Theme', 'Giao diện')} ${p.id}"></button>`).join('');
   grid.querySelectorAll('[data-theme]').forEach(sw => sw.addEventListener('click', () => {
-    state.theme = sw.dataset.theme; save(); applyTheme(); buildThemePop();
+    state.theme = sw.dataset.theme; state.customBg = false;          // a preset replaces the photo (it stays stored until the next upload)
+    if (bgUrl) { URL.revokeObjectURL(bgUrl); bgUrl = null; }
+    save(); applyTheme(); buildThemePop();
   }));
 }
 buildThemePop();
+loadCustomBg();
 // Light / Dark in the top bar, just left of Settings as in every suite app (js/mode.js, css/mode.css). UniStudentDeck gets it once its page has #mode-toggle.
 if (typeof DeckMode !== 'undefined') DeckMode.mountSwitch(document.getElementById('mode-toggle'), { label: V('Mode', 'Chế độ'), light: V('Light', 'Sáng'), dark: V('Dark', 'Tối') }, { compact: true });
 $('#theme-pill').addEventListener('click', e => {
