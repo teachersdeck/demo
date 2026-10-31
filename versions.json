@@ -19,19 +19,19 @@
   },
   "apps": {
     "teachersdeck": {
-      "version": "0.25.0",
-      "label": "0.25.0 beta",
-      "date": "2026-10-23"
+      "version": "0.34.0",
+      "label": "0.34.0 beta",
+      "date": "2026-10-31"
     },
     "studentdeck": {
-      "version": "0.13.0",
-      "label": "0.13.0 beta",
-      "date": "2026-10-23"
+      "version": "0.22.0",
+      "label": "0.22.0 beta",
+      "date": "2026-10-31"
     },
     "parentdeck": {
-      "version": "0.21.6",
-      "label": "0.21.6 beta",
-      "date": "2026-10-19"
+      "version": "0.26.0",
+      "label": "0.26.0 beta",
+      "date": "2026-10-31"
     },
     "admindeck": {
       "version": "0.12.0",
