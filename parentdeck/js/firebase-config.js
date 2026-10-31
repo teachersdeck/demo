@@ -9,3 +9,9 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "YOUR_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
+
+/* Google sign-in inside the installed Chrome extension (js/ext-signin.js): the ID of the project's OAuth web client
+   ("Web client (auto created by Google Service)"), a public identifier. Its redirect URIs are listed in js/ext-signin.js. */
+window.GOOGLE_SIGNIN = {
+  googleClientId: "YOUR_OAUTH_WEB_CLIENT_ID"
+};

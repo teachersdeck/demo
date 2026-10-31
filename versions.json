@@ -1,16 +1,16 @@
 {
   "development": {
     "teachersdeck": {
-      "version": "0.34.0",
-      "label": "0.34.0 beta"
+      "version": "0.34.1",
+      "label": "0.34.1 beta"
     },
     "studentdeck": {
-      "version": "0.23.0",
-      "label": "0.23.0 beta"
+      "version": "0.23.1",
+      "label": "0.23.1 beta"
     },
     "parentdeck": {
-      "version": "0.26.0",
-      "label": "0.26.0 beta"
+      "version": "0.26.1",
+      "label": "0.26.1 beta"
     },
     "admindeck": {
       "version": "0.15.0",
