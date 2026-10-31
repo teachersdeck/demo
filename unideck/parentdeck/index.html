@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>👪 ParentDeck</title>
-<script src="js/mode.js?v=0.2.0"></script>   <!-- first: Light or Dark before anything paints (the same file in every suite app) -->
-<script src="js/edition.js?v=0.2.0"></script>   <!-- first: says which app this is (js/app.js is shared with ParentDeck) -->
-<link rel="stylesheet" href="css/style.css?v=0.2.0">
-<link rel="stylesheet" href="css/drawdeck-engine.css?v=0.2.0">
-<link rel="stylesheet" href="css/mode.css?v=0.2.0">
-<link rel="stylesheet" href="css/light.css?v=0.2.0">   <!-- Light mode only (html[data-mode=light]); generated in the suite by tools/gen_light_css.py -->
-<link rel="stylesheet" href="css/uni.css?v=0.2.0">   <!-- ParentDeck only; the other stylesheets are shared with ParentDeck -->
+<script src="js/mode.js?v=0.2.1"></script>   <!-- first: Light or Dark before anything paints (the same file in every suite app) -->
+<script src="js/edition.js?v=0.2.1"></script>   <!-- first: says which app this is (js/app.js is shared with ParentDeck) -->
+<link rel="stylesheet" href="css/style.css?v=0.2.1">
+<link rel="stylesheet" href="css/drawdeck-engine.css?v=0.2.1">
+<link rel="stylesheet" href="css/mode.css?v=0.2.1">
+<link rel="stylesheet" href="css/light.css?v=0.2.1">   <!-- Light mode only (html[data-mode=light]); generated in the suite by tools/gen_light_css.py -->
+<link rel="stylesheet" href="css/uni.css?v=0.2.1">   <!-- ParentDeck only; the other stylesheets are shared with ParentDeck -->
 </head>
 <body>
   <header class="top">
@@ -53,23 +53,24 @@
   </div>
 
   <!-- Cloud sync (optional): see js/firebase-config.js to enable -->
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-functions-compat.js"></script>
-  <script src="js/firebase-config.js?v=0.2.0"></script>
-  <script src="js/data.js?v=0.2.0"></script>
-  <script src="js/demo.js?v=0.2.0"></script>
-  <script src="js/badges.js?v=0.2.0"></script>
-  <script src="js/tier1.js?v=0.2.0"></script>
-  <script src="js/progate.js?v=0.2.0"></script>
-  <script src="js/watermark.js?v=0.2.0"></script>
-  <script src="js/drawdeck-engine.js?v=0.2.0"></script>
-  <script src="js/scrapdeck-core.js?v=0.2.0"></script>
-  <script src="js/keepdeck.js?v=0.2.0"></script>
-  <script src="js/keepdeck-scrap.js?v=0.2.0"></script>
-  <script src="js/keepdeck-render.js?v=0.2.0"></script>
-  <script src="js/uni-family.js?v=0.2.0"></script>   <!-- UniDeck: the family view widget (this app's own file); before app.js -->
-  <script src="js/app.js?v=0.2.0"></script>
+  <script src="js/vendor/firebase-app-compat.js?v=0.2.1"></script>
+  <script src="js/vendor/firebase-auth-compat.js?v=0.2.1"></script>
+  <script src="js/vendor/firebase-firestore-compat.js?v=0.2.1"></script>
+  <script src="js/vendor/firebase-functions-compat.js?v=0.2.1"></script>
+  <script src="js/firebase-config.js?v=0.2.1"></script>
+  <script src="js/ext-signin.js?v=0.2.1"></script>
+  <script src="js/data.js?v=0.2.1"></script>
+  <script src="js/demo.js?v=0.2.1"></script>
+  <script src="js/badges.js?v=0.2.1"></script>
+  <script src="js/tier1.js?v=0.2.1"></script>
+  <script src="js/progate.js?v=0.2.1"></script>
+  <script src="js/watermark.js?v=0.2.1"></script>
+  <script src="js/drawdeck-engine.js?v=0.2.1"></script>
+  <script src="js/scrapdeck-core.js?v=0.2.1"></script>
+  <script src="js/keepdeck.js?v=0.2.1"></script>
+  <script src="js/keepdeck-scrap.js?v=0.2.1"></script>
+  <script src="js/keepdeck-render.js?v=0.2.1"></script>
+  <script src="js/uni-family.js?v=0.2.1"></script>   <!-- UniDeck: the family view widget (this app's own file); before app.js -->
+  <script src="js/app.js?v=0.2.1"></script>
 </body>
 </html>

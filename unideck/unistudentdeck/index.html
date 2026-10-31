@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>🎓 UniStudentDeck</title>
-<script src="js/mode.js?v=0.15.0"></script>   <!-- first: Light or Dark before anything paints (the same file in every suite app) -->
-<script src="js/lang.js?v=0.15.0"></script>   <!-- then: English or Vietnamese (<html lang>), before anything paints -->
-<script src="js/edition.js?v=0.15.0"></script>   <!-- first: sets the university edition before anything paints -->
-<link rel="stylesheet" href="css/style.css?v=0.15.0">
-<link rel="stylesheet" href="css/mode.css?v=0.15.0">
-<link rel="stylesheet" href="css/light.css?v=0.15.0">   <!-- Light mode only (html[data-mode=light]); generated in the suite by tools/gen_light_css.py -->
-<link rel="stylesheet" href="css/bento.css?v=0.15.0">   <!-- phones and tablets: live tiles (shared with StudentDeck) -->
-<link rel="stylesheet" href="css/course-mode.css?v=0.15.0">   <!-- UniDeck: Course mode styles (LectureDeck and TAdeck) -->
-<link rel="stylesheet" href="css/uni.css?v=0.15.0">   <!-- UniStudentDeck only; css/style.css is shared with StudentDeck -->
+<script src="js/mode.js?v=0.15.1"></script>   <!-- first: Light or Dark before anything paints (the same file in every suite app) -->
+<script src="js/lang.js?v=0.15.1"></script>   <!-- then: English or Vietnamese (<html lang>), before anything paints -->
+<script src="js/edition.js?v=0.15.1"></script>   <!-- first: sets the university edition before anything paints -->
+<link rel="stylesheet" href="css/style.css?v=0.15.1">
+<link rel="stylesheet" href="css/mode.css?v=0.15.1">
+<link rel="stylesheet" href="css/light.css?v=0.15.1">   <!-- Light mode only (html[data-mode=light]); generated in the suite by tools/gen_light_css.py -->
+<link rel="stylesheet" href="css/bento.css?v=0.15.1">   <!-- phones and tablets: live tiles (shared with StudentDeck) -->
+<link rel="stylesheet" href="css/course-mode.css?v=0.15.1">   <!-- UniDeck: Course mode styles (LectureDeck and TAdeck) -->
+<link rel="stylesheet" href="css/uni.css?v=0.15.1">   <!-- UniStudentDeck only; css/style.css is shared with StudentDeck -->
 </head>
 <body>
   <header class="top">
@@ -84,29 +84,30 @@
     <div class="sbar"><button class="btn" id="s-back" data-vi="← Quay lại UniStudentDeck">← Back to <span class="app-name">UniStudentDeck</span></button><b id="s-title"></b><span class="grow"></span><button class="btn" id="s-help" data-vi="Cách chơi">How to play</button></div>
     <iframe id="s-frame" sandbox="allow-scripts allow-popups allow-modals allow-forms" title="Game" data-vi-title="Trò chơi"></iframe>
   </div>
-  <script src="js/idioms.js?v=0.15.0"></script>
-  <script src="js/games.js?v=0.15.0"></script>
+  <script src="js/idioms.js?v=0.15.1"></script>
+  <script src="js/games.js?v=0.15.1"></script>
   <!-- Class sync (optional): see js/firebase-config.js to enable -->
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-functions-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>   <!-- UniDeck: file submissions -->
-  <script src="js/firebase-config.js?v=0.15.0"></script>
-  <script src="js/demo.js?v=0.15.0"></script>   <!-- demo mode: must come BEFORE cloud.js (it swaps in throw-away storage first) -->
-  <script src="js/cloud.js?v=0.15.0"></script>
-  <script src="js/progate.js?v=0.15.0"></script>
-  <script src="js/scrapdeck-core.js?v=0.15.0"></script>
-  <script src="js/watermark.js?v=0.15.0"></script>   <!-- the shared export watermark (identical to the other apps' copy) -->
-  <script src="js/scrapdeck.js?v=0.15.0"></script>   <!-- Scrapdeck widget: must come BEFORE app.js, which lists it in WIDGETS -->
-  <script src="js/boardassign.js?v=0.15.0"></script>   <!-- Board Assignments widget: must come BEFORE app.js, which lists it in WIDGETS -->
-  <script src="js/coursemath.js?v=0.15.0"></script>   <!-- UniDeck: course maths (same file as the backend) -->
-  <script src="js/unicourses.js?v=0.15.0"></script>   <!-- UniDeck: course client (shared with LectureDeck) -->
-  <script src="js/uni-courses-ui.js?v=0.15.0"></script>   <!-- UniStudentDeck only: Courses, Assignments, Grades; before app.js -->
-  <script src="js/cite.js?v=0.15.0"></script>   <!-- UniStudentDeck only: citation styles, BibTeX (phase 5) -->
-  <script src="js/grad.js?v=0.15.0"></script>   <!-- UniStudentDeck only: graduate tools (thesis, citations, lab log, supervisor notes); after uni-courses-ui.js, before app.js -->
-  <script src="js/course-mode.js?v=0.15.0"></script>   <!-- UniDeck: LectureDeck's Course mode screens, for TAdeck (same file as LectureDeck's) -->
-  <script src="js/app.js?v=0.15.0"></script>
-  <script src="js/bento.js?v=0.15.0"></script>   <!-- after app.js: the widget wall as live tiles on phones and tablets -->
+  <script src="js/vendor/firebase-app-compat.js?v=0.15.1"></script>
+  <script src="js/vendor/firebase-auth-compat.js?v=0.15.1"></script>
+  <script src="js/vendor/firebase-firestore-compat.js?v=0.15.1"></script>
+  <script src="js/vendor/firebase-functions-compat.js?v=0.15.1"></script>
+  <script src="js/vendor/firebase-storage-compat.js?v=0.15.1"></script>   <!-- UniDeck: file submissions -->
+  <script src="js/firebase-config.js?v=0.15.1"></script>
+  <script src="js/ext-signin.js?v=0.15.1"></script>
+  <script src="js/demo.js?v=0.15.1"></script>   <!-- demo mode: must come BEFORE cloud.js (it swaps in throw-away storage first) -->
+  <script src="js/cloud.js?v=0.15.1"></script>
+  <script src="js/progate.js?v=0.15.1"></script>
+  <script src="js/scrapdeck-core.js?v=0.15.1"></script>
+  <script src="js/watermark.js?v=0.15.1"></script>   <!-- the shared export watermark (identical to the other apps' copy) -->
+  <script src="js/scrapdeck.js?v=0.15.1"></script>   <!-- Scrapdeck widget: must come BEFORE app.js, which lists it in WIDGETS -->
+  <script src="js/boardassign.js?v=0.15.1"></script>   <!-- Board Assignments widget: must come BEFORE app.js, which lists it in WIDGETS -->
+  <script src="js/coursemath.js?v=0.15.1"></script>   <!-- UniDeck: course maths (same file as the backend) -->
+  <script src="js/unicourses.js?v=0.15.1"></script>   <!-- UniDeck: course client (shared with LectureDeck) -->
+  <script src="js/uni-courses-ui.js?v=0.15.1"></script>   <!-- UniStudentDeck only: Courses, Assignments, Grades; before app.js -->
+  <script src="js/cite.js?v=0.15.1"></script>   <!-- UniStudentDeck only: citation styles, BibTeX (phase 5) -->
+  <script src="js/grad.js?v=0.15.1"></script>   <!-- UniStudentDeck only: graduate tools (thesis, citations, lab log, supervisor notes); after uni-courses-ui.js, before app.js -->
+  <script src="js/course-mode.js?v=0.15.1"></script>   <!-- UniDeck: LectureDeck's Course mode screens, for TAdeck (same file as LectureDeck's) -->
+  <script src="js/app.js?v=0.15.1"></script>
+  <script src="js/bento.js?v=0.15.1"></script>   <!-- after app.js: the widget wall as live tiles on phones and tablets -->
 </body>
 </html>
