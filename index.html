@@ -132,7 +132,7 @@
     <p class="kicker">Live demos</p>
     <h1>Try every app with example data</h1>
     <p class="lede">Each demo opens in its own window with a pretend class, student or school already set up. Nothing is saved to a server, and you can close the window at any time. The demos follow the latest development, so they can be ahead of the released versions.</p>
-    <div class="jump"><a class="btn" href="#school">School</a><a class="btn" href="#uni">University</a><a class="btn" href="#web">Web apps</a><a class="btn" href="#lms">In your LMS</a></div>
+    <div class="jump" id="jump"><a class="btn" href="#school">School</a><a class="btn" href="#uni">University</a><a class="btn" href="#web">Web apps</a><a class="btn" href="#lms">In your LMS</a></div>
     <ul class="legend" aria-label="What the lights mean">
       <li><span class="lamp" data-s="ok"></span>Online</li>
       <li><span class="lamp" data-s="slow"></span>Slow to answer</li>
@@ -141,6 +141,10 @@
     </ul>
   </div>
 
+  <!-- The sections below are replaced, once the page loads, by ones built from the site's list of apps
+       (https://myteachersdeck.com/apps/apps.json, the same list as Get the apps), so a new app shows up here by itself.
+       These written-out rows are what shows if that list can't be fetched. -->
+  <div id="list">
   <section class="box" id="school">
     <div class="head"><h2>TeachersDeck Suite</h2><p>For schools and language centers: one app for each person in the class.</p></div>
     <ul class="list">
@@ -199,14 +203,16 @@
         <div class="go"><a class="btn primary play" href="moodle/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="moodle/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
     </ul>
   </section>
+  </div>
 </main>
 
-<footer><div class="bar"><span>Updated 04 Nov 2026, 13:57 UTC (build efa1e71)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
+<footer><div class="bar"><span>Updated 04 Nov 2026, 14:08 UTC (build 3aa8343)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
 
 <script>
 (function () {
-  var SLOW_MS = 1500, TIMEOUT_MS = 8000;
-  var rows = Array.prototype.slice.call(document.querySelectorAll('.app[data-path], .app[data-web]'));
+  var SLOW_MS = 1500, TIMEOUT_MS = 8000, APPS = 'https://myteachersdeck.com/apps/apps.json';
+  var rows = [];
+  var findRows = function () { rows = Array.prototype.slice.call(document.querySelectorAll('.app[data-path], .app[data-web]')); };
   var TEXT = { ok: 'Online', slow: 'Online, but slow to answer', down: 'Not answering right now. Try again in a few minutes.', checking: 'Checking…' };
 
   function set(row, s, version) {
@@ -231,25 +237,84 @@
     // data-check names another file to fetch for builds that ship no manifest.json: a .json file is read for its "version"
     // (the ClassIn and Canvas builds' build-info.json); a page only says the site answers. A build-info.json that isn't
     // there yet (a site not yet published by the suite) falls back to index.html, so the row still shows online.
+    // Rows built from the app list have no data-check: they try manifest.json, then build-info.json, then the page itself.
     var base = row.getAttribute('data-path'), page = row.getAttribute('data-check'), opts = { cache: 'no-store', signal: ctl ? ctl.signal : undefined };
     var get = function (file) { return fetch(base + file + '?t=' + Date.now(), opts); };
-    get(page || 'manifest.json')
-      .then(function (r) {
-        if (r.ok) return (!page || /\.json$/.test(page)) ? r.json() : { version: null, page: true };
-        if (page && /\.json$/.test(page)) return get('index.html').then(function (r2) { if (!r2.ok) throw new Error('HTTP ' + r2.status); return { version: null, page: true }; });
+    var files = page ? [page, 'index.html'] : ['manifest.json', 'build-info.json', 'index.html'];
+    var next = function (i) {
+      return get(files[i]).then(function (r) {
+        if (r.ok) return /\.json$/.test(files[i]) ? r.json() : { version: null, page: true };
+        if (i + 1 < files.length) return next(i + 1);
         throw new Error('HTTP ' + r.status);
-      })
+      });
+    };
+    next(0)
       .then(function (m) { done(m && (m.version || m.page) && performance.now() - t0 < SLOW_MS ? 'ok' : 'slow', m && m.version); })
       .catch(function () { done('down'); });
   }
   function checkAll() { rows.forEach(check); }
+
+  /* ---- the sections, built from the site's app list (the same one as Get the apps) ---- */
+  var NOTE = {
+    school: 'For schools and language centers: one app for each person in the class.',
+    preschool: 'KinderDeck, the preschool edition. No live demos yet: Get the apps has the latest on each app.',
+    uni: 'UniDeck, the university edition, in early preview: for colleges, graduate programs, language centers and test-prep schools.',
+    lms: 'TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.'
+  };
+  var STATUS = { preview: 'Preview', beta: 'Beta', soon: 'Coming soon' };
+  var PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>';
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  // The icon's two letters: the first two capitals of the app's name (TeachersDeck TD, TinyTeachersDeck TT), or of the
+  // platform for an LMS build ("TeachersDeck for ClassIn" CI)
+  var initials = function (name) { var w = (name.split(' for ')[1] || name.split(' ')[0]), c = w.match(/[A-Z]/g) || []; return (c.length > 1 ? c[0] + c[1] : w.slice(0, 2)).toUpperCase(); };
+  var en = function (x) { return x && typeof x === 'object' ? (x.en || '') : (x || ''); };
+  function who(a, extra) { return '<p class="who"><b>' + esc(extra || en(a['for'])) + '</b>' + (en(a.line) ? ' · ' + esc(en(a.line)) : '') + '</p>'; }
+  function idBlock(a, inner, lamp) {
+    return '<div class="id"><span class="ic" aria-hidden="true">' + esc(initials(a.name)) + (lamp ? '<span class="lamp" data-s="checking"></span>' : '') + '</span><div>' + inner + '</div></div>';
+  }
+  function demoRow(a) {
+    var href = a.demo, folder = href.split(/[?#]/)[0];
+    // the LMS builds ship build-info.json instead of a manifest.json
+    return '<li class="app" data-path="' + esc(folder) + '"' + (a.group === 'lms' ? ' data-check="build-info.json"' : '') + '>' + idBlock(a, '<h3>' + esc(a.name) + '<span class="ver"></span></h3>' + who(a) + '<p class="state" role="status">Checking…</p>', true) +
+      '<div class="go"><a class="btn primary play" href="' + esc(href) + '">' + PLAY + 'Play demo</a><a class="tab" href="' + esc(href) + '" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>';
+  }
+  function laterRow(a) {   // an app with no demo yet (KinderDeck's): its status, and its row on Get the apps
+    return '<li class="app">' + idBlock(a, '<h3>' + esc(a.name) + (STATUS[a.status] ? '<span class="ver">' + esc(STATUS[a.status]) + '</span>' : '') + '</h3>' + who(a) + '<p class="state">No live demo yet</p>', false) +
+      '<div class="go"><a class="btn" href="' + esc(a.hub || 'https://myteachersdeck.com/apps/') + '">See it on Get the apps ↗</a></div></li>';
+  }
+  function webRow(a) {
+    var host = a.web.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    return '<li class="app" data-web="' + esc(a.web) + '">' + idBlock(a, '<h3>' + esc(a.name) + '</h3><p class="who"><b>' + esc(host) + '</b> · ' + esc(en(a['for'])) + '</p><p class="state" role="status">Checking…</p>', true) +
+      '<div class="go"><a class="btn primary" href="' + esc(a.web) + '" target="_blank" rel="noopener">Open the web app ↗</a></div></li>';
+  }
+  function section(id, title, note, items, steps) {
+    return items ? '<section class="box" id="' + id + '"><div class="head"><h2>' + esc(title) + '</h2>' + (note ? '<p>' + esc(note) + '</p>' : '') + '</div>' + (steps || '') + '<ul class="list">' + items + '</ul></section>' : '';
+  }
+  function build(data) {
+    var apps = (data && data.apps) || [], groups = (data && data.groups) || [];
+    var html = '', jump = '';
+    var add = function (id, title, h) { if (h) { html += h; jump += '<a class="btn" href="#' + id + '">' + esc(title) + '</a>'; } };
+    groups.forEach(function (g) {
+      var items = apps.filter(function (a) { return a.group === g.id; }).map(function (a) { return a.demo ? demoRow(a) : laterRow(a); }).join('');
+      add(g.id, en(g), section(g.id, en(g), NOTE[g.id], items));
+      if (g.id === 'uni') {   // the web apps after the editions they belong to, before the LMS builds
+        var web = apps.filter(function (a) { return a.web; }).map(webRow).join('');
+        add('web', 'Web apps', section('web', 'Web apps for phones and tablets', 'The real apps at their own addresses, with your own sign-in rather than the example data above. On a phone or tablet the widgets become live tiles.', web,
+          document.querySelector('#web .steps') ? document.querySelector('#web .steps').outerHTML : ''));
+      }
+    });
+    if (!html || !/data-path=/.test(html)) return false;   // nothing usable: keep the written-out rows
+    document.getElementById('list').innerHTML = html;
+    document.getElementById('jump').innerHTML = jump;
+    return true;
+  }
 
   // Play opens the demo in its own window; if the browser blocks pop-ups, the link simply opens it here.
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a.play');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     var w = Math.min(1440, screen.availWidth - 40), h = Math.min(900, screen.availHeight - 60);
-    var win = window.open(a.href, 'demo-' + a.closest('.app').getAttribute('data-path').replace(/\W+/g, '-'),
+    var win = window.open(a.href, 'demo-' + (a.closest('.app').getAttribute('data-path') || '').replace(/^https?:\/\/[^/]+\//, '').replace(/\W+/g, '-'),
       'popup=yes,width=' + w + ',height=' + h + ',left=' + Math.round((screen.availWidth - w) / 2) + ',top=' + Math.round((screen.availHeight - h) / 2));
     if (win) { e.preventDefault(); try { win.focus(); } catch (x) {} }
   });
@@ -261,7 +326,13 @@
     var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? '#0D1117' : '#F3F5FC';
   });
   if (document.documentElement.getAttribute('data-theme') === 'dark') document.querySelector('meta[name=theme-color]').content = '#0D1117';
-  checkAll(); setInterval(function () { if (!document.hidden) checkAll(); }, 60000);
+  var start = function () { findRows(); checkAll(); };
+  var ctl = 'AbortController' in window ? new AbortController() : null, wait = setTimeout(function () { if (ctl) ctl.abort(); }, 5000);
+  fetch(APPS, { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (d) { clearTimeout(wait); try { build(d); } catch (e) {} start(); if (location.hash) { var t = document.getElementById(location.hash.slice(1)); if (t) t.scrollIntoView(); } })
+    .catch(function () { clearTimeout(wait); start(); });
+  setInterval(function () { if (!document.hidden) checkAll(); }, 60000);
 })();
 </script>
 </body>
