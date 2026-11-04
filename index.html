@@ -110,8 +110,6 @@
   .lamp[data-s=checking]{animation:blink 1s ease-in-out infinite}
   @keyframes blink{50%{opacity:.35}}
 
-  .steps{margin:-8px 0 22px;padding:14px 18px;border-radius:16px;background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--muted);font-size:14.5px}
-  .steps b{color:var(--text)}
 
   footer{border-top:1px solid var(--line);color:var(--muted);font-size:13.5px}
   footer .bar{height:auto;padding:28px 20px 40px;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
@@ -144,7 +142,7 @@
     <p class="kicker">Live demos</p>
     <h1>Try every app with example data</h1>
     <p class="lede">Each demo opens in its own window with a pretend class, student or school already set up. Nothing is saved to a server, and you can close the window at any time. The demos follow the latest development, so they can be ahead of the released versions.</p>
-    <div class="jump" id="jump"><a class="btn" href="#school">School</a><a class="btn" href="#uni">University</a><a class="btn" href="#web">Web apps</a><a class="btn" href="#lms">In your LMS</a></div>
+    <div class="jump" id="jump"><a class="btn" href="#preschool">Preschool</a><a class="btn" href="#school">School</a><a class="btn" href="#uni">University</a><a class="btn" href="#lms">Platforms</a></div>
     <ul class="legend" aria-label="What the lights mean">
       <li><span class="lamp" data-s="ok"></span>Online</li>
       <li><span class="lamp" data-s="slow"></span>Slow to answer</li>
@@ -157,8 +155,20 @@
        (https://myteachersdeck.com/apps/apps.json, the same list as Get the apps), so a new app shows up here by itself.
        These written-out rows are what shows if that list can't be fetched. -->
   <div id="list">
+  <section class="box" id="preschool">
+    <div class="head"><h2>Preschool</h2><p>KinderDeck, the preschool edition. No live demos yet: Get the apps has the latest on each app.</p></div>
+    <ul class="list">
+      <li class="app"><div class="id"><span class="ic" aria-hidden="true">KD</span><div><h3>KinderDeck<span class="ver">Preview</span></h3><p class="who"><b>For owners and the office</b> · Children, families, staff, the kitchen and the school’s money in one place.</p><p class="state">No live demo yet</p></div></div>
+        <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#kinderdeck">See it on Get the apps ↗</a></div></li>
+      <li class="app"><div class="id"><span class="ic" aria-hidden="true">TT</span><div><h3>TinyTeachersDeck<span class="ver">Beta</span></h3><p class="who"><b>For class teachers</b> · The preschool edition of TeachersDeck: classroom tools now, attendance and the daily report next.</p><p class="state">No live demo yet</p></div></div>
+        <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#tinyteachersdeck">See it on Get the apps ↗</a></div></li>
+      <li class="app"><div class="id"><span class="ic" aria-hidden="true">TD</span><div><h3>TinyDeck<span class="ver">Coming soon</span></h3><p class="who"><b>For families</b> · Your child’s day at school, attendance and notes from the teacher.</p><p class="state">No live demo yet</p></div></div>
+        <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#tinydeck">See it on Get the apps ↗</a></div></li>
+    </ul>
+  </section>
+
   <section class="box" id="school">
-    <div class="head"><h2>TeachersDeck Suite</h2><p>For schools and language centers: one app for each person in the class.</p></div>
+    <div class="head"><h2>School</h2><p>For schools and language centers: one app for each person in the class.</p></div>
     <ul class="list">
       <li class="app" data-path="teachersdeck/"><div class="id"><span class="ic" aria-hidden="true">TD<span class="lamp" data-s="checking"></span></span><div><h3>TeachersDeck<span class="ver"></span></h3><p class="who"><b>For teachers</b> · Classroom widgets, classes, points and notes home.</p><p class="state" role="status">Checking…</p></div></div>
         <div class="go"><a class="btn primary play" href="teachersdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="teachersdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
@@ -172,7 +182,7 @@
   </section>
 
   <section class="box" id="uni">
-    <div class="head"><h2>UniDeck</h2><p>The university edition, in early preview: for colleges, graduate programs, language centers and test-prep schools.</p></div>
+    <div class="head"><h2>University</h2><p>UniDeck, the university edition, in early preview: for colleges, graduate programs, language centers and test-prep schools.</p></div>
     <ul class="list">
       <li class="app" data-path="unideck/unistudentdeck/"><div class="id"><span class="ic" aria-hidden="true">US<span class="lamp" data-s="checking"></span></span><div><h3>UniStudentDeck<span class="ver"></span></h3><p class="who"><b>For students</b> · A calm study dashboard for undergraduate and graduate students.</p><p class="state" role="status">Checking…</p></div></div>
         <div class="go"><a class="btn primary play" href="unideck/unistudentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/unistudentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
@@ -185,27 +195,8 @@
     </ul>
   </section>
 
-  <section class="box" id="web">
-    <div class="head"><h2>Web apps for phones and tablets</h2><p>The real apps at their own addresses, with your own sign-in rather than the example data above. On a phone or tablet the widgets become live tiles.</p></div>
-    <p class="steps"><b>Put one on your Home Screen:</b> open it on the phone or tablet, then <b>Share → Add to Home Screen</b> (iPhone, iPad) or <b>⋮ → Install app</b> (Android).</p>
-    <ul class="list">
-      <li class="app" data-web="https://teacher.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">TD<span class="lamp" data-s="checking"></span></span><div><h3>TeachersDeck</h3><p class="who"><b>teacher.myteachersdeck.com</b> · For teachers</p><p class="state" role="status">Checking…</p></div></div>
-        <div class="go"><a class="btn primary" href="https://teacher.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
-      <li class="app" data-web="https://student.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">SD<span class="lamp" data-s="checking"></span></span><div><h3>StudentDeck</h3><p class="who"><b>student.myteachersdeck.com</b> · For students</p><p class="state" role="status">Checking…</p></div></div>
-        <div class="go"><a class="btn primary" href="https://student.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
-      <li class="app" data-web="https://parent.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">PD<span class="lamp" data-s="checking"></span></span><div><h3>ParentDeck</h3><p class="who"><b>parent.myteachersdeck.com</b> · For families</p><p class="state" role="status">Checking…</p></div></div>
-        <div class="go"><a class="btn primary" href="https://parent.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
-      <li class="app" data-web="https://admin.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">AD<span class="lamp" data-s="checking"></span></span><div><h3>AdminDeck</h3><p class="who"><b>admin.myteachersdeck.com</b> · For school leaders, best on a tablet</p><p class="state" role="status">Checking…</p></div></div>
-        <div class="go"><a class="btn primary" href="https://admin.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
-      <li class="app" data-web="https://uni.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">US<span class="lamp" data-s="checking"></span></span><div><h3>UniStudentDeck</h3><p class="who"><b>uni.myteachersdeck.com</b> · UniDeck, for students</p><p class="state" role="status">Checking…</p></div></div>
-        <div class="go"><a class="btn primary" href="https://uni.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
-      <li class="app" data-web="https://lecture.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">LD<span class="lamp" data-s="checking"></span></span><div><h3>LectureDeck</h3><p class="who"><b>lecture.myteachersdeck.com</b> · UniDeck, for lecturers</p><p class="state" role="status">Checking…</p></div></div>
-        <div class="go"><a class="btn primary" href="https://lecture.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
-    </ul>
-  </section>
-
   <section class="box" id="lms">
-    <div class="head"><h2>In your LMS</h2><p>TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.</p></div>
+    <div class="head"><h2>Platforms</h2><p>TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.</p></div>
     <ul class="list">
       <li class="app" data-path="../teachersdeck-classin/" data-check="build-info.json"><div class="id"><span class="ic" aria-hidden="true">CI<span class="lamp" data-s="checking"></span></span><div><h3>TeachersDeck for ClassIn<span class="ver"></span></h3><p class="who"><b>For ClassIn lessons</b> · Classroom tools that open inside a ClassIn lesson.</p><p class="state" role="status">Checking…</p></div></div>
         <div class="go"><a class="btn primary play" href="../teachersdeck-classin/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-classin/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
@@ -218,7 +209,7 @@
   </div>
 </main>
 
-<footer><div class="bar"><span>Updated 04 Nov 2026, 17:44 UTC (build e796905)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
+<footer><div class="bar"><span>Updated 04 Nov 2026, 17:54 UTC (build c875922)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
 
 <script>
 (function () {
@@ -273,6 +264,7 @@
     uni: 'UniDeck, the university edition, in early preview: for colleges, graduate programs, language centers and test-prep schools.',
     lms: 'TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.'
   };
+  var TITLE = { lms: 'Platforms' };   // the demo page's own name for a group, where it differs from Get the apps
   var STATUS = { preview: 'Preview', beta: 'Beta', soon: 'Coming soon' };
   var PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>';
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -294,11 +286,6 @@
     return '<li class="app">' + idBlock(a, '<h3>' + esc(a.name) + (STATUS[a.status] ? '<span class="ver">' + esc(STATUS[a.status]) + '</span>' : '') + '</h3>' + who(a) + '<p class="state">No live demo yet</p>', false) +
       '<div class="go"><a class="btn" href="' + esc(a.hub || 'https://myteachersdeck.com/apps/') + '">See it on Get the apps ↗</a></div></li>';
   }
-  function webRow(a) {
-    var host = a.web.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    return '<li class="app" data-web="' + esc(a.web) + '">' + idBlock(a, '<h3>' + esc(a.name) + '</h3><p class="who"><b>' + esc(host) + '</b> · ' + esc(en(a['for'])) + '</p><p class="state" role="status">Checking…</p>', true) +
-      '<div class="go"><a class="btn primary" href="' + esc(a.web) + '" target="_blank" rel="noopener">Open the web app ↗</a></div></li>';
-  }
   function section(id, title, note, items, steps) {
     return items ? '<section class="box" id="' + id + '"><div class="head"><h2>' + esc(title) + '</h2>' + (note ? '<p>' + esc(note) + '</p>' : '') + '</div>' + (steps || '') + '<ul class="list">' + items + '</ul></section>' : '';
   }
@@ -308,12 +295,8 @@
     var add = function (id, title, h) { if (h) { html += h; jump += '<a class="btn" href="#' + id + '">' + esc(title) + '</a>'; } };
     groups.forEach(function (g) {
       var items = apps.filter(function (a) { return a.group === g.id; }).map(function (a) { return a.demo ? demoRow(a) : laterRow(a); }).join('');
-      add(g.id, en(g), section(g.id, en(g), NOTE[g.id], items));
-      if (g.id === 'uni') {   // the web apps after the editions they belong to, before the LMS builds
-        var web = apps.filter(function (a) { return a.web; }).map(webRow).join('');
-        add('web', 'Web apps', section('web', 'Web apps for phones and tablets', 'The real apps at their own addresses, with your own sign-in rather than the example data above. On a phone or tablet the widgets become live tiles.', web,
-          document.querySelector('#web .steps') ? document.querySelector('#web .steps').outerHTML : ''));
-      }
+      var title = TITLE[g.id] || en(g);
+      add(g.id, title, section(g.id, title, NOTE[g.id], items));
     });
     if (!html || !/data-path=/.test(html)) return false;   // nothing usable: keep the written-out rows
     document.getElementById('list').innerHTML = html;
