@@ -7,9 +7,11 @@
 /* Which app this is: this app's own js/edition.js (the first script on the page) sets window.DECK_EDITION — the app's
    name, its version and the edition. UNI = the university edition (UniDeck); U(schoolText, uniText) picks the wording
    for the current edition; APP = the app's name for anything shown to the user. This file is shared with UniDeck's copy
-   of the app (teachersdeck/unideck, tools/sync_shared.py): edit it here, keep one-app-only behaviour behind UNI or U(). */
+   of the app (teachersdeck/unideck, tools/sync_shared.py): edit it here, keep one-app-only behaviour behind UNI or U().
+   KINDER = the Kinder edition (TinyParentDeck, teachersdeck/kinderdeck-suite, synced the same way): the parents' app for
+   preschool and kindergarten. Its own widgets come from window.KINDER_WIDGETS; ParentDeck never sets it. */
 const ED = window.DECK_EDITION || { name: 'ParentDeck', version: '0.0.0', uni: false };
-const UNI = !!ED.uni, APP = ED.name || 'ParentDeck', U = (school, uni) => (UNI ? uni : school);
+const UNI = !!ED.uni, KINDER = !!ED.kinder, APP = ED.name || 'ParentDeck', U = (school, uni) => (UNI ? uni : school);
 const VERSION = ED.version, UIKEY = 'pd_ui_v1';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -351,7 +353,7 @@ function loadUI() {
   if (s.dockPlacement) delete s.dockPlacement.week;
   s.calV2 = true;
   // v0.12.0: layout modes + dock placement (ported from StudentDeck). Saved state from older builds simply lacks these, so they default in.
-  const u = { active: {}, layout: {}, currentChild: null, lang: 'en', langPair: ['en', 'vi'], theme: 'dusk', layoutMode: 'cozy', dockAutoHide: false, dockPlacement: {}, calendarSystem: 'gregorian', calTab: 'month', ...s };
+  const u = { active: {}, layout: {}, currentChild: null, lang: KINDER ? 'vi' : 'en', langPair: KINDER ? ['vi', 'en'] : ['en', 'vi'], theme: 'dusk', layoutMode: 'cozy', dockAutoHide: false, dockPlacement: {}, calendarSystem: 'gregorian', calTab: 'month', ...s };
   u.edgeDock = { left: { visible: true, ...((s.edgeDock || {}).left || {}) }, right: { visible: true, ...((s.edgeDock || {}).right || {}) } };
   if (!['compact', 'cozy', 'custom'].includes(u.layoutMode)) u.layoutMode = 'cozy';
   if (!['gregorian', 'lunar', 'both'].includes(u.calendarSystem)) u.calendarSystem = 'gregorian';
@@ -508,7 +510,7 @@ if (window.Watermark) Watermark.configure({ identity: () => { const s = PD.getSe
    v0.26.0, the web app: a page outside an extension is official only on our own addresses (parent.myteachersdeck.com and the
    other *.myteachersdeck.com apps, the teachersdeck-* Firebase Hosting sites), the demo site, or this computer while testing.
    A copy of the web app put up anywhere else shows the notice and can't activate Pro. */
-const OFFICIAL_IDS = ['konabbakfllochlfepachaijclndabam'];
+const OFFICIAL_IDS = ['konabbakfllochlfepachaijclndabam', ...((ED && ED.officialIds) || [])];   // an edition's own extension ids (TinyParentDeck) come from its js/edition.js
 const OFFICIAL_HOSTS = [/(^|\.)myteachersdeck\.com$/, /^teachersdeck-[a-z]+\.(web\.app|firebaseapp\.com)$/, /^teachersdeck\.github\.io$/, /^(localhost|127\.0\.0\.1)$/];
 function isOfficialBuild(){
   try{
@@ -518,7 +520,7 @@ function isOfficialBuild(){
 }
 if(!isOfficialBuild()) document.addEventListener('DOMContentLoaded', ()=>{
   const n = document.createElement('div'); n.className = 'unofficial-build'; n.setAttribute('role', 'alert');
-  n.textContent = 'This copy of ParentDeck is not an official build. Pro and licence activation are switched off. Please install the official version.';
+  n.textContent = 'This copy of ' + APP + ' is not an official build. Pro and licence activation are switched off. Please install the official version.';
   document.body.prepend(n);
 });
 
@@ -622,7 +624,7 @@ function switchChild(id) {
 /* ---------- Header XP pill (StudentDeck-style: level + bar + total; click opens Trends) ---------- */
 let pillUnsub = null, pillChild = null;
 function bindXpPill() {
-  const want = PD.getSession() && ui.currentChild ? ui.currentChild : null;
+  const want = !KINDER && PD.getSession() && ui.currentChild ? ui.currentChild : null;   // Kinder: no XP, so no pill
   if (want === pillChild) return;
   if (pillUnsub) { pillUnsub(); pillUnsub = null; }
   pillChild = want;
@@ -1520,6 +1522,18 @@ if (UNI) {
     WIDGETS.unshift({ id: w.id, cat: w.cat || 'overview', titleKey: 'uw_' + w.id, icon: I(w.iconPath || '<circle cx="12" cy="12" r="8"/>'), w: w.w, h: w.h, full: !!w.full, render: w.render });
   });
 }
+/* Kinder edition (TinyParentDeck): children aged 2 to 6 have no StudentDeck, homework, points or badges, so every school widget
+   that reads them goes. TinyParentDeck's own js/kinder-widgets.js lists its widgets in window.KINDER_WIDGETS (the UniDeck shape,
+   plus titleVi): Today at School, Attendance, Notes from teacher, Absence Notice, Class Notices, Ask Me About Today. Family
+   Overview, Theme, Settings and KeepDeck stay. ParentDeck never loads that file. */
+const KINDER_KEEP = ['family', 'theme', 'settings', 'keepdeck'];
+if (KINDER) {
+  for (let i = WIDGETS.length - 1; i >= 0; i--) if (!KINDER_KEEP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
+  (window.KINDER_WIDGETS || []).slice().reverse().forEach(w => {
+    STRINGS['kw_' + w.id] = { en: w.title, vi: w.titleVi || w.title };
+    WIDGETS.unshift({ id: w.id, cat: w.cat || 'overview', titleKey: 'kw_' + w.id, icon: I(w.iconPath || '<circle cx="12" cy="12" r="8"/>'), w: w.w, h: w.h, full: !!w.full, render: w.render });
+  });
+}
 
 /* ---------- Shell: panels, drag, resize, dock (same pattern as TeachersDeck/StudentDeck) ---------- */
 const wall = $('#wall'), panels = {}; let topZ = 10;
@@ -1628,6 +1642,7 @@ const PLACES = ['bottom', 'left', 'right', 'hidden'];
 const DOCK_CAPS = { bottom: 10, left: 5, right: 5 };
 const DEFAULT_PLACEMENT = { summary: 'bottom', badges: 'bottom', notes: 'bottom', homework: 'bottom', progress: 'bottom', calendar: 'bottom', hwc: 'bottom', attend: 'bottom', pulse: 'left', wish: 'left', starters: 'left', digest: 'left', family: 'right', settings: 'right' };   // theme: top bar since v0.25.0
 if (UNI) (window.UNI_WIDGETS || []).forEach(w => { DEFAULT_PLACEMENT[w.id] = 'bottom'; });   // UniDeck's family view widgets
+if (KINDER) (window.KINDER_WIDGETS || []).forEach(w => { DEFAULT_PLACEMENT[w.id] = 'bottom'; });   // TinyParentDeck's widgets
 const TRAY_CATS = ['overview', 'homework', 'rewards', 'share', 'settings'];
 
 const isVisible = w => !w.show || w.show();                      // Family Overview only exists with two or more linked children

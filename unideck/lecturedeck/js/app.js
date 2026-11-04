@@ -550,7 +550,9 @@ function saveState(){
   // near-instantly, when nothing changed or no class is linked — see
   // TDCloud.syncCalendar in js/cloud.js). This is what lets StudentDeck and
   // ParentDeck see a teacher's calendar events.
-  if(typeof TDCloud !== 'undefined' && state.cloudClassId){
+  // Kinder (TinyTeachersDeck): no Cloud Class, no StudentDeck — the calendar stays on this device, and families get the
+  // class's news through Notices (classes/{id}/classNotices) instead.
+  if(!KINDER && typeof TDCloud !== 'undefined' && state.cloudClassId){
     TDCloud.syncCalendar(state.cloudClassId, state.calendarEvents);
     TDCloud.syncHomework(state.cloudClassId, state.assignments);
     // Progress Reports are NOT mirrored here — each one is sent once, straight to its one
@@ -1475,6 +1477,9 @@ Object.assign(STRINGS, DrawDeck.strings);
 function renderDrawDeck(body, ctx){
   return DrawDeck.mount(body, {
     t, toast,
+    tracing: KINDER,   // TinyTeachersDeck: tracing pages for letters, numbers, names, strokes and shapes
+    preschool: KINDER, kidModeSwitch: KINDER,   // drawing only, the preschool maths and templates; Kid Mode for a child at the screen
+    kidModeUnlock: KINDER ? () => (window.KinderAdultGate ? window.KinderAdultGate() : false) : undefined,   // js/kinder-widgets.js: the PIN, or a sum
     close: ()=>toggleWidget('drawdeck'),
     idb,
     watermark: (typeof Watermark !== 'undefined') ? Watermark : null,
@@ -1484,8 +1489,8 @@ function renderDrawDeck(body, ctx){
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
     },
-    // "Share this page with the class" (v0.26.0) needs a linked cloud class to share into.
-    cloudClassId: () => (typeof TDCloud !== 'undefined' && TDCloud.isConfigured() && TDCloud.getSession() && state.cloudClassId) ? state.cloudClassId : null,
+    // "Share this page with the class" (v0.26.0) needs a linked cloud class to share into (never in the Kinder edition: no StudentDeck).
+    cloudClassId: () => (!KINDER && typeof TDCloud !== 'undefined' && TDCloud.isConfigured() && TDCloud.getSession() && state.cloudClassId) ? state.cloudClassId : null,
     share: (dataUrl) => TDCloud.shareBoard(state.cloudClassId, dataUrl),
     stopShare: () => TDCloud.stopSharingBoard(state.cloudClassId),
     // "Assign this page to students" (v0.29.0, backend v2.9.0) — DrawDeck scope step D.
