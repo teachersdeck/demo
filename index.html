@@ -2,153 +2,232 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TeachersDeck Suite – Live Demos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live demos — TeachersDeck Suite</title>
 <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
 <link rel="icon" type="image/png" sizes="96x96" href="favicon-96.png">
 <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#F3F5FC">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
-<!-- Written by tools/build_demo.py from tools/demo_landing.html. Each row checks its app is online by fetching the
-     app's manifest.json from this same site: green = answered quickly, amber = answered slowly or oddly, red = no answer. -->
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Written by tools/build_demo.py from tools/demo_landing.html, in the style of myteachersdeck.com (its "Get the apps"
+     page: the same colours, type, section boxes and app rows). Each row checks its app is online: a demo by fetching its
+     manifest.json from this same site, a web app by asking its own address. Green = answered quickly, amber = slowly or
+     oddly, red = no answer. Light or Dark follows the device; the button in the top bar switches it (this site only). -->
+<script>try{var t=localStorage.getItem('td_theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>
 <style>
+  /* myteachersdeck.com's palette (assets/site.css): indigo + amber in Light, amber on black in Dark */
   :root{
-    --dusk-1:#1A2740; --dusk-2:#2C3B57; --ink:#E9EEF6; --muted:#93A3BA; --line:rgba(233,238,246,.12);
-    --gold:#E0A93B; --gold-hi:#F2C46A; --ok:#3DD68C; --slow:#F5B83D; --down:#F0605A; --off:#56637A;
-    --row:rgba(255,255,255,.035); --row-hover:rgba(255,255,255,.06);
-  }
-  *{box-sizing:border-box}
-  html{background:var(--dusk-1)}
-  body{margin:0;min-height:100vh;color:var(--ink);background:linear-gradient(180deg,var(--dusk-1) 0%,var(--dusk-2) 60%,#263248 100%) fixed;
-    font:17px/1.55 'Atkinson Hyperlegible',system-ui,sans-serif}
-  main{max-width:860px;margin:0 auto;padding:56px 24px 40px}
-  .brand{display:flex;align-items:center;gap:10px;font:700 17px/1 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.01em}
-  .brand b{color:var(--gold);font-size:20px}
-  h1{font:700 clamp(36px,6vw,58px)/1.02 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.03em;margin:44px 0 16px;max-width:15ch}
-  .lead{color:var(--muted);max-width:60ch;margin:0 0 12px}
-  .legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin:22px 0 0;padding:0;list-style:none;color:var(--muted);font-size:15px}
+    --bg:#F3F5FC;--surface:#FFFFFF;--text:#161C25;--muted:#4D5565;--line:rgba(22,28,37,.13);
+    --accent:#4A55B8;--on-accent:#FFFFFF;--accent-text:#4A55B8;--amber:#E8A33D;--on-amber:#231604;
+    --tint:#E8A33D;--on-tint:#231604;
+    --ok:#1F9D5C;--slow:#B7791F;--down:#D64532;--off:#9AA3B2;
+    --box-shadow:0 30px 60px -24px rgba(22,28,37,.18),0 8px 20px rgba(22,28,37,.05);
+    color-scheme:light}
+  :root[data-theme="dark"]{
+    --bg:#0D1117;--surface:#161C25;--text:#EDEFF3;--muted:#A3ADBF;--line:rgba(237,239,243,.11);
+    --accent:#E8A33D;--on-accent:#231604;--accent-text:#F5B85C;
+    --tint:#1A1C21;--on-tint:#E8A33D;
+    --ok:#3DD68C;--slow:#F5B83D;--down:#F0605A;--off:#56637A;
+    --box-shadow:0 30px 60px -24px rgba(0,0,0,.65),0 8px 20px rgba(0,0,0,.3);
+    color-scheme:dark}
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:84px}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;transition:background-color .25s,color .25s}
+  h1,h2,h3{font-family:'Quicksand',sans-serif;line-height:1.15;margin:0}
+  a{color:inherit}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+  /* top bar */
+  header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+  .bar{max-width:1080px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:14px;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font:700 18px 'Quicksand',sans-serif;text-decoration:none;margin-right:auto}
+  .brand img{width:34px;height:34px;display:block;border-radius:9px}
+  .bar .link{font-size:14px;font-weight:500;color:var(--muted);text-decoration:none}
+  .bar .link:hover{color:var(--text)}
+  .theme{flex:none;width:34px;height:34px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--muted);cursor:pointer;padding:0}
+  .theme:hover{color:var(--text);border-color:var(--accent)}
+  .theme svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .theme .moon,:root[data-theme="dark"] .theme .sun{display:none}
+  :root[data-theme="dark"] .theme .moon{display:block}
+
+  /* section boxes */
+  main{padding:28px 0 12px}
+  .box{width:calc(100% - 40px);max-width:1040px;margin:0 auto 28px;padding:44px 40px;background:var(--surface);border:1px solid var(--line);border-radius:28px;box-shadow:var(--box-shadow);scroll-margin-top:84px}
+  .hero{padding:56px 40px 44px}
+  .kicker{font:700 13px 'Quicksand',sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--accent-text);margin:0 0 10px}
+  h1{font-size:clamp(34px,6vw,54px);max-width:16ch;margin:0 0 16px;letter-spacing:-.5px}
+  .lede{max-width:62ch;margin:0 0 22px;font-size:18px;color:var(--muted)}
+  .jump{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 26px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;font:600 14.5px 'Inter',sans-serif;text-decoration:none;border:1px solid var(--accent-text);background:var(--surface);color:var(--accent-text);cursor:pointer;white-space:nowrap;transition:transform .15s}
+  .btn.primary{background:var(--accent);color:var(--on-accent);border-color:transparent}
+  .btn:hover{transform:translateY(-1px)}
+  .btn svg{width:14px;height:14px;fill:currentColor}
+  .jump .btn{padding:8px 18px;font-size:14px}
+  .legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin:0;padding:16px 0 0;list-style:none;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
   .legend li{display:flex;align-items:center;gap:8px}
-  .legend .lamp{width:12px;height:12px;box-shadow:none}
-  .recheck{margin-left:auto;background:none;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:15px;border-radius:999px;padding:4px 14px;cursor:pointer}
-  .recheck:hover{border-color:var(--muted)}
-  h2{font:700 22px/1.2 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.01em;margin:48px 0 4px}
-  h2 + p{color:var(--muted);margin:0 0 16px;font-size:15px}
-  .apps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-  .app{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;padding:18px 20px;background:var(--row);border:1px solid var(--line);border-radius:16px}
-  .app:hover{background:var(--row-hover)}
-  .lamp{width:22px;height:22px;border-radius:50%;background:var(--off);flex:none;transition:background .4s,box-shadow .4s}
-  .lamp[data-s=ok]{background:var(--ok);box-shadow:0 0 0 5px rgba(61,214,140,.14),0 0 18px rgba(61,214,140,.55)}
-  .lamp[data-s=slow]{background:var(--slow);box-shadow:0 0 0 5px rgba(245,184,61,.14),0 0 18px rgba(245,184,61,.5)}
-  .lamp[data-s=down]{background:var(--down);box-shadow:0 0 0 5px rgba(240,96,90,.16),0 0 18px rgba(240,96,90,.5)}
-  .lamp[data-s=checking]{background:var(--off);animation:blink 1s ease-in-out infinite}
-  @keyframes blink{50%{opacity:.35}}
-  .name{font:700 20px/1.2 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.01em;margin:0}
-  .ver{font:400 14px/1 'Atkinson Hyperlegible',system-ui,sans-serif;color:var(--muted);margin-left:8px;letter-spacing:0}
-  .who{margin:3px 0 0;color:var(--muted);font-size:15px}
-  .state{margin:6px 0 0;font-size:14px;color:var(--muted)}
+  .legend .lamp{width:10px;height:10px;box-shadow:none}
+  .legend .end{margin-left:auto}
+  .head{max-width:62ch;margin:0 0 24px}
+  .head h2{font-size:clamp(26px,4vw,34px);margin-bottom:8px}
+  .head p{margin:0;color:var(--muted)}
+
+  /* one row per app, as on the "Get the apps" page */
+  .list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+  .app{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 20px;padding:16px 18px;border:1px solid var(--line);border-radius:18px;background:var(--bg)}
+  .id{display:flex;align-items:center;gap:14px;min-width:0}
+  .ic{flex:none;position:relative;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font:700 16px 'Quicksand',sans-serif;background:var(--tint);color:var(--on-tint)}
+  .id h3{font-size:18px;margin:0 0 2px}
+  .ver{display:inline-block;vertical-align:3px;margin-left:6px;padding:2px 9px;border-radius:999px;font:600 11.5px 'Inter',sans-serif;letter-spacing:.3px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent-text)}
+  .ver:empty{display:none}
+  .who{margin:0;font-size:14.5px;color:var(--muted)}
+  .who b{color:var(--text);font-weight:600}
+  .state{margin:4px 0 0;font-size:13px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:7px}
   .state[data-s=ok]{color:var(--ok)} .state[data-s=slow]{color:var(--slow)} .state[data-s=down]{color:var(--down)}
-  .actions{display:flex;align-items:center;gap:14px}
-  .play{display:inline-flex;align-items:center;gap:10px;background:var(--gold);color:#1A2740;border:0;border-radius:999px;padding:11px 20px 11px 16px;
-    font:700 16px/1 'Atkinson Hyperlegible',system-ui,sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap}
-  .play svg{width:16px;height:16px;fill:currentColor}
-  .play:hover{background:var(--gold-hi)}
-  .play[aria-disabled=true]{background:transparent;color:var(--muted);border:1px dashed var(--off);cursor:default}
-  .tab{color:var(--muted);font-size:14px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
-  .tab:hover{color:var(--ink)}
-  a:focus-visible,button:focus-visible{outline:3px solid var(--gold-hi);outline-offset:3px}
-  .app.future{background:transparent;border-style:dashed}
-  footer{margin:56px 0 0;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:6px 24px}
-  footer a{color:var(--ink)}
-  @media (max-width:640px){
-    main{padding-top:36px}
-    .app{grid-template-columns:auto 1fr;gap:14px}
-    .actions{grid-column:1 / -1;justify-content:space-between}
+  .go{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px 14px}
+  .tab{font-size:13.5px;font-weight:600;color:var(--accent-text);text-decoration:none;white-space:nowrap}
+  .tab:hover{text-decoration:underline}
+
+  /* the status light: a dot on the app's icon and in the status line */
+  .lamp{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--off);flex:none;transition:background .4s,box-shadow .4s}
+  .ic .lamp{position:absolute;right:-3px;top:-3px;width:13px;height:13px;border:2px solid var(--bg)}
+  .lamp[data-s=ok]{background:var(--ok);box-shadow:0 0 10px color-mix(in srgb,var(--ok) 60%,transparent)}
+  .lamp[data-s=slow]{background:var(--slow)}
+  .lamp[data-s=down]{background:var(--down)}
+  .lamp[data-s=checking]{animation:blink 1s ease-in-out infinite}
+  @keyframes blink{50%{opacity:.35}}
+
+  .steps{margin:-8px 0 22px;padding:14px 18px;border-radius:16px;background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--muted);font-size:14.5px}
+  .steps b{color:var(--text)}
+
+  footer{border-top:1px solid var(--line);color:var(--muted);font-size:13.5px}
+  footer .bar{height:auto;padding:28px 20px 40px;flex-wrap:wrap;gap:10px 28px;justify-content:space-between}
+  footer a{color:var(--muted)} footer a:hover{color:var(--text)}
+
+  @media (max-width:760px){
+    .box{width:calc(100% - 24px);padding:28px 18px;border-radius:22px}
+    .hero{padding:36px 20px 28px}
+    .app{grid-template-columns:1fr;padding:14px}
+    .go{justify-content:flex-start}
+    .bar .link{display:none}
+    .legend .end{margin-left:0}
   }
-  @media (prefers-reduced-motion:reduce){.lamp{transition:none}.lamp[data-s=checking]{animation:none}}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.lamp{transition:none}.lamp[data-s=checking]{animation:none}.btn{transition:none}}
 </style>
 </head>
 <body>
+<header><div class="bar">
+  <a class="brand" href="https://myteachersdeck.com/"><img src="favicon-192.png" alt=""><span>TeachersDeck Suite</span></a>
+  <a class="link" href="https://myteachersdeck.com/apps/">Get the apps</a>
+  <a class="link" href="https://myteachersdeck.com/pricing/">Pricing</a>
+  <button class="theme" type="button" id="theme" aria-label="Switch Light / Dark" title="Light / Dark"><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+</div></header>
+
 <main>
-  <div class="brand"><b aria-hidden="true">◆</b> TeachersDeck Suite</div>
-  <h1>Try every app with example data</h1>
-  <p class="lead">Each demo opens in its own window with a pretend class, student or school already set up. Nothing is saved to a server, and you can close the window at any time. These follow the latest development, so they can be ahead of the released versions.</p>
-  <ul class="legend" aria-label="What the lights mean">
-    <li><span class="lamp" data-s="ok"></span>Online</li>
-    <li><span class="lamp" data-s="slow"></span>Slow to answer</li>
-    <li><span class="lamp" data-s="down"></span>Not answering</li>
-    <li><span class="lamp"></span>Not built yet</li>
-    <li style="margin-left:auto"><button class="recheck" type="button" id="recheck">Check again</button></li>
-  </ul>
+  <div class="box hero">
+    <p class="kicker">Live demos</p>
+    <h1>Try every app with example data</h1>
+    <p class="lede">Each demo opens in its own window with a pretend class, student or school already set up. Nothing is saved to a server, and you can close the window at any time. The demos follow the latest development, so they can be ahead of the released versions.</p>
+    <div class="jump"><a class="btn" href="#school">School</a><a class="btn" href="#uni">University</a><a class="btn" href="#web">Web apps</a><a class="btn" href="#lms">In your LMS</a></div>
+    <ul class="legend" aria-label="What the lights mean">
+      <li><span class="lamp" data-s="ok"></span>Online</li>
+      <li><span class="lamp" data-s="slow"></span>Slow to answer</li>
+      <li><span class="lamp" data-s="down"></span>Not answering</li>
+      <li class="end"><button class="btn" type="button" id="recheck">Check again</button></li>
+    </ul>
+  </div>
 
-  <h2>TeachersDeck Suite</h2>
-  <p>For schools: teachers, students, families and administrators.</p>
-  <ul class="apps">
-    <li class="app" data-path="teachersdeck/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">TeachersDeck<span class="ver"></span></p><p class="who">Classroom tools for teachers</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="teachersdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="teachersdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="studentdeck/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">StudentDeck<span class="ver"></span></p><p class="who">A study dashboard for school students</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="studentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="studentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="parentdeck/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">ParentDeck<span class="ver"></span></p><p class="who">For parents and families</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="parentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="parentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="admindeck/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">AdminDeck<span class="ver"></span></p><p class="who">For school administrators</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="admindeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="admindeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-  </ul>
+  <section class="box" id="school">
+    <div class="head"><h2>TeachersDeck Suite</h2><p>For schools and language centers: one app for each person in the class.</p></div>
+    <ul class="list">
+      <li class="app" data-path="teachersdeck/"><div class="id"><span class="ic" aria-hidden="true">TD<span class="lamp" data-s="checking"></span></span><div><h3>TeachersDeck<span class="ver"></span></h3><p class="who"><b>For teachers</b> · Classroom widgets, classes, points and notes home.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="teachersdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="teachersdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="studentdeck/"><div class="id"><span class="ic" aria-hidden="true">SD<span class="lamp" data-s="checking"></span></span><div><h3>StudentDeck<span class="ver"></span></h3><p class="who"><b>For students</b> · Study dashboard: focus timer, homework, reading, XP.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="studentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="studentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="parentdeck/"><div class="id"><span class="ic" aria-hidden="true">PD<span class="lamp" data-s="checking"></span></span><div><h3>ParentDeck<span class="ver"></span></h3><p class="who"><b>For families</b> · Your child’s points, homework and notes from the teacher.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="parentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="parentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="admindeck/"><div class="id"><span class="ic" aria-hidden="true">AD<span class="lamp" data-s="checking"></span></span><div><h3>AdminDeck<span class="ver"></span></h3><p class="who"><b>For school leaders</b> · The whole school: stats, people, classes and timetables.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="admindeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="admindeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+    </ul>
+  </section>
 
-  <h2>UniDeck</h2>
-  <p>The university edition: for colleges, graduate programs, language centers and test-prep schools.</p>
-  <ul class="apps">
-    <li class="app" data-path="unideck/unistudentdeck/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">UniStudentDeck<span class="ver"></span></p><p class="who">A calm study dashboard for undergraduate and graduate students</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="unideck/unistudentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/unistudentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="unideck/lecturedeck/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">LectureDeck<span class="ver"></span></p><p class="who">Courses, assignments and grading for lecturers (early shell)</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="unideck/lecturedeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/lecturedeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="unideck/campusdeck/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">CampusDeck<span class="ver"></span></p><p class="who">Courses, terms and enrollment for a campus, program or center (early shell)</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="unideck/campusdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/campusdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="unideck/parentdeck/"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">ParentDeck (family view)<span class="ver"></span></p><p class="who">What an adult student chooses to share with family (early shell)</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="unideck/parentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/parentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-  </ul>
+  <section class="box" id="uni">
+    <div class="head"><h2>UniDeck</h2><p>The university edition, in early preview: for colleges, graduate programs, language centers and test-prep schools.</p></div>
+    <ul class="list">
+      <li class="app" data-path="unideck/unistudentdeck/"><div class="id"><span class="ic" aria-hidden="true">US<span class="lamp" data-s="checking"></span></span><div><h3>UniStudentDeck<span class="ver"></span></h3><p class="who"><b>For students</b> · A calm study dashboard for undergraduate and graduate students.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="unideck/unistudentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/unistudentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="unideck/lecturedeck/"><div class="id"><span class="ic" aria-hidden="true">LD<span class="lamp" data-s="checking"></span></span><div><h3>LectureDeck<span class="ver"></span></h3><p class="who"><b>For lecturers</b> · Courses, assignments and grading (early shell).</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="unideck/lecturedeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/lecturedeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="unideck/campusdeck/"><div class="id"><span class="ic" aria-hidden="true">CD<span class="lamp" data-s="checking"></span></span><div><h3>CampusDeck<span class="ver"></span></h3><p class="who"><b>For a campus, program or center</b> · Courses, terms and enrollment (early shell).</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="unideck/campusdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/campusdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="unideck/parentdeck/"><div class="id"><span class="ic" aria-hidden="true">FV<span class="lamp" data-s="checking"></span></span><div><h3>ParentDeck (family view)<span class="ver"></span></h3><p class="who"><b>For families</b> · What an adult student chooses to share (early shell).</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="unideck/parentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="unideck/parentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+    </ul>
+  </section>
 
-  <h2>Platform editions</h2>
-  <p>TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.</p>
-  <ul class="apps">
-    <li class="app" data-path="../teachersdeck-classin/" data-check="build-info.json"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">TeachersDeck for ClassIn<span class="ver"></span></p><p class="who">Classroom tools that open inside a ClassIn lesson</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="../teachersdeck-classin/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-classin/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="../teachersdeck-canvas/" data-check="build-info.json"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">TeachersDeck for Canvas<span class="ver"></span></p><p class="who">Classroom tools for Canvas courses. The real thing starts from inside a course; this demo shows the same widgets with example data.</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="../teachersdeck-canvas/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-canvas/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-    <li class="app" data-path="moodle/" data-check="build-info.json"><span class="lamp" data-s="checking"></span>
-      <div><p class="name">TeachersDeck &amp; LectureDeck for Moodle<span class="ver"></span></p><p class="who">One Moodle plugin that opens a course as TeachersDeck or LectureDeck. The real thing starts from inside a course; this demo shows the same widgets with example data.</p><p class="state" role="status">Checking…</p></div>
-      <div class="actions"><a class="play" href="moodle/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="moodle/?demo=1" target="_blank" rel="noopener">Open in a tab</a></div></li>
-  </ul>
+  <section class="box" id="web">
+    <div class="head"><h2>Web apps for phones and tablets</h2><p>The real apps at their own addresses, with your own sign-in rather than the example data above. On a phone or tablet the widgets become live tiles.</p></div>
+    <p class="steps"><b>Put one on your Home Screen:</b> open it on the phone or tablet, then <b>Share → Add to Home Screen</b> (iPhone, iPad) or <b>⋮ → Install app</b> (Android).</p>
+    <ul class="list">
+      <li class="app" data-web="https://teacher.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">TD<span class="lamp" data-s="checking"></span></span><div><h3>TeachersDeck</h3><p class="who"><b>teacher.myteachersdeck.com</b> · For teachers</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary" href="https://teacher.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
+      <li class="app" data-web="https://student.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">SD<span class="lamp" data-s="checking"></span></span><div><h3>StudentDeck</h3><p class="who"><b>student.myteachersdeck.com</b> · For students</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary" href="https://student.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
+      <li class="app" data-web="https://parent.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">PD<span class="lamp" data-s="checking"></span></span><div><h3>ParentDeck</h3><p class="who"><b>parent.myteachersdeck.com</b> · For families</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary" href="https://parent.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
+      <li class="app" data-web="https://admin.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">AD<span class="lamp" data-s="checking"></span></span><div><h3>AdminDeck</h3><p class="who"><b>admin.myteachersdeck.com</b> · For school leaders, best on a tablet</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary" href="https://admin.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
+      <li class="app" data-web="https://uni.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">US<span class="lamp" data-s="checking"></span></span><div><h3>UniStudentDeck</h3><p class="who"><b>uni.myteachersdeck.com</b> · UniDeck, for students</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary" href="https://uni.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
+      <li class="app" data-web="https://lecture.myteachersdeck.com/"><div class="id"><span class="ic" aria-hidden="true">LD<span class="lamp" data-s="checking"></span></span><div><h3>LectureDeck</h3><p class="who"><b>lecture.myteachersdeck.com</b> · UniDeck, for lecturers</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary" href="https://lecture.myteachersdeck.com/" target="_blank" rel="noopener">Open the web app ↗</a></div></li>
+    </ul>
+  </section>
 
-  <footer><span>Updated 04 Nov 2026, 05:52 UTC (build 4de8f1d)</span><a href="https://myteachersdeck.com/">myteachersdeck.com</a></footer>
+  <section class="box" id="lms">
+    <div class="head"><h2>In your LMS</h2><p>TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.</p></div>
+    <ul class="list">
+      <li class="app" data-path="../teachersdeck-classin/" data-check="build-info.json"><div class="id"><span class="ic" aria-hidden="true">CI<span class="lamp" data-s="checking"></span></span><div><h3>TeachersDeck for ClassIn<span class="ver"></span></h3><p class="who"><b>For ClassIn lessons</b> · Classroom tools that open inside a ClassIn lesson.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="../teachersdeck-classin/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-classin/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="../teachersdeck-canvas/" data-check="build-info.json"><div class="id"><span class="ic" aria-hidden="true">CV<span class="lamp" data-s="checking"></span></span><div><h3>TeachersDeck for Canvas<span class="ver"></span></h3><p class="who"><b>For Canvas courses</b> · The real thing starts from inside a course; the demo shows the same widgets with example data.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="../teachersdeck-canvas/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="../teachersdeck-canvas/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="moodle/" data-check="build-info.json"><div class="id"><span class="ic" aria-hidden="true">MD<span class="lamp" data-s="checking"></span></span><div><h3>TeachersDeck &amp; LectureDeck for Moodle<span class="ver"></span></h3><p class="who"><b>For Moodle courses</b> · One plugin that opens a course as TeachersDeck or LectureDeck; the demo uses example data.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="moodle/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="moodle/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+    </ul>
+  </section>
 </main>
+
+<footer><div class="bar"><span>Updated 04 Nov 2026, 13:45 UTC (build 2f23821)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
+
 <script>
 (function () {
   var SLOW_MS = 1500, TIMEOUT_MS = 8000;
-  var rows = Array.prototype.slice.call(document.querySelectorAll('.app[data-path]'));
+  var rows = Array.prototype.slice.call(document.querySelectorAll('.app[data-path], .app[data-web]'));
   var TEXT = { ok: 'Online', slow: 'Online, but slow to answer', down: 'Not answering right now. Try again in a few minutes.', checking: 'Checking…' };
 
   function set(row, s, version) {
     row.querySelector('.lamp').setAttribute('data-s', s);
     var st = row.querySelector('.state'); st.setAttribute('data-s', s); st.textContent = TEXT[s];
-    if (version) row.querySelector('.ver').textContent = 'v' + version;
+    var v = row.querySelector('.ver'); if (version && v) v.textContent = 'v' + version;
   }
   function check(row) {
     set(row, 'checking');
     var t0 = performance.now(), ctl = 'AbortController' in window ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, TIMEOUT_MS);
+    var done = function (s, version) { clearTimeout(timer); set(row, s, version); };
+    // data-web: a web app on its own address (Firebase Hosting sends no CORS headers), so its answer can't be read:
+    // any answer means online, and there is no version to show.
+    var web = row.getAttribute('data-web');
+    if (web) {
+      fetch(web + 'manifest.webmanifest?t=' + Date.now(), { mode: 'no-cors', cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+        .then(function () { done(performance.now() - t0 < SLOW_MS ? 'ok' : 'slow'); })
+        .catch(function () { done('down'); });
+      return;
+    }
     // data-check names another file to fetch for builds that ship no manifest.json: a .json file is read for its "version"
     // (the ClassIn and Canvas builds' build-info.json); a page only says the site answers. A build-info.json that isn't
     // there yet (a site not yet published by the suite) falls back to index.html, so the row still shows online.
@@ -160,8 +239,8 @@
         if (page && /\.json$/.test(page)) return get('index.html').then(function (r2) { if (!r2.ok) throw new Error('HTTP ' + r2.status); return { version: null, page: true }; });
         throw new Error('HTTP ' + r.status);
       })
-      .then(function (m) { clearTimeout(timer); var ms = performance.now() - t0; set(row, m && (m.version || m.page) && ms < SLOW_MS ? 'ok' : 'slow', m && m.version); })
-      .catch(function () { clearTimeout(timer); set(row, 'down'); });
+      .then(function (m) { done(m && (m.version || m.page) && performance.now() - t0 < SLOW_MS ? 'ok' : 'slow', m && m.version); })
+      .catch(function () { done('down'); });
   }
   function checkAll() { rows.forEach(check); }
 
@@ -175,6 +254,13 @@
     if (win) { e.preventDefault(); try { win.focus(); } catch (x) {} }
   });
   document.getElementById('recheck').addEventListener('click', checkAll);
+  document.getElementById('theme').addEventListener('click', function () {
+    var root = document.documentElement, dark = root.getAttribute('data-theme') !== 'dark';
+    if (dark) root.setAttribute('data-theme', 'dark'); else root.removeAttribute('data-theme');
+    try { localStorage.setItem('td_theme', dark ? 'dark' : 'light'); } catch (x) {}
+    var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? '#0D1117' : '#F3F5FC';
+  });
+  if (document.documentElement.getAttribute('data-theme') === 'dark') document.querySelector('meta[name=theme-color]').content = '#0D1117';
   checkAll(); setInterval(function () { if (!document.hidden) checkAll(); }, 60000);
 })();
 </script>
