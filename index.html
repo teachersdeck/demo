@@ -158,12 +158,12 @@
   <section class="box" id="preschool">
     <div class="head"><h2>Preschool</h2><p>KinderDeck, the preschool edition. No live demos yet: Get the apps has the latest on each app.</p></div>
     <ul class="list">
-      <li class="app"><div class="id"><span class="ic" aria-hidden="true">KD</span><div><h3>KinderDeck<span class="ver">Preview</span></h3><p class="who"><b>For owners and the office</b> · Children, families, staff, the kitchen and the school’s money in one place.</p><p class="state">No live demo yet</p></div></div>
+      <li class="app"><div class="id"><span class="ic" aria-hidden="true">KD</span><div><h3>KinderDeck<span class="ver">Preview</span></h3><p class="who"><b>For owners and the office</b> · Children, families, staff, the kitchen and the school’s money in one place.</p><p class="state">No live demo yet · latest <a href="https://myteachersdeck.com/downloads/kinderdeck-v0.9.0.zip" download>.zip v0.9.0</a></p></div></div>
         <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#kinderdeck">See it on Get the apps ↗</a></div></li>
-      <li class="app"><div class="id"><span class="ic" aria-hidden="true">TT</span><div><h3>TinyTeachersDeck<span class="ver">Beta</span></h3><p class="who"><b>For class teachers</b> · The preschool edition of TeachersDeck: classroom tools now, attendance and the daily report next.</p><p class="state">No live demo yet</p></div></div>
+      <li class="app"><div class="id"><span class="ic" aria-hidden="true">TT</span><div><h3>TinyTeachersDeck<span class="ver">Beta</span></h3><p class="who"><b>For class teachers</b> · The preschool edition of TeachersDeck: attendance, the daily report, notes home, pickup and classroom tools.</p><p class="state">No live demo yet · latest <a href="https://myteachersdeck.com/downloads/tinyteachersdeck-v0.13.0-beta.zip" download>.zip v0.13.0</a></p></div></div>
         <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#tinyteachersdeck">See it on Get the apps ↗</a></div></li>
-      <li class="app"><div class="id"><span class="ic" aria-hidden="true">TD</span><div><h3>TinyDeck<span class="ver">Coming soon</span></h3><p class="who"><b>For families</b> · Your child’s day at school, attendance and notes from the teacher.</p><p class="state">No live demo yet</p></div></div>
-        <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#tinydeck">See it on Get the apps ↗</a></div></li>
+      <li class="app"><div class="id"><span class="ic" aria-hidden="true">TP</span><div><h3>TinyParentDeck<span class="ver">Beta</span></h3><p class="who"><b>For families</b> · Your child’s day at school: attendance, notes from the teacher, milestones, fees and pickup.</p><p class="state">No live demo yet · latest <a href="https://myteachersdeck.com/downloads/tinyparentdeck-v0.7.0-beta.zip" download>.zip v0.7.0</a></p></div></div>
+        <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#tinyparentdeck">See it on Get the apps ↗</a></div></li>
     </ul>
   </section>
 
@@ -209,7 +209,7 @@
   </div>
 </main>
 
-<footer><div class="bar"><span>Updated 06 Nov 2026, 18:04 UTC (build 44d03be)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
+<footer><div class="bar"><span>Updated 06 Nov 2026, 18:23 UTC (build 84946e7)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
 
 <script>
 (function () {
@@ -282,8 +282,9 @@
     return '<li class="app" data-path="' + esc(folder) + '"' + (a.group === 'lms' ? ' data-check="build-info.json"' : '') + '>' + idBlock(a, '<h3>' + esc(a.name) + '<span class="ver"></span></h3>' + who(a) + '<p class="state" role="status">Checking…</p>', true) +
       '<div class="go"><a class="btn primary play" href="' + esc(href) + '">' + PLAY + 'Play demo</a><a class="tab" href="' + esc(href) + '" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>';
   }
-  function laterRow(a) {   // an app with no demo yet (KinderDeck's): its status, and its row on Get the apps
-    return '<li class="app">' + idBlock(a, '<h3>' + esc(a.name) + (STATUS[a.status] ? '<span class="ver">' + esc(STATUS[a.status]) + '</span>' : '') + '</h3>' + who(a) + '<p class="state">No live demo yet</p>', false) +
+  function laterRow(a) {   // an app with no demo yet (KinderDeck's): its status, its latest .zip, and its row on Get the apps
+    var zip = a.zip && a.zip.version ? ' · latest <a href="' + esc(a.zip.url) + '" download>.zip v' + esc(a.zip.version) + '</a>' : '';
+    return '<li class="app">' + idBlock(a, '<h3>' + esc(a.name) + (STATUS[a.status] ? '<span class="ver">' + esc(STATUS[a.status]) + '</span>' : '') + '</h3>' + who(a) + '<p class="state">No live demo yet' + zip + '</p>', false) +
       '<div class="go"><a class="btn" href="' + esc(a.hub || 'https://myteachersdeck.com/apps/') + '">See it on Get the apps ↗</a></div></li>';
   }
   function section(id, title, note, items, steps) {
