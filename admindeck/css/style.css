@@ -840,3 +840,22 @@ th.ss-pickcol{ font-size:10px; color:var(--text-lo); }
 /* v0.12.0: Student safety switches */
 .pol-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer}
 .pol-row input{margin-top:3px}
+
+/* ---------- Files (v0.16.0, js/files-ui.js) ---------- */
+.fl-add{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.fl-link{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.fl-link input{ flex:1 1 140px; min-width:0; background:var(--ink-1); border:1px solid var(--line); color:var(--text-hi); border-radius:8px; padding:7px 9px; font-size:12.5px; }
+.fl-err{ color:#ff9a8a; font-size:12px; margin:0 0 8px; }
+.fl-err[hidden]{ display:none; }
+.fl-list{ list-style:none; margin:0 0 8px; padding:0; display:flex; flex-direction:column; gap:6px; }
+.fl-list li:not(.empty){ display:flex; align-items:center; gap:8px; background:var(--ink-2); border:1px solid var(--line); border-radius:9px; padding:6px 8px; }
+.fl-type{ flex-shrink:0; font-size:10px; font-weight:700; letter-spacing:.4px; color:var(--amber); min-width:44px; }
+.fl-name-btn{ flex:1; min-width:0; text-align:left; background:none; border:0; color:var(--text-hi); font:inherit; font-size:13px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:2px 0; }
+.fl-name-btn:hover{ color:var(--amber); }
+.fl-ico{ flex-shrink:0; background:none; border:1px solid var(--line); color:var(--text-lo); border-radius:7px; width:26px; height:26px; cursor:pointer; }
+.fl-ico:hover{ color:var(--text-hi); border-color:var(--amber); }
+.fl-stage{ position:fixed; inset:0; z-index:9000; background:var(--ink-0); display:flex; flex-direction:column; }
+.fl-stage[hidden]{ display:none; }
+.fl-bar{ display:flex; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--line); }
+.fl-title{ flex:1; min-width:0; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fl-frame{ flex:1; width:100%; border:0; background:#fff; }

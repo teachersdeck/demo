@@ -451,6 +451,8 @@ if(typeof CD_STRINGS !== 'undefined') Object.assign(STRINGS, CD_STRINGS);
 if(typeof SC_STRINGS !== 'undefined') Object.assign(STRINGS, SC_STRINGS);
 /* v0.13.0 (History): likewise (js/history-ui.js). */
 if(typeof HS_STRINGS !== 'undefined') Object.assign(STRINGS, HS_STRINGS);
+/* v0.16.0 (Files): likewise (js/files-ui.js). */
+if(typeof FL_STRINGS !== 'undefined') Object.assign(STRINGS, FL_STRINGS);
 if(typeof SHELL_I18N !== 'undefined'){
   Object.keys(SHELL_I18N).forEach(k=>{ STRINGS[k] = Object.assign({}, SHELL_I18N[k], STRINGS[k] || {}); });
 }
@@ -471,6 +473,7 @@ function localizeNode(root){
 
 /* ---------------- Icons ---------------- */
 const ICONS = {
+  files:`<path d="M4 4h6l2 2h8v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/>`,   // v0.16.0, as TeachersDeck's
   snapshot:`<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>`,
   trophy:`<path d="M7 3h10v4a5 5 0 0 1-10 0V3Z"/><path d="M7 4H4.5A2.5 2.5 0 0 0 4 8.9L7 11"/><path d="M17 4h2.5A2.5 2.5 0 0 1 20 8.9L17 11"/><path d="M12 12v3.5"/><path d="M9 20h6"/><path d="M9.6 16.5h4.8l.5 3.5H9.1l.5-3.5Z"/>`,
   poll:`<rect x="4" y="11" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="16" y="14" width="4" height="6" rx="1"/>`,
@@ -2050,7 +2053,9 @@ const WIDGETS = [
   // v0.7.0 — the administration build starts here: one directory for teachers, students, parents and staff (js/directory-ui.js)
   { id:'directory', labelKey:'w_directory', icon:'contacts', w:780, h:640, render: renderDirectory },
   // v0.8.0 (SchoolDeck line) — staff directory, parent links, roster import, setup checklist (js/schooldeck-ui.js), built on the People Directory
-  { id:'schooldeck', labelKey:'w_schooldeck', icon:'school', w:820, h:680, render: renderSchoolDeck }
+  { id:'schooldeck', labelKey:'w_schooldeck', icon:'school', w:820, h:680, render: renderSchoolDeck },
+  // v0.16.0 — Files: PDFs, Google links and Google Drive, shown full screen (js/files-ui.js, js/drivepick.js)
+  { id:'files', labelKey:'w_files', icon:'files', w:420, h:460, render: renderFilesWidget }
 ];
 
 /* UniDeck phase 1 (CampusDeck): CampusDeck's own js/campus-courses.js lists its widgets in window.UNI_WIDGETS
@@ -2059,7 +2064,7 @@ const WIDGETS = [
 /* v0.14.1: in the university edition (CampusDeck) the school widgets go — they read classes, students' points, homework,
    join codes and families, which universities don't have. CampusDeck shows its own campus widgets instead (courses,
    campus stats, course health, teaching staff), and keeps the People Directory. */
-const UNI_KEEP = ['directory'];
+const UNI_KEEP = ['directory', 'files'];
 if(UNI) for(let i = WIDGETS.length - 1; i >= 0; i--) if(!UNI_KEEP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
 const DEFAULT_WINDOW = UNI ? ((window.UNI_WIDGETS || [])[0] || { id:'directory' }).id : 'schoolstats';   // first run and Reset layout
 if(UNI) (window.UNI_WIDGETS || []).forEach(w => {

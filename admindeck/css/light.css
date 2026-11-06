@@ -333,6 +333,15 @@
 :where(html[data-mode="light"]) .pol-row{
   border-bottom:1px solid rgba(15,23,42,0.088);
 }
+:where(html[data-mode="light"]) .fl-err{
+  color:#c21b00;
+}
+:where(html[data-mode="light"]) .fl-type{
+  color:#b5710d;
+}
+:where(html[data-mode="light"]) .fl-name-btn:hover{
+  color:#b5710d;
+}
 
 /* ---- css/light.extra.css (hand-written) ---- */
 /* AdminDeck — hand-written part of css/light.css (tools/gen_light_css.py appends this file).
