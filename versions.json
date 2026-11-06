@@ -19,9 +19,9 @@
   },
   "apps": {
     "teachersdeck": {
-      "version": "0.38.0",
-      "label": "0.38.0 beta",
-      "date": "2026-11-05"
+      "version": "0.39.0",
+      "label": "0.39.0 beta",
+      "date": "2026-11-06"
     },
     "studentdeck": {
       "version": "0.23.1",
