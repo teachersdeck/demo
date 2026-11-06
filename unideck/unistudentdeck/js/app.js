@@ -1532,7 +1532,7 @@ let hwFeedOff = null;
 SDCloud.onStatusChanged(status => { if (hwFeedOff) { hwFeedOff(); hwFeedOff = null; } if (status === 'joined') hwFeedOff = SDCloud.subscribeHomework((list, err) => { if (!err) cacheHomework(list); }); });
 
 function renderFiles(b) {
-  b.innerHTML = `<div class="row" style="margin-top:0"><button type="button" class="btn" id="file-browse">\u2795 ${V('Add a PDF', 'Thêm PDF')}</button><span class="muted">${V('Opens right here, full size.', 'Mở ngay tại đây, cỡ lớn.')}</span></div>
+  b.innerHTML = `<div class="row" style="margin-top:0"><button type="button" class="btn" id="file-browse">\u2795 ${V('Add a PDF', 'Thêm PDF')}</button>${typeof DrivePick !== 'undefined' && DrivePick.available() ? `<button type="button" class="btn" id="file-drive">☁️ Google Drive</button>` : ''}<span class="muted">${V('Opens right here, full size.', 'Mở ngay tại đây, cỡ lớn.')}</span></div>
     <input type="file" id="file-input" hidden multiple accept=".pdf,application/pdf">
     <form class="file-glink" id="file-glink" autocomplete="off">
       <input type="text" id="glink-url" placeholder="${V('Paste a Google Docs / Slides / Sheets / Drive link', 'Dán liên kết Google Docs / Slides / Sheets / Drive')}" aria-label="${V('Google link', 'Liên kết Google')}">
@@ -1546,6 +1546,15 @@ function renderFiles(b) {
   const list = $('.file-list', b), input = $('#file-input', b), errEl = $('#file-err', b);
   const fail = msg => { errEl.hidden = !msg; errEl.textContent = msg || ''; };
   $('#file-browse', b).addEventListener('click', () => input.click());
+  const driveBtn = $('#file-drive', b);                              // Google Drive (js/drivepick.js): picked files are saved as Google links
+  if (driveBtn) driveBtn.addEventListener('click', async () => {
+    let picked;
+    try { picked = await DrivePick.pick(document.documentElement.lang); } catch (e) { fail(V('The Google Drive window was blocked. Allow pop-ups for this page and try again.', 'Cửa sổ Google Drive đã bị chặn. Hãy cho phép cửa sổ bật lên trên trang này rồi thử lại.')); return; }
+    if (!picked.length) return;
+    try { for (const p of picked) await idb.put({ id: uid() + Date.now().toString(36), kind: 'glink', name: p.name, url: p.url, gtype: p.gtype, added: Date.now() }); }
+    catch (err) { fail(V('Couldn’t save the link: ', 'Không lưu được liên kết: ') + err.message); }
+    draw(); toast(V('Added ' + picked.length + ' from Google Drive.', 'Đã thêm ' + picked.length + ' tệp từ Google Drive.'));
+  });
 
   async function draw() {
     let files = []; try { files = await idb.getAll(); fail(''); } catch (e) { fail(V('Your saved files couldn\u2019t be loaded: ', 'Không tải được các tệp đã lưu: ') + e.message); }
