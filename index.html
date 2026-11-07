@@ -156,14 +156,14 @@
        These written-out rows are what shows if that list can't be fetched. -->
   <div id="list">
   <section class="box" id="preschool">
-    <div class="head"><h2>Preschool</h2><p>KinderDeck, the preschool edition. No live demos yet: Get the apps has the latest on each app.</p></div>
+    <div class="head"><h2>Preschool</h2><p>KinderDeck, the preschool edition, for kindergartens: one app for the office, one for each class teacher and one for families.</p></div>
     <ul class="list">
-      <li class="app"><div class="id"><span class="ic" aria-hidden="true">KD</span><div><h3>KinderDeck<span class="ver">Preview</span></h3><p class="who"><b>For owners and the office</b> · Children, families, staff, the kitchen and the school’s money in one place.</p><p class="state">No live demo yet · latest <a href="https://myteachersdeck.com/downloads/kinderdeck-v0.9.0.zip" download>.zip v0.9.0</a></p></div></div>
-        <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#kinderdeck">See it on Get the apps ↗</a></div></li>
-      <li class="app"><div class="id"><span class="ic" aria-hidden="true">TT</span><div><h3>TinyTeachersDeck<span class="ver">Beta</span></h3><p class="who"><b>For class teachers</b> · The preschool edition of TeachersDeck: attendance, the daily report, notes home, pickup and classroom tools.</p><p class="state">No live demo yet · latest <a href="https://myteachersdeck.com/downloads/tinyteachersdeck-v0.13.0-beta.zip" download>.zip v0.13.0</a></p></div></div>
-        <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#tinyteachersdeck">See it on Get the apps ↗</a></div></li>
-      <li class="app"><div class="id"><span class="ic" aria-hidden="true">TP</span><div><h3>TinyParentDeck<span class="ver">Beta</span></h3><p class="who"><b>For families</b> · Your child’s day at school: attendance, notes from the teacher, milestones, fees and pickup.</p><p class="state">No live demo yet · latest <a href="https://myteachersdeck.com/downloads/tinyparentdeck-v0.7.0-beta.zip" download>.zip v0.7.0</a></p></div></div>
-        <div class="go"><a class="btn" href="https://myteachersdeck.com/apps/#tinyparentdeck">See it on Get the apps ↗</a></div></li>
+      <li class="app" data-path="kinder/kinderdeck/"><div class="id"><span class="ic" aria-hidden="true">KD<span class="lamp" data-s="checking"></span></span><div><h3>KinderDeck<span class="ver"></span></h3><p class="who"><b>For owners and the office</b> · Children, families, staff, the kitchen and the school’s money in one place.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="kinder/kinderdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="kinder/kinderdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="kinder/tinyteachersdeck/"><div class="id"><span class="ic" aria-hidden="true">TT<span class="lamp" data-s="checking"></span></span><div><h3>TinyTeachersDeck<span class="ver"></span></h3><p class="who"><b>For class teachers</b> · The preschool edition of TeachersDeck: attendance, the daily report, notes home, pickup and classroom tools.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="kinder/tinyteachersdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="kinder/tinyteachersdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+      <li class="app" data-path="kinder/tinyparentdeck/"><div class="id"><span class="ic" aria-hidden="true">TP<span class="lamp" data-s="checking"></span></span><div><h3>TinyParentDeck<span class="ver"></span></h3><p class="who"><b>For families</b> · Your child’s day at school: attendance, notes from the teacher, milestones, fees and pickup.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="kinder/tinyparentdeck/?demo=1"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="kinder/tinyparentdeck/?demo=1" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
     </ul>
   </section>
 
@@ -209,7 +209,7 @@
   </div>
 </main>
 
-<footer><div class="bar"><span>Updated 07 Nov 2026, 03:34 UTC (build 4ced954)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
+<footer><div class="bar"><span>Updated 07 Nov 2026, 04:25 UTC (build 3148a6d)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
 
 <script>
 (function () {
@@ -260,10 +260,13 @@
   /* ---- the sections, built from the site's app list (the same one as Get the apps) ---- */
   var NOTE = {
     school: 'For schools and language centers: one app for each person in the class.',
-    preschool: 'KinderDeck, the preschool edition. No live demos yet: Get the apps has the latest on each app.',
+    preschool: 'KinderDeck, the preschool edition, for kindergartens: one app for the office, one for each class teacher and one for families.',
     uni: 'UniDeck, the university edition, in early preview: for colleges, graduate programs, language centers and test-prep schools.',
     lms: 'TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.'
   };
+  // Demos the site's list doesn't link yet: the preschool apps, which teachersdeck/kinderdeck-suite publishes to kinder/.
+  // (Get the apps keeps "Book a demo" for them; a "demo" in the site's list wins over these.)
+  var DEMO = { kinderdeck: 'kinder/kinderdeck/?demo=1', tinyteachersdeck: 'kinder/tinyteachersdeck/?demo=1', tinyparentdeck: 'kinder/tinyparentdeck/?demo=1' };
   var TITLE = { lms: 'Platforms' };   // the demo page's own name for a group, where it differs from Get the apps
   var STATUS = { preview: 'Preview', beta: 'Beta', soon: 'Coming soon' };
   var PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>';
@@ -282,7 +285,7 @@
     return '<li class="app" data-path="' + esc(folder) + '"' + (a.group === 'lms' ? ' data-check="build-info.json"' : '') + '>' + idBlock(a, '<h3>' + esc(a.name) + '<span class="ver"></span></h3>' + who(a) + '<p class="state" role="status">Checking…</p>', true) +
       '<div class="go"><a class="btn primary play" href="' + esc(href) + '">' + PLAY + 'Play demo</a><a class="tab" href="' + esc(href) + '" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>';
   }
-  function laterRow(a) {   // an app with no demo yet (KinderDeck's): its status, its latest .zip, and its row on Get the apps
+  function laterRow(a) {   // an app with no demo yet: its status, its latest .zip, and its row on Get the apps
     var zip = a.zip && a.zip.version ? ' · latest <a href="' + esc(a.zip.url) + '" download>.zip v' + esc(a.zip.version) + '</a>' : '';
     return '<li class="app">' + idBlock(a, '<h3>' + esc(a.name) + (STATUS[a.status] ? '<span class="ver">' + esc(STATUS[a.status]) + '</span>' : '') + '</h3>' + who(a) + '<p class="state">No live demo yet' + zip + '</p>', false) +
       '<div class="go"><a class="btn" href="' + esc(a.hub || 'https://myteachersdeck.com/apps/') + '">See it on Get the apps ↗</a></div></li>';
@@ -295,7 +298,7 @@
     var html = '', jump = '';
     var add = function (id, title, h) { if (h) { html += h; jump += '<a class="btn" href="#' + id + '">' + esc(title) + '</a>'; } };
     groups.forEach(function (g) {
-      var items = apps.filter(function (a) { return a.group === g.id; }).map(function (a) { return a.demo ? demoRow(a) : laterRow(a); }).join('');
+      var items = apps.filter(function (a) { return a.group === g.id; }).map(function (a) { if (!a.demo && DEMO[a.id]) a.demo = DEMO[a.id]; return a.demo ? demoRow(a) : laterRow(a); }).join('');
       var title = TITLE[g.id] || en(g);
       add(g.id, title, section(g.id, title, NOTE[g.id], items));
     });
