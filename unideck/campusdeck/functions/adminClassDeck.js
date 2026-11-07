@@ -197,10 +197,10 @@ function makeAdminUpdateClass(deps) {
     if (!Object.keys(fields).length) { res.status(400).json({ errors: [{ field: 'body', code: 'nothing_to_change' }] }); return; }
     const cls = await loadClass(db, b.classId);
     if (!cls) { res.status(404).json({ error: 'No such class' }); return; }
-    // A class made before v2.0.0 has no classPulse / parentLinking: those count as on / 'class-code' (pulse.js, parents.js), so compare against that.
+    // A class made before v2.0.0 has no classPulse / parentLinking: those count as on (pulse.js) / 'family-code' (parents.js refuses the class code unless a class chose 'class-code'), so compare against that.
     // grade/homeroom/year didn't exist before v2.10.0 either: a class with none counts as '' (unset), same "missing = default" pattern.
     const current = {
-      className: cls.data.className, rankingVisibility: cls.data.rankingVisibility || 'anonymized', classPulse: cls.data.classPulse !== false, parentLinking: cls.data.parentLinking || 'class-code',
+      className: cls.data.className, rankingVisibility: cls.data.rankingVisibility || 'anonymized', classPulse: cls.data.classPulse !== false, parentLinking: cls.data.parentLinking || 'family-code',
       grade: cls.data.grade || '', homeroom: cls.data.homeroom || '', year: cls.data.year || '',
     };
     const changed = Object.keys(fields).filter((k) => fields[k] !== current[k]);

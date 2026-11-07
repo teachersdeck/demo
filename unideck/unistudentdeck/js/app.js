@@ -2142,4 +2142,4 @@ document.addEventListener('click', e => {                           // v0.9.8/0.
 { const flip = e => { const it = e.target.closest && e.target.closest('.bs-item'); if (it) it.classList.toggle('flip', it.getBoundingClientRect().left + 230 > innerWidth - 12); };   // pop-up card opens to the right unless there's no room
   document.addEventListener('mouseover', flip); document.addEventListener('focusin', flip); }
 { let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderBadgeStrip, 120); }); }
-(state.active.timer === undefined && Object.keys(state.active).length === 0 ? ['timer', 'todo'] : WIDGETS.map(w => w.id).filter(id => state.active[id])).forEach(openWidget);
+(state.active.timer === undefined && Object.keys(state.active).length === 0 ? ['clock'] : WIDGETS.map(w => w.id).filter(id => state.active[id])).forEach(openWidget);
