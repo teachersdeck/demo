@@ -1,0 +1,58 @@
+/* TinyParentDeck's own widgets (js/kinder-widgets.js). ParentDeck's tokens (--panel2, --line, --hi, --lo, --gold), so Light
+   mode follows. Tap targets at least 44 px; a status always has a shape as well as a colour; Not recorded is grey. */
+.kp-hint { color: var(--lo); font-size: 13px; line-height: 1.45; margin: 6px 0; }
+.kp-nr { color: var(--lo); font-style: italic; }
+.kp-h { margin: 12px 0 6px; font-size: 14px; }
+.kp-big { min-height: 48px; font-size: 15px; }
+.kp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.kp-head > div { display: grid; } .kp-name { font-size: 18px; } .kp-head small { color: var(--lo); }
+.kp-daynav { display: flex; align-items: center; gap: 6px; } .kp-daynav .btn { min-width: 44px; min-height: 44px; }
+.kp-mark { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line); font-weight: 700; flex: none; color: var(--lo); }
+.kp-arrive { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: var(--r); background: var(--panel2); margin-bottom: 10px; }
+.kp-arrive > div { display: grid; } .kp-arrive small { color: var(--lo); }
+.present .kp-mark { border-color: #47C98A; color: #47C98A; } .late .kp-mark { border-color: #E8C23D; color: #E8C23D; } .absent .kp-mark { border-color: #E06565; color: #E06565; }
+.kp-fields { display: grid; gap: 6px; }
+.kp-field { display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; border-radius: 10px; background: var(--panel2); }
+.kp-field small { color: var(--lo); font-size: 12px; } .kp-field.none { opacity: .75; }
+.kp-val { font-weight: 600; }
+.kp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.kp-list li { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--panel2); }
+.kp-list li > div { display: grid; flex: 1; } .kp-list small { color: var(--lo); font-size: 12px; } .kp-list p { margin: 4px 0 0; }
+.kp-note { display: block !important; padding: 0 !important; }
+.kp-notehead { display: flex; gap: 10px; align-items: center; width: 100%; min-height: 52px; padding: 8px 10px; background: none; border: 0; color: var(--hi); font: inherit; text-align: left; cursor: pointer; }
+.kp-notehead > div { display: grid; } .kp-note.unread .kp-notehead b::after { content: ' ●'; color: var(--gold); }
+.kp-ncat { font-size: 24px; } .kp-notebody { padding: 0 12px 12px 52px; } .kp-notebody p { margin: 0 0 4px; }
+.kp-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kp-form label { display: grid; gap: 4px; font-size: 13px; color: var(--lo); } .kp-form .wide, .kp-form .btn { grid-column: 1 / -1; }
+.kp-form input { min-height: 44px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; color: var(--hi); padding: 6px 10px; font: inherit; }
+.kp-seen { font-size: 12px; color: var(--lo); display: grid; gap: 4px; justify-items: end; }
+.kp-date { font-weight: 700; min-width: 44px; text-align: center; color: var(--gold); }
+.kp-q { display: grid !important; } .kp-q details { color: var(--lo); } .kp-q summary { cursor: pointer; min-height: 32px; }
+.kp-plan { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 4px; } .kp-plan li { display: flex; gap: 8px; align-items: center; }
+.kp-t { color: var(--lo); width: 44px; font-variant-numeric: tabular-nums; }
+.kp-week { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.kp-week li { display: grid; grid-template-columns: 44px 70px 1fr; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--panel2); }
+.kp-week li p { grid-column: 2 / -1; margin: 0; font-size: 13px; } .kp-week small { color: var(--lo); }
+.kp-week .kp-mark { width: 36px; height: 36px; }
+/* v0.3.0: the school's menu on Today at School, and school notices */
+.kp-menu { margin: 10px 0 4px; padding: 8px 10px; border-radius: 10px; background: var(--panel2); font-size: 14px; }
+.kp-menu ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.kp-menu small { color: var(--lo); display: inline-block; min-width: 72px; }
+/* v0.5.0: the child's photo beside the name (when the school sends photos) */
+.kp-head > .kp-who { display: flex; align-items: center; gap: 10px; } .kp-who > span { display: grid; }
+.kp-photo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex: none; background: var(--panel2); }
+/* v0.6.0: Fees (only when the school shows them) */
+.kp-fee { padding: 10px 12px; border-radius: 12px; background: var(--panel2); margin-bottom: 10px; border-left: 4px solid var(--lo); }
+.kp-fee.paid { border-left-color: #43a047; } .kp-fee.part { border-left-color: #f0a23a; } .kp-fee.due { border-left-color: #e57373; }
+.kp-feestat { font-weight: 700; white-space: nowrap; }
+.kp-feet { width: 100%; border-collapse: collapse; font-size: 14px; }
+.kp-feet td { padding: 4px 0; } .kp-feet td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.kp-feet tr.sum td { font-weight: 700; border-top: 1px solid rgba(127, 127, 127, .3); }
+/* v0.7.0: Health and Growth, and the pickup pass */
+.kp-growth th { text-align: left; font-size: 12px; color: var(--lo); font-weight: 600; padding-bottom: 4px; }
+.kp-growth td:last-child, .kp-growth th:last-child { text-align: right; }
+.kp-diff { display: block; color: var(--lo); font-size: 11px; }
+.kp-pass { text-align: center; padding: 8px 0; }
+.kp-qr { display: inline-block; background: #fff; padding: 8px; border-radius: 12px; }
+.kp-qr svg { width: min(240px, 70vw); height: auto; display: block; }
+.kp-code { font: 700 26px/1.2 ui-monospace, Consolas, monospace; letter-spacing: 3px; margin: 8px 0 2px; }

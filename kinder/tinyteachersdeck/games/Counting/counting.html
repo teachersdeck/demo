@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đếm số</title>
+<link rel="stylesheet" href="../Preschool/kg.css">
+</head>
+<body>
+<header class="kg-top">
+  <h1 id="kg-title">Đếm số</h1>
+  <span id="kg-range-lbl" style="font-weight:700">Số</span>
+  <button class="kg-pill" data-max="5" aria-pressed="true">1–5</button>
+  <button class="kg-pill" data-max="10" aria-pressed="false">1–10</button>
+  <button class="kg-pill" id="kg-sound" aria-pressed="true">🔊</button>
+  <button class="kg-pill" id="kg-lang">VI</button>
+</header>
+<div class="kg-stars" id="kg-stars"></div>
+<div class="kg-ask" id="kg-ask" aria-live="polite"></div>
+<main class="kg-stage" id="kg-stage"></main>
+<div class="kg-nums" id="kg-nums"></div>
+<p class="kg-hint" id="kg-hint" aria-live="polite"></p>
+<script src="../Preschool/kg.js"></script>
+<script src="counting.js"></script>
+</body>
+</html>

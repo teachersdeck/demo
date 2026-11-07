@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Màu sắc · Colours",
+    "folder": "Colours",
+    "entry": "colours.html",
+    "instructions": "../Preschool/guide.html"
+  },
+  {
+    "name": "Đếm số · Counting",
+    "folder": "Counting",
+    "entry": "counting.html",
+    "instructions": "../Preschool/guide.html"
+  },
+  {
+    "name": "Chữ cái · Letters",
+    "folder": "Letters",
+    "entry": "letters.html",
+    "instructions": "../Preschool/guide.html"
+  }
+]
