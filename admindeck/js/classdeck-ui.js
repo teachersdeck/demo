@@ -126,7 +126,7 @@ function cdManageHtml(c){
     <div><div class="dir-name">${esc(t('cd_settings_h'))}</div>
       <div class="dir-fields"><label class="dir-field"><span>${esc(t('cd_f_name'))}</span><input type="text" id="cd-name" maxlength="80" value="${esc(c.className)}">${cdErrs(errs, 'className')}</label>
         <label class="dir-field"><span>${esc(t('cd_f_rank'))}</span>${sel('cd-rank', c.rankingVisibility || 'anonymized', [['full', 'cd_rank_full'], ['anonymized', 'cd_rank_anonymized'], ['opt_out', 'cd_rank_opt_out']])}</label>
-        <label class="dir-field"><span>${esc(t('cd_f_linking'))}</span>${sel('cd-linking', c.parentLinking || 'class-code', [['family-code', 'cd_link_family'], ['class-code', 'cd_link_class']])}</label>
+        <label class="dir-field"><span>${esc(t('cd_f_linking'))}</span>${sel('cd-linking', c.parentLinking || 'family-code', [['family-code', 'cd_link_family'], ['class-code', 'cd_link_class']])}</label>
         <label class="dir-field"><span>${esc(t('cd_f_grade'))}</span><input type="text" id="cd-grade" maxlength="40" value="${esc(c.grade || '')}">${cdErrs(errs, 'grade')}</label>
         <label class="dir-field"><span>${esc(t('cd_f_homeroom'))}</span><input type="text" id="cd-homeroom" maxlength="40" value="${esc(c.homeroom || '')}">${cdErrs(errs, 'homeroom')}</label>
         <label class="dir-field"><span>${esc(t('cd_f_year'))}</span><input type="text" id="cd-year" maxlength="20" value="${esc(c.year || '')}">${cdErrs(errs, 'year')}</label></div>

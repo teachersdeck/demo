@@ -1,8 +1,8 @@
 {
   "development": {
     "teachersdeck": {
-      "version": "0.40.1",
-      "label": "0.40.1 rc"
+      "version": "0.40.2",
+      "label": "0.40.2 rc"
     },
     "studentdeck": {
       "version": "0.24.2",
@@ -13,8 +13,8 @@
       "label": "0.26.1 beta"
     },
     "admindeck": {
-      "version": "0.16.0",
-      "label": "0.16.0 beta"
+      "version": "0.16.1",
+      "label": "0.16.1 beta"
     }
   },
   "apps": {

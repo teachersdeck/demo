@@ -302,7 +302,7 @@ const AD_DEMO = (() => {
       if (!c) { c = { id, lastActiveAt: null }; classes.push(c); details[id] = { studentJoinCode: '', parentJoinCode: '', roster: [], rewards: [], calendarEvents: [], homework: [] }; }
       const tr = TEACHERS[String(v.teacherUid || '').replace(/^uid_/, '')] || null;
       Object.assign(c, { className: v.className, teacherUid: v.teacherUid || null, teacherName: tr ? tr.name : null, teacherEmail: tr ? tr.email : null, rankingVisibility: v.rankingVisibility || 'anonymized',
-        classPulse: v.classPulse !== false, parentLinking: v.parentLinking || 'class-code', managedBy: v.managedBy || null, schedule: v.schedule || null,
+        classPulse: v.classPulse !== false, parentLinking: v.parentLinking || 'family-code', managedBy: v.managedBy || null, schedule: v.schedule || null,
         grade: v.grade || '', homeroom: v.homeroom || '', year: v.year || '', archived: !!v.archived });
       if (v.studentJoinCode) details[id].studentJoinCode = v.studentJoinCode;
       if (v.parentJoinCode) details[id].parentJoinCode = v.parentJoinCode;
