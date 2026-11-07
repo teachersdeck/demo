@@ -127,7 +127,7 @@ html[data-mode="light"] .ud-pick input[type=date]{color-scheme:light;background:
 .btn:disabled{opacity:.5;cursor:default}
 /* Quizzes (phase 4, v0.11.0): the list, taking a quiz, results */
 .ud-qcard{display:block}.ud-qhead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.ud-qbar{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;background:inherit}
+.ud-qbar{position:sticky;top:-10px;margin-top:-10px;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:18px 0 8px;background:var(--panel)}   /* the panel colour (inherit was see-through: the parent has none), and up over .ud-pad's 10px top padding so nothing scrolls past above it */
 .ud-timer{font-variant-numeric:tabular-nums;font-size:18px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:4px 12px}
 .ud-timer.low{color:#f0a37e;border-color:#f0a37e}
 .ud-q .ud-check{margin:6px 0}
