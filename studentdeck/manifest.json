@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "StudentDeck",
-  "version": "0.24.2",
-  "version_name": "0.24.2 rc",
+  "version": "0.24.3",
+  "version_name": "0.24.3",
   "description": "A study dashboard for students: focus timer, homework, reading log, games, flashcards, a journal, a scrapbook, files and XP.",
   "chrome_url_overrides": {
     "newtab": "index.html"

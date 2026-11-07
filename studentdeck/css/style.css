@@ -661,7 +661,7 @@ body.fs-open .widget.full{top:0;border-top:0}
 .sc-pbtn svg{width:34px;height:34px}
 
 /* ===== v0.15.0 — Scrapdeck sharing (M3, backend v2.8.0): "Share this page" modal ===== */
-.sc-modal{position:absolute;inset:0;background:rgba(10,14,24,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.sc-modal{position:absolute;inset:0;background:rgba(10,14,24,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}.sc-modal[hidden]{display:none}   /* display:flex above outranks the hidden attribute, so without this the empty share layer covered the editor */
 .sc-mcard{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;width:min(420px,100%);max-height:85%;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.4)}
 .sc-mcard h3{margin:0 0 10px}
 .sc-mcard h4{margin:14px 0 6px;font-size:13px;color:var(--lo)}
