@@ -112,8 +112,29 @@ const STRINGS = {
   pro_active:         { en:'Active on this account. Every child you link also gets StudentDeck Pro.', vi:'Đang hoạt động trên tài khoản này. Mọi học sinh bạn liên kết cũng được StudentDeck Pro.' },
   pro_pitch:          { en:'Badge Display Case, Class Pulse, Weekly Digest, conversation starters, the rewards wishlist and homework insights — and StudentDeck Pro (games and language tools) for every child you link.', vi:'Tủ huy hiệu, Class Pulse, Tóm tắt tuần, gợi ý trò chuyện, danh sách phần thưởng mong muốn và phân tích bài tập — cùng StudentDeck Pro (trò chơi và công cụ ngôn ngữ) cho mọi học sinh bạn liên kết.' },
   pro_activate:       { en:'Activate', vi:'Kích hoạt' },
-  pro_get:            { en:'Get ParentDeck Pro', vi:'Mua ParentDeck Pro' },
-  pro_price_line:     { en:'{monthly}/child/month or {annual}/child/year — 30% off the 2nd child, 50% off the 3rd+.', vi:'{monthly}/trẻ/tháng hoặc {annual}/trẻ/năm — giảm 30% cho trẻ thứ 2, giảm 50% từ trẻ thứ 3 trở đi.' },
+  pro_price_line:     { en:'{monthly}/month or {annual}/year for the whole family: every child you link is included.', vi:'{monthly}/tháng hoặc {annual}/năm cho cả gia đình: mọi con bạn liên kết đều được bao gồm.' },
+  pro_have_key:       { en:'Already have a key?', vi:'Đã có mã?' },
+  pay_heading:        { en:'Pay by bank transfer (VietQR):', vi:'Thanh toán bằng chuyển khoản (VietQR):' },
+  pay_monthly:        { en:'Monthly, {price}', vi:'Theo tháng, {price}' },
+  pay_annual:         { en:'Yearly, {price}', vi:'Theo năm, {price}' },
+  pay_email_ph:       { en:'Email for your key', vi:'Email nhận mã' },
+  pay_go:             { en:'Show the payment QR', vi:'Hiện mã QR thanh toán' },
+  pay_email_needed:   { en:'Enter the email your key should go to.', vi:'Nhập email để nhận mã.' },
+  pay_renew_note:     { en:'Renew your key {key} by bank transfer (VietQR):', vi:'Gia hạn mã {key} bằng chuyển khoản (VietQR):' },
+  pay_renew_early:    { en:'Renew now', vi:'Gia hạn ngay' },
+  pay_scan:           { en:'Scan with your banking app', vi:'Quét bằng ứng dụng ngân hàng' },
+  pay_note_label:     { en:'Transfer note: keep it exactly as it is', vi:'Nội dung chuyển khoản: giữ nguyên như sau' },
+  pay_copy:           { en:'Copy', vi:'Sao chép' },
+  pay_copied:         { en:'Copied', vi:'Đã sao chép' },
+  pay_waiting:        { en:'Waiting for your payment. We match transfers by hand, usually within one working day. Pro switches on by itself for you and your children, and the key is emailed to you.', vi:'Đang chờ thanh toán. Chúng tôi đối chiếu chuyển khoản thủ công, thường trong một ngày làm việc. Pro sẽ tự bật cho bạn và các con, và mã được gửi qua email.' },
+  pay_start_over:     { en:'Start over with a different plan', vi:'Chọn lại gói khác' },
+  pay_start_over_confirm: { en:'Start over? If you have already paid for this order, don\'t: it would be harder to match.', vi:'Chọn lại? Nếu bạn đã thanh toán đơn này thì đừng: đơn sẽ khó đối chiếu hơn.' },
+  pay_off:            { en:'Payments aren\'t open yet. Please check back soon.', vi:'Chưa mở thanh toán. Vui lòng quay lại sau.' },
+  pay_too_many:       { en:'You already have unpaid orders. Pay one of them, or wait a week for it to expire.', vi:'Bạn đã có đơn chưa thanh toán. Hãy thanh toán một đơn, hoặc chờ một tuần để đơn hết hạn.' },
+  pay_failed:         { en:'Couldn\'t create the order. Please try again.', vi:'Không tạo được đơn hàng. Vui lòng thử lại.' },
+  pay_done:           { en:'Payment received: ParentDeck Pro is on for you and your children.', vi:'Đã nhận thanh toán: ParentDeck Pro đã bật cho bạn và các con.' },
+  pay_renewed:        { en:'Payment received: your ParentDeck Pro is renewed.', vi:'Đã nhận thanh toán: ParentDeck Pro đã được gia hạn.' },
+  pay_unofficial:     { en:'This copy of ParentDeck is not an official build, so it can\'t buy Pro.', vi:'Bản ParentDeck này không phải bản chính thức nên không thể mua Pro.' },
   pro_activated:      { en:'ParentDeck Pro is active. {n} linked child(ren) now have StudentDeck Pro.', vi:'Đã kích hoạt ParentDeck Pro. {n} học sinh đã liên kết giờ có StudentDeck Pro.' },
   pro_signin_first:   { en:'Sign in first, then activate ParentDeck Pro from your account.', vi:'Hãy đăng nhập trước, rồi kích hoạt ParentDeck Pro trong tài khoản.' },
   acct_link_notfound: { en:'That code wasn\u2019t found. Check it with your child (StudentDeck \u2192 Class) or the teacher.', vi:'Không tìm thấy mã này. Hãy kiểm tra lại với con (StudentDeck \u2192 Lớp) hoặc giáo viên.' },
@@ -488,10 +509,8 @@ $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM
    previews the gate. Never gated: anything a teacher sends (notes, reports, homework, calendar, attendance). */
 const PRO_GATE_ENABLED = false;
 const PRO_WIDGETS = ['badges', 'hwc', 'wish', 'starters', 'digest', 'pulse'];
-const PD_ORDER_FORM_URL = 'https://forms.gle/SGUgGpgLyEjNu5iS8';   // where a family asks for a ParentDeck Pro key (change to your own form)
-// v2.3.0: real subscription pricing (official pricing sheet), per child. Sibling discount
-// (2nd child 30% off, 3rd+ 50% off) is shown as copy only here — see
-// backend/functions/src/license.js for the matching billingCycle/expiresAt fields.
+// One price per family, every linked child included (owner, 7 Nov 2026). Shown only: the backend's payments.js prices
+// every order (= the quote engine's `family`). Paid by VietQR with a note token (v0.27.0).
 const PD_PRICING_VND = { monthly: 30000, annual: 300000 };
 ProGate.configure({
   enabled: PRO_GATE_ENABLED, ids: PRO_WIDGETS,
@@ -540,15 +559,76 @@ function renderAcct() {
   el.innerHTML = `<button class="acctbtn" id="a-open"><span class="avatar">${esc(initials(s.displayName))}</span>${esc(s.displayName)}</button>`;
   $('#a-open').addEventListener('click', openAccountModal);
 }
+const PD_ORDER_KEY = 'pd_pro_order';
+function readPdOrder() { try { const o = JSON.parse(localStorage.getItem(PD_ORDER_KEY)); const sess = PD.getSession(); return o && sess && o.uid === sess.uid ? o : null; } catch (e) { return null; } }
+function savePdOrder(o) { try { o ? localStorage.setItem(PD_ORDER_KEY, JSON.stringify(o)) : localStorage.removeItem(PD_ORDER_KEY); } catch (e) {} }
+const vnd = n => `${Number(n).toLocaleString('vi-VN')}₫`;
+function proOrderHtml(o) {
+  const b = o.bank || {};
+  return `<div class="pay-box">
+    <p class="muted center-t">${t('pay_scan')}</p>
+    ${o.qrUrl ? `<img class="pay-qr" src="${esc(o.qrUrl)}" alt="VietQR">` : ''}
+    <p class="pay-amount">${vnd(o.amount)}</p>
+    <p class="muted center-t">${t('pay_note_label')}</p>
+    <div class="row center"><span class="pay-token">${esc(o.token)}</span><button class="btn" id="pay-copy">${t('pay_copy')}</button></div>
+    ${b.account ? `<p class="muted center-t"><b>${esc(b.accountName || '')}</b><br>${esc(b.account)} · ${esc(b.bankName || '')}</p>` : ''}
+    <p class="muted center-t">${t('pay_waiting')}</p>
+    <p class="muted center-t"><a href="#" id="pay-over">${t('pay_start_over')}</a></p></div>`;
+}
+function proBuyHtml(renewKey) {
+  const s = PD.getSession();
+  return `<div class="pay-box">
+    <p class="muted">${renewKey ? t('pay_renew_note', { key: esc(renewKey) }) : t('pay_heading')}</p>
+    <div class="row"><label class="pay-plan"><input type="radio" name="pd-plan" value="monthly"> ${t('pay_monthly', { price: vnd(PD_PRICING_VND.monthly) })}</label>
+      <label class="pay-plan"><input type="radio" name="pd-plan" value="annual" checked> ${t('pay_annual', { price: vnd(PD_PRICING_VND.annual) })}</label></div>
+    <div class="row"><input type="email" id="pay-email" value="${esc((s && s.email) || '')}" placeholder="${t('pay_email_ph')}" autocomplete="email"><button class="btn primary" id="pay-go">${t('pay_go')}</button></div></div>`;
+}
 function proSectionHtml() {
   const p = PD.getPro ? PD.getPro() : { active: false };
-  if (p.active) return `<h4>⭐ ${t('pro_title')}</h4><p class="pro-on">${t('pro_active')}</p>`;
-  const priceLine = t('pro_price_line', { monthly: `${PD_PRICING_VND.monthly.toLocaleString('vi-VN')}₫`, annual: `${PD_PRICING_VND.annual.toLocaleString('vi-VN')}₫` });
+  const order = readPdOrder(), key = p.info && p.info.key;
+  if (p.active) return `<h4>⭐ ${t('pro_title')}</h4><p class="pro-on">${t('pro_active')}</p>` +
+    (order ? proOrderHtml(order) : `<details class="pay-renew"><summary>${t('pay_renew_early')}</summary>${proBuyHtml(key)}</details>`);
+  const priceLine = t('pro_price_line', { monthly: vnd(PD_PRICING_VND.monthly), annual: vnd(PD_PRICING_VND.annual) });
   return `<h4>⭐ ${t('pro_title')}</h4><p class="muted">${t('pro_pitch')}</p>
     <p class="muted">${priceLine}</p>
-    <div class="row"><input type="text" id="pro-key" placeholder="PDPRO-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false"><button class="btn primary" id="pro-go">${t('pro_activate')}</button></div>
-    <p class="muted"><a href="${PD_ORDER_FORM_URL}" target="_blank" rel="noopener">${t('pro_get')}</a></p>`;
+    ${order ? proOrderHtml(order) : proBuyHtml(key)}
+    <p class="muted">${t('pro_have_key')}</p>
+    <div class="row"><input type="text" id="pro-key" placeholder="PDPRO-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false"><button class="btn primary" id="pro-go">${t('pro_activate')}</button></div>`;
 }
+function bindProBuy() {
+  const go = $('#pay-go'), copy = $('#pay-copy'), over = $('#pay-over');
+  if (go) go.addEventListener('click', async () => {
+    if (!isOfficialBuild()) { toast(t('pay_unofficial')); return; }
+    const email = $('#pay-email').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast(t('pay_email_needed')); $('#pay-email').focus(); return; }
+    const plan = (document.querySelector('input[name="pd-plan"]:checked') || {}).value || 'annual';
+    const p = PD.getPro(), body = { cycle: plan, email, name: (PD.getSession() || {}).displayName || '' };
+    if (p.info && p.info.key) body.renewKey = p.info.key;
+    go.disabled = true;
+    try {
+      const o = await PD.createProOrder(body);
+      savePdOrder({ uid: PD.getSession().uid, id: o.id, secret: o.secret, token: o.token, amount: o.amount, qrUrl: o.qrUrl, bank: o.bank, renew: !!body.renewKey, at: Date.now() });
+      openAccountModal();
+    } catch (e) {
+      toast(t({ 'payments-off': 'pay_off', 'too-many-open': 'pay_too_many' }[e.code] || 'pay_failed'));
+      go.disabled = false;
+    }
+  });
+  if (copy) copy.addEventListener('click', () => { const tok = readPdOrder() && readPdOrder().token; if (tok) (navigator.clipboard ? navigator.clipboard.writeText(tok) : Promise.reject()).then(() => toast(t('pay_copied')), () => toast(tok)); });
+  if (over) over.addEventListener('click', e => { e.preventDefault(); if (!confirm(t('pay_start_over_confirm'))) return; savePdOrder(null); openAccountModal(); });
+}
+// A saved order is done once the owner marks it paid: users/{uid}.pro switches on (watchPro) or, for a renewal, getOrder says paid.
+async function checkPdOrder() {
+  const o = readPdOrder(); if (!o || !PD.createProOrder) return;
+  try {
+    const r = await PD.getProOrder(o.id, o.secret);
+    if (r.status === 'paid') { savePdOrder(null); toast(t(o.renew ? 'pay_renewed' : 'pay_done')); if (accountModalOpen) openAccountModal(); }
+    else if (r.status === 'cancelled') { savePdOrder(null); if (accountModalOpen) openAccountModal(); }
+  } catch (e) { if (e.status === 404) savePdOrder(null); }
+}
+if (PD.onProChanged) PD.onProChanged(on => { if (on && readPdOrder()) checkPdOrder(); });
+if (PD.onAuthChanged) PD.onAuthChanged(s => { if (s) setTimeout(checkPdOrder, 3000); });
+setInterval(() => { if (accountModalOpen && readPdOrder()) checkPdOrder(); }, 20000);
 function openAccountModal() {
   accountModalOpen = true;
   if (UNI) {   // UniDeck: students link this account from their own UniStudentDeck (an invite code entered in the family view)
@@ -588,6 +668,7 @@ function openAccountModal() {
     }
   });
   $('#a-signout').addEventListener('click', () => { PD.signOut(); closeModal(); toast(t('acct_signed_out')); refreshAll(); });
+  bindProBuy();
   const proGo = $('#pro-go');
   if (proGo) proGo.addEventListener('click', async () => {
     if (!isOfficialBuild()) { toast('This copy of ParentDeck is not an official build, so Pro cannot be activated here.'); return; }
