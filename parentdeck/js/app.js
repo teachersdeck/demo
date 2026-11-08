@@ -643,7 +643,7 @@ function openAccountModal() {
   openModal(t('acct_title'), `
     <p class="muted">${t('acct_signed_in_email', { email: esc(PD.getSession().email) })}</p>
     <h4>${t('acct_linked_children')}</h4>${rows}
-    ${proSectionHtml()}
+    ${KINDER ? "" : proSectionHtml()}
     <h4>${t('acct_link_child')}</h4>
     <div class="row"><input type="text" id="join-code" placeholder="${t('acct_join_code_ph')}" autocomplete="off" spellcheck="false"></div>
     <p class="muted">${t('acct_join_hint')}</p>
