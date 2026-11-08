@@ -117,6 +117,8 @@ const STRINGS = {
   pay_heading:        { en:'Pay by bank transfer (VietQR):', vi:'Thanh toán bằng chuyển khoản (VietQR):' },
   pay_monthly:        { en:'Monthly, {price}', vi:'Theo tháng, {price}' },
   pay_annual:         { en:'Yearly, {price}', vi:'Theo năm, {price}' },
+  pay_founding:       { en:'Founding Family, {price} for the first year (first 50 families)', vi:'Gia đình sáng lập, {price} cho năm đầu (50 gia đình đầu tiên)' },
+  pay_founding_full:  { en:'The Founding Family places are all taken. Choose Monthly or Yearly.', vi:'Đã hết suất Gia đình sáng lập. Hãy chọn gói theo tháng hoặc theo năm.' },
   pay_email_ph:       { en:'Email for your key', vi:'Email nhận mã' },
   pay_go:             { en:'Show the payment QR', vi:'Hiện mã QR thanh toán' },
   pay_email_needed:   { en:'Enter the email your key should go to.', vi:'Nhập email để nhận mã.' },
@@ -511,7 +513,7 @@ const PRO_GATE_ENABLED = false;
 const PRO_WIDGETS = ['badges', 'hwc', 'wish', 'starters', 'digest', 'pulse'];
 // One price per family, every linked child included (owner, 7 Nov 2026). Shown only: the backend's payments.js prices
 // every order (= the quote engine's `family`). Paid by VietQR with a note token (v0.27.0).
-const PD_PRICING_VND = { monthly: 30000, annual: 300000 };
+const PD_PRICING_VND = { monthly: 30000, annual: 300000, founding: 210000 };   // founding = Founding Family, 30% off the first year (first 50 families)
 ProGate.configure({
   enabled: PRO_GATE_ENABLED, ids: PRO_WIDGETS,
   title: '⭐ A ParentDeck Pro widget',
@@ -580,7 +582,8 @@ function proBuyHtml(renewKey) {
   return `<div class="pay-box">
     <p class="muted">${renewKey ? t('pay_renew_note', { key: esc(renewKey) }) : t('pay_heading')}</p>
     <div class="row"><label class="pay-plan"><input type="radio" name="pd-plan" value="monthly"> ${t('pay_monthly', { price: vnd(PD_PRICING_VND.monthly) })}</label>
-      <label class="pay-plan"><input type="radio" name="pd-plan" value="annual" checked> ${t('pay_annual', { price: vnd(PD_PRICING_VND.annual) })}</label></div>
+      <label class="pay-plan"><input type="radio" name="pd-plan" value="annual" checked> ${t('pay_annual', { price: vnd(PD_PRICING_VND.annual) })}</label>
+      ${renewKey ? '' : `<label class="pay-plan"><input type="radio" name="pd-plan" value="founding"> ${t('pay_founding', { price: vnd(PD_PRICING_VND.founding) })}</label>`}</div>
     <div class="row"><input type="email" id="pay-email" value="${esc((s && s.email) || '')}" placeholder="${t('pay_email_ph')}" autocomplete="email"><button class="btn primary" id="pay-go">${t('pay_go')}</button></div></div>`;
 }
 function proSectionHtml() {
@@ -602,7 +605,7 @@ function bindProBuy() {
     const email = $('#pay-email').value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast(t('pay_email_needed')); $('#pay-email').focus(); return; }
     const plan = (document.querySelector('input[name="pd-plan"]:checked') || {}).value || 'annual';
-    const p = PD.getPro(), body = { cycle: plan, email, name: (PD.getSession() || {}).displayName || '' };
+    const p = PD.getPro(), body = { cycle: plan === 'monthly' ? 'monthly' : 'annual', founding: plan === 'founding', email, name: (PD.getSession() || {}).displayName || '' };
     if (p.info && p.info.key) body.renewKey = p.info.key;
     go.disabled = true;
     try {
@@ -610,7 +613,7 @@ function bindProBuy() {
       savePdOrder({ uid: PD.getSession().uid, id: o.id, secret: o.secret, token: o.token, amount: o.amount, qrUrl: o.qrUrl, bank: o.bank, renew: !!body.renewKey, at: Date.now() });
       openAccountModal();
     } catch (e) {
-      toast(t({ 'payments-off': 'pay_off', 'too-many-open': 'pay_too_many' }[e.code] || 'pay_failed'));
+      toast(t({ 'payments-off': 'pay_off', 'too-many-open': 'pay_too_many', 'founding-full': 'pay_founding_full' }[e.code] || 'pay_failed'));
       go.disabled = false;
     }
   });

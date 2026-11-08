@@ -4,7 +4,7 @@
  "version": "0.41.0-moodle.1",
  "app_version": "0.41.0",
  "build": "moodle.1",
- "commit": "ca5285d",
- "built": "2026-11-08T13:16:12Z",
+ "commit": "6a56125",
+ "built": "2026-11-08T13:22:40Z",
  "widgets": 45
 }
