@@ -621,11 +621,27 @@ const PD = (() => {
     if (role && role !== 'parent') throw wrongRoleError(role);
     return (await functions.httpsCallable('activateParentLicense')({ key: String(key || '').trim() })).data;
   }
+  /* v0.27.0 (backend v2.30.0): buying ParentDeck Pro by VietQR. createOrder / getOrder are plain HTTP functions;
+     the parent's ID token proves who is buying, so the key is bound to this account when the owner marks it paid
+     (users/{uid}.pro then switches on through watchPro above, with no polling needed). */
+  async function orderFn(name, body) {
+    if (!ready || !auth.currentUser) throw new Error('Sign in first.');
+    const role = await ensureParentRole();
+    if (role && role !== 'parent') throw wrongRoleError(role);
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch(`https://us-central1-${window.FIREBASE_CONFIG.projectId}.cloudfunctions.net/${name}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body || {}) });
+    let data = {}; try { data = await res.json(); } catch (e) {}
+    if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.code = data.code; e.status = res.status; throw e; }
+    return data;
+  }
+  const createProOrder = (o) => orderFn('createOrder', { ...o, product: 'parentdeck' });
+  const getProOrder = (id, secret) => orderFn('getOrder', { id, secret });
   function getPro() { return { active: proOn, info: proInfo }; }
   function onProChanged(fn) { proListeners.add(fn); return () => proListeners.delete(fn); }
 
   return {
-    activatePro, getPro, onProChanged,
+    activatePro, getPro, onProChanged, createProOrder, getProOrder,
     isConfigured, onAuthChanged, signInWithGoogle, signOut, getSession,
     getLinkedChildren, onLinksChanged, linkChild, unlinkChild,
     getChildSnapshot, subscribeChild, refreshChild, getRanking, getClassPulse, onPointsAwarded, onHomeworkCompleted, onBadgeEarned,

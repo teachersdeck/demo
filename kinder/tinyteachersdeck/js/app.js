@@ -341,31 +341,11 @@ if(!state.nhLayoutV21){ state.nhLayoutV21 = true; const nl = state.layout && sta
    LICENSE_OFFLINE_GRACE_MS before failing closed — see
    recheckLicenseIfNeeded().
    ========================================================= */
-// Customers fill this out first.
-const ORDER_FORM_URL = 'https://forms.gle/SGUgGpgLyEjNu5iS8';
-// v2.3.0: real subscription pricing (official pricing sheet). VND-only — the old one-time
-// PRO_PRICE_USD/PRO_PRICE_VND pair is gone; see backend/functions/src/license.js for the
-// matching billingCycle/expiresAt fields this prices against.
+// v2.3.0: real subscription pricing (official pricing sheet). VND only; must equal the quote engine and the backend's
+// payments.js PRICES (the server prices every order; these are only shown).
 const PRO_PRICING_VND = { monthly: 240000, annual: 2100000, founding: 1300000 };
-
-// --- Payment method 1: HSBC VietQR (bank transfer, shown first) ---
-// BETA BUILD: the account details below are intentionally blank, so the VietQR panel
-// just says payments are switched off.
-const HSBC_VIETQR_BIN = '458761';      // HSBC Vietnam's NAPAS bank BIN (public info; verify at vietqr.io)
-const HSBC_ACCOUNT_NUMBER = '';
-const HSBC_ACCOUNT_NAME = '';
-const HSBC_BANK_NAME = 'HSBC Vietnam';
-const HSBC_ACCOUNT_NUMBER_DISPLAY = '';
-const HSBC_SWIFT_CODE = '';
-const HSBC_BRANCH_ADDRESS = '';
-
-// --- Payment method 2: Stripe (card), or swap for another Asian processor ---
-// Easiest no-backend option: create a Stripe "Payment Link" (dashboard.stripe.com/payment-links)
-// for the Pro price and paste its URL here. Alternatives that also work without a
-// backend: PayPal.me link, a Wise payment request link, or a 2Checkout/Xendit/
-// PayerMax checkout link — anything that's just a URL can go in STRIPE_PAYMENT_LINK.
-const STRIPE_PAYMENT_LINK = '';        // TODO: e.g. 'https://buy.stripe.com/xxxxxxxx'
-const CARD_PROCESSOR_LABEL = 'Card (Stripe)'; // change if using a different processor
+// v0.41.0: paid by VietQR only, with a note token per order (createOrder). The bank account comes from the backend,
+// so the order form, the HSBC constants and the Stripe/card link are gone.
 
 // ---- Pro gate (v0.21.3) — the decided split; reasons in PRO-TIERS.md at the repository root ----
 // PRO_GATE_ENABLED is THE switch. While it is false (testing / beta distribution) nothing is locked: every widget and
@@ -426,10 +406,10 @@ function exportWatermarkToken(){
 if(window.Watermark) Watermark.configure({ identity: ()=> `${(state.license && state.license.key) || 'UNLICENSED'}::${deviceId()}` });
 /* ---- Official-build check (anti-theft, v0.21.4) ----
    The extension ID comes from the manifest's "key" (dliphbbeinjlpcnpenllgaddihpkamcl), so a copy republished under another ID shows a notice and
-   cannot activate Pro. Update OFFICIAL_IDS if the Chrome Web Store assigns a different ID when you publish. Pages served
+   cannot activate Pro. The Chrome Web Store build runs as gemkljlgmnajlmdlcgdegpegaoiahaea (the store's own ID; its manifest has no "key"). Pages served
    outside an extension (demo/testing over http) are not checked. */
 // UniDeck: LectureDeck runs this same file under its own extension ID, listed in its own js/edition.js (officialIds).
-const OFFICIAL_IDS = ['dliphbbeinjlpcnpenllgaddihpkamcl', ...((ED && ED.officialIds) || [])];
+const OFFICIAL_IDS = ['dliphbbeinjlpcnpenllgaddihpkamcl', 'gemkljlgmnajlmdlcgdegpegaoiahaea', ...((ED && ED.officialIds) || [])];
 function isOfficialBuild(){ try{ return !(window.chrome && chrome.runtime && chrome.runtime.id) || OFFICIAL_IDS.includes(chrome.runtime.id); }catch(e){ return true; } }
 if(!isOfficialBuild()) document.addEventListener('DOMContentLoaded', ()=>{
   const n = document.createElement('div'); n.className = 'unofficial-build'; n.setAttribute('role', 'alert');
@@ -952,31 +932,45 @@ const STRINGS = {
   pro_license_expired: { en:'Your subscription has expired — renew to keep Pro features', vi:'Gói đăng ký của bạn đã hết hạn — gia hạn để tiếp tục dùng tính năng Pro' },
   pro_license_network_error: { en:'Couldn\'t reach the license server — check your connection and try again', vi:'Không thể kết nối máy chủ cấp phép — kiểm tra kết nối mạng và thử lại' },
   pro_modal_title: { en:'Upgrade to TeachersDeck Pro', vi:'Nâng cấp lên TeachersDeck Pro' },
-  pro_modal_subtitle: { en:'Monthly or annual subscription. Unlocks on this browser.', vi:'Đăng ký theo tháng hoặc theo năm. Mở khóa trên trình duyệt này.' },
+  pro_modal_subtitle: { en:'Monthly or yearly, paid by bank transfer (VietQR). Unlocks on this device.', vi:'Theo tháng hoặc theo năm, thanh toán bằng chuyển khoản (VietQR). Mở khóa trên thiết bị này.' },
   pro_close: { en:'Close', vi:'Đóng' },
   plan_free_title: { en:'Free', vi:'Miễn phí' },
   plan_pro_title: { en:'Pro', vi:'Pro' },
-  plan_free_f1: { en:'Clock, timer & stopwatch', vi:'Đồng hồ, hẹn giờ & bấm giờ' },
-  plan_free_f2: { en:'Built-in calendar', vi:'Lịch tích hợp' },
-  plan_free_f3: { en:'Lesson files on this device', vi:'Tệp bài học trên thiết bị này' },
+  plan_free_f1: { en:'Classes, points, Notes Home, reports, homework, calendar, attendance', vi:'Lớp học, điểm thưởng, Notes Home, báo cáo, bài tập, lịch, điểm danh' },
+  plan_free_f2: { en:'Classroom tools: clock, timers, name picker, dice, traffic light, checklist', vi:'Công cụ lớp học: đồng hồ, hẹn giờ, chọn tên, xúc xắc, đèn giao thông, danh sách việc' },
+  plan_free_f3: { en:'Files, with Google Drive', vi:'Tệp, kèm Google Drive' },
   plan_pro_f1: { en:'Everything in Free', vi:'Tất cả tính năng của gói Miễn phí' },
-  plan_pro_f2: { en:'Traffic light, dice, checklist, scoreboard, poll, noise meter', vi:'Đèn giao thông, xúc xắc, danh sách việc, bảng điểm, khảo sát, đo tiếng ồn' },
-  plan_pro_f3: { en:'Games, music & video player, soundboard', vi:'Trò chơi, nhạc & video, bảng âm thanh' },
-  plan_pro_f4: { en:'Custom background & side drawer customization', vi:'Ảnh nền tùy chỉnh & tùy chỉnh ngăn kéo bên' },
-  pay_tab_vietqr: { en:'VietQR (Bank transfer)', vi:'VietQR (Chuyển khoản)' },
-  pay_tab_card: { en:'{label}', vi:'{label}' },
-  pay_bank_transfer_heading: { en:'Pay by Bank Transfer', vi:'Thanh toán qua chuyển khoản' },
-  pay_step1_heading: { en:'Step 1 — Fill out the order form', vi:'Bước 1 — Điền phiếu đặt mua' },
-  pay_step1_copy: { en:'Tell us who the license is for. It opens in a new tab.', vi:'Cho chúng tôi biết mã bản quyền dành cho ai. Biểu mẫu mở trong tab mới.' },
-  pay_step1_btn: { en:'Open the order form', vi:'Mở phiếu đặt mua' },
-  pay_step1_done: { en:'Already submitted the form? Continue to payment', vi:'Đã gửi biểu mẫu? Tiếp tục thanh toán' },
-  pay_step2_heading: { en:'Step 2 — Pay by Bank Transfer', vi:'Bước 2 — Thanh toán qua chuyển khoản' },
-  vietqr_instructions: { en:'Scan with any Vietnamese banking app to pay {price}. Use the same email you entered on the order form so we can match your payment and send your license key.', vi:'Quét bằng ứng dụng ngân hàng bất kỳ để thanh toán {price}. Dùng cùng email bạn đã điền trong phiếu đặt mua để chúng tôi đối chiếu thanh toán và gửi mã bản quyền.' },
-  vietqr_not_configured: { en:'Payments are switched off in this beta build.', vi:'Bản thử nghiệm này đã tắt tính năng thanh toán.' },
-  vietqr_swift_label: { en:'SWIFT', vi:'SWIFT' },
-  card_instructions: { en:'Pay {price} securely by card.', vi:'Thanh toán {price} an toàn bằng thẻ.' },
-  pay_card_btn: { en:'Pay with {label}', vi:'Thanh toán bằng {label}' },
-  card_not_configured: { en:'Card payment isn\'t set up yet — add a payment link in js/app.js (search STRIPE_PAYMENT_LINK).', vi:'Thanh toán bằng thẻ chưa được thiết lập — thêm liên kết thanh toán trong js/app.js (tìm STRIPE_PAYMENT_LINK).' },
+  plan_pro_f2: { en:'Lesson Planner, Games, Poll, Exit Ticket, Group Maker, Scoreboard', vi:'Soạn giáo án, Trò chơi, Khảo sát, Phiếu cuối giờ, Chia nhóm, Bảng điểm' },
+  plan_pro_f3: { en:'Music, video, soundboard, Meet, TTS reader, DrawDeck', vi:'Nhạc, video, bảng âm thanh, Meet, đọc văn bản, DrawDeck' },
+  plan_pro_f4: { en:'Language tools, custom background, school logo, drawer', vi:'Công cụ ngôn ngữ, ảnh nền, logo trường, tùy chỉnh ngăn kéo' },
+  pay_choose_heading: { en:'Choose your plan', vi:'Chọn gói của bạn' },
+  pay_plan_monthly: { en:'Monthly', vi:'Theo tháng' },
+  pay_plan_annual: { en:'Yearly', vi:'Theo năm' },
+  pay_plan_founding: { en:'Founding Teacher (yearly)', vi:'Giáo viên sáng lập (theo năm)' },
+  pay_plan_founding_note: { en:'For the first 100 teachers', vi:'Dành cho 100 giáo viên đầu tiên' },
+  pay_per_month: { en:'{price}/month', vi:'{price}/tháng' },
+  pay_per_year: { en:'{price}/year', vi:'{price}/năm' },
+  pay_renew_note: { en:'This payment renews your key {key}.', vi:'Khoản thanh toán này gia hạn mã {key} của bạn.' },
+  pay_email_label: { en:'Email for your key', vi:'Email nhận mã' },
+  pay_name_label: { en:'Your name (optional)', vi:'Tên của bạn (không bắt buộc)' },
+  pay_start_btn: { en:'Show the payment QR', vi:'Hiện mã QR thanh toán' },
+  pay_email_needed: { en:'Enter the email your key should go to.', vi:'Nhập email để nhận mã bản quyền.' },
+  pay_off: { en:'Payments aren\'t open yet. Please check back soon.', vi:'Chưa mở thanh toán. Vui lòng quay lại sau.' },
+  pay_founding_full: { en:'The founding places are all taken. Choose Monthly or Yearly.', vi:'Đã hết suất giá sáng lập. Hãy chọn gói theo tháng hoặc theo năm.' },
+  pay_too_many: { en:'There are already unpaid orders from this computer. Pay one of them, or wait a week for it to expire.', vi:'Máy tính này đã có đơn chưa thanh toán. Hãy thanh toán một đơn, hoặc chờ một tuần để đơn hết hạn.' },
+  pay_failed: { en:'Couldn\'t create the order. Please try again.', vi:'Không tạo được đơn hàng. Vui lòng thử lại.' },
+  pay_scan_heading: { en:'Scan with your banking app', vi:'Quét bằng ứng dụng ngân hàng' },
+  pay_note_label: { en:'Transfer note: keep it exactly as it is', vi:'Nội dung chuyển khoản: giữ nguyên như sau' },
+  pay_copy: { en:'Copy', vi:'Sao chép' },
+  pay_copied: { en:'Copied', vi:'Đã sao chép' },
+  pay_waiting: { en:'Waiting for your payment. We match transfers by hand, usually within one working day. You can close this window: Pro switches on here by itself and your key is emailed to you.', vi:'Đang chờ thanh toán. Chúng tôi đối chiếu chuyển khoản thủ công, thường trong một ngày làm việc. Bạn có thể đóng cửa sổ này: Pro sẽ tự bật trên máy này và mã được gửi qua email.' },
+  pay_start_over: { en:'Start over with a different plan', vi:'Chọn lại gói khác' },
+  pay_start_over_confirm: { en:'Start over? If you have already paid for this order, don\'t: it would be matched by hand later and is harder to trace.', vi:'Chọn lại? Nếu bạn đã thanh toán đơn này thì đừng: đơn sẽ khó đối chiếu hơn.' },
+  pay_done: { en:'Payment received: Pro is on. Your key is in your email.', vi:'Đã nhận thanh toán: Pro đã bật. Mã đã được gửi qua email.' },
+  pay_renewed: { en:'Payment received: your Pro is renewed.', vi:'Đã nhận thanh toán: Pro đã được gia hạn.' },
+  pro_platform_order: { en:'Pro for {name} is ordered at myteachersdeck.com/order (1,250,000 VND a teacher a year). Then enter your licence key in Settings.', vi:'Pro cho {name} được đặt mua tại myteachersdeck.com/order (1.250.000 VND mỗi giáo viên mỗi năm). Sau đó nhập mã bản quyền trong Cài đặt.' },
+  pro_uni_campus: { en:'Pro comes with your campus plan. Ask your campus admin, or enter a licence key in Settings.', vi:'Pro đi kèm gói của trường. Hãy hỏi quản trị viên của trường, hoặc nhập mã bản quyền trong Cài đặt.' },
+  pro_unofficial: { en:'This copy is not an official build, so it can\'t buy or activate Pro.', vi:'Bản này không phải bản chính thức nên không thể mua hoặc kích hoạt Pro.' },
   pro_locked_hint: { en:'This is a Pro feature.', vi:'Đây là tính năng của Pro.' },
 
   /* ---- Wave 1 widgets ---- */
@@ -6611,7 +6605,8 @@ function renderSoundboard(body){
 /* ---------------- Wave 1 widgets ---------------- */
 
 function renderAttendance(body){
-  function todayKey(d){ d = d||new Date(); return d.toISOString().slice(0,10); }
+  // v0.40.2: the LOCAL date (toISOString is UTC, so in Vietnam it opened on yesterday's date before 7 am).
+  function todayKey(d){ d = d||new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
   let curDate = todayKey();
   /* v0.21.2: "Share with families" — when this class is linked to a cloud class and the teacher turns it on, each day's
      present / late / absent is copied to students/{id}/attendance/{date} for ParentDeck's Attendance widget (status only,
@@ -8386,10 +8381,6 @@ wireDrawer('btn-theme','theme-drawer','theme-close');
 wireDrawer('btn-settings','settings-drawer','settings-close');
 
 /* ---------------- TeachersDeck Pro ---------------- */
-function fmtPrice(){
-  const m = PRO_PRICING_VND.monthly.toLocaleString('vi-VN'), y = PRO_PRICING_VND.annual.toLocaleString('vi-VN');
-  return state.lang === 'vi' ? `${m}₫/tháng hoặc ${y}₫/năm` : `${m}₫/month or ${y}₫/year`;
-}
 function buildProStatus(){
   const badge = document.getElementById('pro-badge');
   const text = document.getElementById('pro-status-text');
@@ -8404,81 +8395,117 @@ function buildProStatus(){
     badge.textContent = 'FREE'; badge.classList.remove('is-pro');
     text.textContent = t('pro_status_free'); text.setAttribute('data-i18n','pro_status_free');
     licenseRow.hidden = false;
-    upgradeBtn.hidden = false;
+    upgradeBtn.hidden = UNI || !!PF;   // no purchase here in UniDeck (campus plan) or the LMS editions (ClassIn, Canvas, Moodle: the order form or a quote); a key can still be entered
   }
 }
 
-function buildVietQRPanel(){
-  const box = document.getElementById('vietqr-qr-box');
-  const details = document.getElementById('vietqr-account-details');
-  document.getElementById('vietqr-copy').textContent = t('vietqr_instructions', { price: fmtPrice() });
-  if(!HSBC_ACCOUNT_NUMBER){
-    box.innerHTML = `<div class="qr-missing">${t('vietqr_not_configured')}</div>`;
-    if(details) details.innerHTML = '';
-    return;
-  }
-  const addInfo = encodeURIComponent('TeachersDeck Pro');
-  const acctName = encodeURIComponent(HSBC_ACCOUNT_NAME || '');
-  const url = `https://img.vietqr.io/image/${HSBC_VIETQR_BIN}-${HSBC_ACCOUNT_NUMBER}-compact2.png?amount=${PRO_PRICING_VND.annual}&addInfo=${addInfo}&accountName=${acctName}`;
-  box.innerHTML = `<img src="${url}" alt="VietQR payment code">`;
-  if(details){
-    details.innerHTML = `
-      <div class="vietqr-acct-line vietqr-acct-name">${escHtml(HSBC_ACCOUNT_NAME)}</div>
-      <div class="vietqr-acct-line vietqr-acct-number">${escHtml(HSBC_ACCOUNT_NUMBER_DISPLAY)}</div>
-      <div class="vietqr-acct-line">${escHtml(HSBC_BANK_NAME)}</div>
-      <div class="vietqr-acct-line">${t('vietqr_swift_label')}: ${escHtml(HSBC_SWIFT_CODE)}</div>
-      <div class="vietqr-acct-line vietqr-acct-address">${escHtml(HSBC_BRANCH_ADDRESS)}</div>
-    `;
-  }
+/* ---- Pro by VietQR (v0.41.0, backend v2.30.0) ----
+   createOrder prices the plan on the server and returns a note token (TD K7Q4M9), the QR and the bank account.
+   The order is kept on this device (PRO_ORDER_KEY) and polled with getOrder until the owner marks it paid; then the
+   key, already bound to this device, is activated here. Cards, Stripe and the order form are gone (owner, 7 Nov 2026). */
+const PRO_ORDER_KEY = 'td_pro_order';
+const PRO_ORDER_POLL_MS = 20000;
+let proOrderTimer = null;
+const vndFmt = n => Number(n).toLocaleString(state.lang === 'vi' ? 'vi-VN' : 'en-US') + '₫';
+function readProOrder(){ try{ return JSON.parse(localStorage.getItem(PRO_ORDER_KEY)); }catch(e){ return null; } }
+function saveProOrder(o){ try{ o ? localStorage.setItem(PRO_ORDER_KEY, JSON.stringify(o)) : localStorage.removeItem(PRO_ORDER_KEY); }catch(e){} }
+function selectedPlan(){ const r = document.querySelector('input[name="pay-plan"]:checked'); return r ? r.value : 'annual'; }
+
+function buildPayStep1(){
+  document.getElementById('pay-price-monthly').textContent = t('pay_per_month', { price: vndFmt(PRO_PRICING_VND.monthly) });
+  document.getElementById('pay-price-annual').textContent = t('pay_per_year', { price: vndFmt(PRO_PRICING_VND.annual) });
+  document.getElementById('pay-price-founding').textContent = t('pay_per_year', { price: vndFmt(PRO_PRICING_VND.founding) });
+  const renew = state.license && state.license.key;
+  const note = document.getElementById('pay-renew-note');
+  note.hidden = !renew;
+  if(renew) note.textContent = t('pay_renew_note', { key: state.license.key });
+  const em = document.getElementById('pay-email');
+  if(!em.value){ try{ em.value = localStorage.getItem('td_pay_email') || ''; }catch(e){} }
+  document.getElementById('pay-start-msg').hidden = true;
 }
-function buildCardPanel(){
-  document.getElementById('card-copy').textContent = t('card_instructions', { price: fmtPrice() });
-  const link = document.getElementById('pay-card-link');
-  if(!STRIPE_PAYMENT_LINK){
-    link.removeAttribute('href');
-    link.textContent = t('card_not_configured');
-    link.style.opacity = .6; link.style.pointerEvents = 'none';
-  } else {
-    link.href = STRIPE_PAYMENT_LINK;
-    link.textContent = t('pay_card_btn', { label: CARD_PROCESSOR_LABEL });
-    link.style.opacity = 1; link.style.pointerEvents = 'auto';
-  }
+function showPayStep(n){
+  document.getElementById('pay-step-1').hidden = n !== 1;
+  document.getElementById('pay-step-2').hidden = n !== 2;
 }
-function buildPayTabs(){
-  document.getElementById('pay-tab-card').dataset.key = 'pay_tab_card';
-  document.getElementById('pay-tab-card').textContent = t('pay_tab_card', { label: CARD_PROCESSOR_LABEL });
+function showProOrder(o){
+  document.getElementById('vietqr-qr-box').innerHTML = o.qrUrl ? `<img src="${escHtml(o.qrUrl)}" alt="VietQR">` : '';
+  document.getElementById('pay-amount').textContent = vndFmt(o.amount);
+  document.getElementById('pay-token').textContent = o.token;
+  const b = o.bank || {};
+  document.getElementById('vietqr-account-details').innerHTML = b.account ? `
+    <div class="vietqr-acct-line vietqr-acct-name">${escHtml(b.accountName || '')}</div>
+    <div class="vietqr-acct-line vietqr-acct-number">${escHtml(b.account)}</div>
+    <div class="vietqr-acct-line">${escHtml(b.bankName || '')}</div>` : '';
+  showPayStep(2);
+}
+async function startProOrder(){
+  const msg = document.getElementById('pay-start-msg'), btn = document.getElementById('pay-start');
+  msg.hidden = true;
+  if(!isOfficialBuild()){ msg.textContent = t('pro_unofficial'); msg.hidden = false; return; }
+  const email = document.getElementById('pay-email').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msg.textContent = t('pay_email_needed'); msg.hidden = false; document.getElementById('pay-email').focus(); return; }
+  const plan = selectedPlan();
+  const body = { product:'teachersdeck', cycle: plan === 'monthly' ? 'monthly' : 'annual', founding: plan === 'founding',
+    email, name: document.getElementById('pay-name').value.trim(), deviceId: deviceId() };
+  if(state.license && state.license.key) body.renewKey = state.license.key;
+  btn.disabled = true;
+  try{
+    const o = await callLicenseFn('createOrder', body);
+    try{ localStorage.setItem('td_pay_email', email); }catch(e){}
+    saveProOrder({ id:o.id, secret:o.secret, token:o.token, amount:o.amount, qrUrl:o.qrUrl, bank:o.bank, at:Date.now() });
+    showProOrder(o);
+    pollProOrder();
+  } catch(e){
+    msg.textContent = t({ 'payments-off':'pay_off', 'founding-full':'pay_founding_full', 'too-many-open':'pay_too_many' }[e.code] || (e.message === 'network' || e.message === 'not-configured' ? 'pro_license_network_error' : 'pay_failed'));
+    msg.hidden = false;
+  } finally { btn.disabled = false; }
+}
+// Checks the saved order once; activates Pro when it's paid. Safe to call on every launch.
+async function checkProOrder(){
+  const saved = readProOrder(); if(!saved) return null;
+  let o;
+  try{ o = await callLicenseFn('getOrder', { id: saved.id, secret: saved.secret }); }
+  catch(e){ if(e.status === 404) saveProOrder(null); return null; }
+  if(o.status === 'paid' && o.key){
+    saveProOrder(null);
+    const r = await activateLicenseOnline(o.key);
+    if(r.ok){ setLicense(Object.assign({}, state.license, { key:o.key, pro:true, lastCheck:Date.now() })); buildProStatus(); toast(t(o.renewed ? 'pay_renewed' : 'pay_done')); closeProModal(); }
+    return o;
+  }
+  if(o.status === 'cancelled'){ saveProOrder(null); if(!proModalBackdrop.hidden){ buildPayStep1(); showPayStep(1); } return o; }
+  return o;
+}
+function pollProOrder(){
+  clearTimeout(proOrderTimer);
+  if(!readProOrder() || proModalBackdrop.hidden) return;
+  proOrderTimer = setTimeout(async ()=>{ await checkProOrder(); pollProOrder(); }, PRO_ORDER_POLL_MS);
 }
 
 const proModalBackdrop = document.getElementById('pro-modal-backdrop');
-function showPayStep2(){ document.getElementById('pay-step-2').hidden = false; }
 function openProModal(){
-  document.getElementById('pay-order-form-link').href = ORDER_FORM_URL;
-  document.getElementById('pay-step-2').hidden = true; // re-lock payment until the form is opened
-  buildVietQRPanel();
-  buildCardPanel();
-  buildPayTabs();
+  if(UNI){ toast(t('pro_uni_campus')); return; }   // UniDeck: Pro comes with the campus plan, never bought by a lecturer here
+  if(PF){ toast(t('pro_platform_order', { name: PF.name || 'TeachersDeck' })); return; }   // LMS editions: 1,250,000 VND a teacher a year, by the order form or a quote (owner, 8 Nov 2026)
+  const saved = readProOrder();
+  if(saved){ showProOrder(saved); } else { buildPayStep1(); showPayStep(1); }
   proModalBackdrop.hidden = false;
+  if(saved) checkProOrder().then(()=> pollProOrder());
 }
-function closeProModal(){ proModalBackdrop.hidden = true; }
+function closeProModal(){ proModalBackdrop.hidden = true; clearTimeout(proOrderTimer); }
 document.getElementById('pro-upgrade-open').addEventListener('click', ()=> openProModal());
 document.getElementById('pro-modal-close').addEventListener('click', closeProModal);
 proModalBackdrop.addEventListener('click', e=>{ if(e.target === proModalBackdrop) closeProModal(); });
-
-document.getElementById('pay-order-form-link').addEventListener('click', ()=>{ showPayStep2(); });
-document.getElementById('pay-form-done-link').addEventListener('click', e=>{ e.preventDefault(); showPayStep2(); });
-
-document.getElementById('pay-tab-vietqr').addEventListener('click', ()=>{
-  document.getElementById('pay-tab-vietqr').classList.add('active');
-  document.getElementById('pay-tab-card').classList.remove('active');
-  document.getElementById('pay-panel-vietqr').hidden = false;
-  document.getElementById('pay-panel-card').hidden = true;
+document.getElementById('pay-start').addEventListener('click', startProOrder);
+document.getElementById('pay-token-copy').addEventListener('click', ()=>{
+  const tok = document.getElementById('pay-token').textContent;
+  (navigator.clipboard ? navigator.clipboard.writeText(tok) : Promise.reject()).then(()=> toast(t('pay_copied')), ()=> toast(tok));
 });
-document.getElementById('pay-tab-card').addEventListener('click', ()=>{
-  document.getElementById('pay-tab-card').classList.add('active');
-  document.getElementById('pay-tab-vietqr').classList.remove('active');
-  document.getElementById('pay-panel-card').hidden = false;
-  document.getElementById('pay-panel-vietqr').hidden = true;
+document.getElementById('pay-cancel-local').addEventListener('click', e=>{
+  e.preventDefault();
+  if(!confirm(t('pay_start_over_confirm'))) return;
+  saveProOrder(null); clearTimeout(proOrderTimer); buildPayStep1(); showPayStep(1);
 });
+// A saved order is checked once at launch, so Pro switches on even if the teacher closed the window while waiting.
+setTimeout(()=>{ if(readProOrder()) checkProOrder(); }, 4000);
 
 document.getElementById('pro-license-activate').addEventListener('click', async ()=>{
   const input = document.getElementById('pro-license-input');
@@ -9184,9 +9211,10 @@ function renderCloudClass(body){
         <div class="cc-code-row"><span>${t('cc_student_code')}: <b>${escHtml(cls.studentJoinCode)}</b></span>
           <span class="cc-code-btns"><button class="wbtn" data-copy="${escHtml(cls.studentJoinCode)}">${t('cc_copy')}</button>
           <button class="wbtn" data-which="student">${t('cc_regenerate')}</button></span></div>
-        <div class="cc-code-row"><span>${t('cc_parent_code')}: <b>${escHtml(cls.parentJoinCode)}</b></span>
+        ${cls.parentLinking === 'class-code' ? `<div class="cc-code-row"><span>${t('cc_parent_code')}: <b>${escHtml(cls.parentJoinCode)}</b></span>
           <span class="cc-code-btns"><button class="wbtn" data-copy="${escHtml(cls.parentJoinCode)}">${t('cc_copy')}</button>
-          <button class="wbtn" data-which="parent">${t('cc_regenerate')}</button></span></div>`;
+          <button class="wbtn" data-which="parent">${t('cc_regenerate')}</button></span></div>`
+        : `<p class="small-hint">👪 ${t('cc_parents_family')}</p>`}`;   // v0.40.2: the class's parent code only works where the class chose class-code linking
       codesEl.querySelectorAll('[data-copy]').forEach(btn=>{
         btn.addEventListener('click', async ()=>{
           const code = btn.dataset.copy;
@@ -9665,7 +9693,8 @@ Object.assign(STRINGS, {
   cb_student_note:     { en:'Matched by name (accents and capitals ignored).', vi:'Khớp theo tên (bỏ qua dấu và chữ hoa).' },
   cb_unmatched_title:  { en:'Joined, but not on your list', vi:'Đã tham gia nhưng chưa có trong danh sách' },
   cb_add_to_list:      { en:'Add to class list', vi:'Thêm vào danh sách lớp' },
-  cb_parent_note:      { en:'Parents join with the parent code {code}. Which parents have linked isn’t visible here — this shows the notes you sent them.', vi:'Phụ huynh tham gia bằng mã phụ huynh {code}. Ở đây không thấy phụ huynh nào đã liên kết — chỉ thấy các ghi chú bạn đã gửi.' },
+  cb_parent_note_cc:   { en:'Parents join with the parent code {code}. Which parents have linked isn’t visible here — this shows the notes you sent them.', vi:'Phụ huynh tham gia bằng mã phụ huynh {code}. Ở đây không thấy phụ huynh nào đã liên kết — chỉ thấy các ghi chú bạn đã gửi.' },
+  cb_parent_note:      { en:'Parents link with their child’s own family code: Cloud Class → Class settings → Family codes, or StudentDeck → Class. Which parents have linked isn’t visible here — this shows the notes you sent them.', vi:'Phụ huynh liên kết bằng mã gia đình riêng của con: Cloud Class → Cài đặt lớp → Mã gia đình, hoặc StudentDeck → Lớp. Ở đây không thấy phụ huynh nào đã liên kết — chỉ thấy các ghi chú bạn đã gửi.' },
   cb_admin_note:       { en:'The class record, as far as TeachersDeck can see it. Your school’s AdminDeck holds its own view.', vi:'Hồ sơ lớp theo những gì TeachersDeck thấy được. AdminDeck của trường có góc nhìn riêng.' },
   cb_a_class:          { en:'Class', vi:'Lớp' },
   cb_a_teacher:        { en:'Teacher', vi:'Giáo viên' },
@@ -9684,6 +9713,8 @@ Object.assign(STRINGS, {
   cb_popup_blocked:    { en:'Your browser blocked the print window — allow pop-ups for this page.', vi:'Trình duyệt đã chặn cửa sổ in — hãy cho phép cửa sổ bật lên.' },
   cb_slip_student:     { en:'StudentDeck → Join with class code {code}. Type your name as: {name}', vi:'StudentDeck → Tham gia bằng mã lớp {code}. Nhập tên của em: {name}' },
   cb_slip_parent:      { en:'Parents: ParentDeck → parent code {code}', vi:'Phụ huynh: ParentDeck → mã phụ huynh {code}' },
+  cb_slip_family:      { en:'Parents: ParentDeck → Link a child → family code {code}', vi:'Phụ huynh: ParentDeck → Liên kết một học sinh → mã gia đình {code}' },
+  cb_slip_family_later:{ en:'Parents: once your child has joined, their family code for ParentDeck is in StudentDeck → Class.', vi:'Phụ huynh: khi con đã tham gia lớp, mã gia đình cho ParentDeck nằm trong StudentDeck → Lớp.' },
   cb_unlink:           { en:'Unlink from cloud class', vi:'Hủy liên kết lớp cloud' },
   cb_unlink_confirm:   { en:'Unlink this class from its cloud class? The cloud class and its students are not deleted.', vi:'Hủy liên kết lớp này với lớp cloud? Lớp cloud và học sinh không bị xóa.' },
   cb_settings_sum:     { en:'{name} · {n} students', vi:'{name} · {n} học sinh' },
@@ -9958,7 +9989,7 @@ function cbPaneCloud(pane){
           const c = map.get(s.id), mine = c ? notes.filter(n => n.studentId === c.id) : [], last = mine.slice().sort((a, b) => cbTsMs(b.createdAt) - cbTsMs(a.createdAt))[0];
           return [studentDisplay(s), c ? String(mine.length) : '—', c ? String(mine.filter(n => !n.read).length) : '—', last ? `${cbDate(cbTsMs(last.createdAt))} ${CB_MOOD[last.mood] || ''}`.trim() : '—'];
         });
-        $('#cb-note').textContent = t('cb_parent_note', { code:cls ? (cls.parentJoinCode || '') : '' });
+        $('#cb-note').textContent = cls && cls.parentLinking === 'class-code' ? t('cb_parent_note_cc', { code:cls.parentJoinCode || '' }) : t('cb_parent_note');   // v0.40.2: parents link with family codes unless the class chose the class code
       }else{
         const n = state.students.filter(s => studentDisplay(s)).length;
         head = [t('cb_h_item'), t('cb_h_value')];
@@ -9996,10 +10027,24 @@ function cbPaneCloud(pane){
   paint();
   return () => { stop(); unAuth(); };
 }
-function cbPrintSlips(cls){
+// v0.40.2: each slip tells the child's family how to link. Parents link with the child's OWN family code (backend v2.0.0),
+// so a student who has joined gets theirs printed on their slip; one who hasn't is told where it will appear. Only a class
+// that chose class-code linking (AdminDeck → ClassDeck) still prints the class's parent code.
+async function cbPrintSlips(cls){
   if(!cls){ toast(t('cb_cloud_missing')); return; }
-  const w = window.open('', '_blank'); if(!w){ toast(t('cb_popup_blocked')); return; }
-  const slips = state.students.filter(s => studentDisplay(s)).map(s => `<div class="slip"><h3>${escHtml(studentDisplay(s))}</h3><p>${escHtml(t('cb_slip_student', { code:cls.studentJoinCode || '', name:studentDisplay(s) }))}</p><p><small>${escHtml(t('cb_slip_parent', { code:cls.parentJoinCode || '' }))}</small></p></div>`).join('');
+  const w = window.open('', '_blank'); if(!w){ toast(t('cb_popup_blocked')); return; }   // opened before any await, or the pop-up blocker steps in
+  const classCode = cls.parentLinking === 'class-code';
+  let famByLocal = new Map();
+  if(!classCode && state.cloudClassId && typeof TDCloud !== 'undefined' && TDCloud.getFamilyCodes){
+    try{
+      const codes = await TDCloud.getFamilyCodes(state.cloudClassId);
+      const { map } = cbMatch(state.students, codes.map(c => ({ id:c.studentId, displayName:c.displayName, familyCode:c.familyCode })));
+      map.forEach((hit, localId) => famByLocal.set(localId, hit.familyCode));
+    }catch(e){ /* offline or an older backend: the slips say where the code will be */ }
+  }
+  const parentLine = s => classCode ? t('cb_slip_parent', { code:cls.parentJoinCode || '' })
+    : famByLocal.get(s.id) ? t('cb_slip_family', { code:famByLocal.get(s.id) }) : t('cb_slip_family_later');
+  const slips = state.students.filter(s => studentDisplay(s)).map(s => `<div class="slip"><h3>${escHtml(studentDisplay(s))}</h3><p>${escHtml(t('cb_slip_student', { code:cls.studentJoinCode || '', name:studentDisplay(s) }))}</p><p><small>${escHtml(parentLine(s))}</small></p></div>`).join('');
   w.document.write(`<!doctype html><meta charset="utf-8"><title>${escHtml(cls.className || '')}</title><style>body{font:14px system-ui,sans-serif;margin:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.slip{border:1.5px dashed #888;border-radius:10px;padding:10px 12px;break-inside:avoid}h3{margin:0 0 6px;font-size:15px}p{margin:4px 0}small{color:#555}button{margin-bottom:12px;padding:6px 12px}@media print{button{display:none}}</style><button onclick="print()">🖨️ ${escHtml(t('cb_slips'))}</button><h2>${escHtml(cls.className || '')}</h2><div class="grid">${slips}</div>`);
   w.document.close();
 }
@@ -10029,6 +10074,7 @@ Object.assign(STRINGS, {
   an_gotit:            { en:'✓ Got it', vi:'✓ Đã xem' },
   an_toast:            { en:'📬 New note from your school (Cloud Class)', vi:'📬 Có ghi chú mới từ nhà trường (Cloud Class)' },
   cc_family_codes:     { en:'Family codes', vi:'Mã gia đình' },
+  cc_parents_family:   { en:'Parents link with their child’s own family code: Class settings → Family codes.', vi:'Phụ huynh liên kết bằng mã gia đình riêng của con: Cài đặt lớp → Mã gia đình.' },
   cc_family_hint:      { en:'Each student has their own code; their parents type it into ParentDeck to link. Students see theirs in StudentDeck \u2192 Class. Give each code only to that child\u2019s family.', vi:'Mỗi học sinh có mã riêng; phụ huynh nhập mã vào ParentDeck để liên kết. Học sinh xem mã trong StudentDeck \u2192 Lớp. Chỉ đưa mỗi mã cho đúng gia đình của em đó.' },
   cc_family_show:      { en:'Show family codes', vi:'Hiện mã gia đình' },
   cc_family_loading:   { en:'Loading\u2026', vi:'Đang tải\u2026' },

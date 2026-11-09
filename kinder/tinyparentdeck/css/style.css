@@ -837,3 +837,13 @@ details.join-classcode summary{cursor:pointer;color:var(--muted, #aab);font-size
 .sb-modal{position:fixed;inset:0;background:rgba(10,14,24,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
 .sb-mcard{background:var(--panel2,#1b2434);border-radius:14px;padding:14px;max-width:min(520px,100%);max-height:85vh;overflow:auto;display:flex;flex-direction:column;gap:10px;align-items:center}
 .sb-mcard img{max-width:100%;max-height:70vh;border-radius:8px}
+
+/* v0.27.0: ParentDeck Pro by VietQR */
+.pay-box{border:1px solid rgba(127,127,127,.3);border-radius:12px;padding:10px 12px;margin:8px 0}
+.pay-box input[type=email]{flex:1;min-width:180px}
+.pay-plan{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.pay-qr{display:block;width:220px;max-width:100%;margin:6px auto;border-radius:8px;background:#fff}
+.pay-amount{text-align:center;font-size:20px;font-weight:800;margin:4px 0}
+.pay-token{font-family:ui-monospace,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:.08em;padding:3px 10px;border:2px dashed currentColor;border-radius:8px}
+.center-t{text-align:center}
+.pay-renew summary{cursor:pointer;margin:6px 0}
