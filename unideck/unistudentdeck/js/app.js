@@ -29,7 +29,7 @@ function fresh() {
   return { active: {}, layout: {}, todo: [], hwDone: {}, hwPending: {}, theme: 'dusk', customBg: false, dim: false,
     timer: { dur: 1500, left: 1500, endsAt: 0, doneDate: '', doneCount: 0 },
     reading: { entries: [], startedAt: 0 },
-    games: { plays: {}, scores: {} }, idiom: { learned: [], awardDate: '' }, journal: { entries: [] }, notes: { pages: [], current: '', lastAward: 0 }, scrap: { books: [], lastOpen: '', lastItemDay: '' }, badges: { earned: {}, init: false, bestStreak: 0 }, fsBar: false, docTime: {}, filesSort: 'recent', hwLinks: {}, hwCache: [], docToReading: true, pdfTools: false, docFocus: true, words: [], tr: { from: 'en', to: 'vi', hist: [] }, cardsBonusDate: '',
+    games: { plays: {}, scores: {}, solo: {} }, idiom: { learned: [], awardDate: '' }, journal: { entries: [] }, notes: { pages: [], current: '', lastAward: 0 }, scrap: { books: [], lastOpen: '', lastItemDay: '' }, badges: { earned: {}, init: false, bestStreak: 0 }, fsBar: false, docTime: {}, filesSort: 'recent', hwLinks: {}, hwCache: [], docToReading: true, pdfTools: false, docFocus: true, words: [], tr: { from: 'en', to: 'vi', hist: [] }, cardsBonusDate: '',
     layoutMode: 'cozy', showEmojisCustom: true, edgeDock: { left: { visible: true }, right: { visible: true } }, dockAutoHide: false, dockPlacement: {},
     xp: { total: 0, streak: 0, last: '', log: [] }, stats: { daily: {}, syncedThrough: '' } };
 }
@@ -711,12 +711,19 @@ function renderReading(b) {
 }
 
 function bestOf(g) { const S = state.games.scores[g.folder]; return S && S.best !== null ? ` · ${V('Best', 'Cao nhất')}: ${S.best} ${g.scoreLabel || ''}` : ''; }
+/* Game Library games keep stars per level (0–3 each, up to 9), sent back by the game when a round ends */
+const soloOf = g => (state.games.solo || {})[g.folder] || {};
+const starsOf = g => ['easy', 'moderate', 'hard'].reduce((n, l) => n + ((soloOf(g)[l] || {}).stars || 0), 0);
+const SUBJ = { en: ['English', 'Tiếng Anh'], maths: ['Maths', 'Toán'], science: ['Science', 'Khoa học'], more: ['More games', 'Trò chơi khác'] };
 function renderGames(b) {
-  b.innerHTML = `<p class="muted" style="margin:0 0 8px">${V('Pick a game to play.', 'Chọn một trò chơi để chơi.')}</p><div id="gl"><p class="muted">${V('Loading games…', 'Đang tải trò chơi…')}</p></div>`;
+  const lib = GAMES.some(g => g.kit);   // Game Library games (StudentDeck); UniStudentDeck's own list has none
+  b.innerHTML = `<p class="muted" style="margin:0 0 8px">${lib ? V('Pick a game to play. Win stars to unlock harder levels.', 'Chọn một trò chơi. Giành sao để mở khóa mức khó hơn.') : V('Pick a game to play.', 'Chọn một trò chơi để chơi.')}</p><div id="gl"><p class="muted">${V('Loading games…', 'Đang tải trò chơi…')}</p></div>`;
   let list = GAMES, dead = false;
+  const tile = (g, i) => `<div class="gtile"><div><b>${esc(g.name)}</b><div class="muted">${g.kit ? `★ ${starsOf(g)}/9 · ` : ''}${V('Finished', 'Đã hoàn thành')} ${state.games.plays[g.folder] || 0}×${g.kit ? '' : bestOf(g)}</div></div>
+      <div class="row" style="margin:0"><button class="btn primary" data-play="${i}">${V('Play', 'Chơi')}</button>${g.instructions ? `<button class="btn" data-help="${i}" aria-label="${V('How to play', 'Cách chơi')} ${esc(g.name)}">?</button>` : ''}</div></div>`;
   const draw = () => {
-    $('#gl', b).innerHTML = list.map((g, i) => `<div class="gtile"><div><b>${esc(g.name)}</b><div class="muted">${V('Finished', 'Đã hoàn thành')} ${state.games.plays[g.folder] || 0}×${bestOf(g)}</div></div>
-      <div class="row" style="margin:0"><button class="btn primary" data-play="${i}">${V('Play', 'Chơi')}</button>${g.instructions ? `<button class="btn" data-help="${i}" aria-label="${V('How to play', 'Cách chơi')} ${esc(g.name)}">?</button>` : ''}</div></div>`).join('')
+    let last = null;
+    $('#gl', b).innerHTML = list.map((g, i) => { const s = g.subject || 'more', head = lib && s !== last ? `<p class="muted" style="margin:10px 0 4px;font-weight:700">${V(...SUBJ[s] || SUBJ.more)}</p>` : ''; last = s; return head + tile(g, i); }).join('')
       || `<p class="muted">${V('No games installed.', 'Chưa cài trò chơi nào.')}</p>`;
   };
   draw();
@@ -733,11 +740,15 @@ function renderGames(b) {
    { type:'sd-xp', game, result, score }. */
 let gamesRedraw = null, stageGame = null;
 const gameUrl = (g, f) => `games/${g.folder}/${f}`;
-function openHelp(g) { if (g && g.instructions) window.open(gameUrl(g, g.instructions), '_blank', 'noopener'); }
+const viLang = () => /^vi/i.test(document.documentElement.lang || '');
+function openHelp(g) { if (g && g.instructions) window.open(gameUrl(g, viLang() && g.instructions_vi ? g.instructions_vi : g.instructions), '_blank', 'noopener'); }
+/* Game Library games open one player at a time, in the student's language, with the stars won so far (the game runs
+   sandboxed, without storage, so the hub keeps the progress) */
 function playGame(g) {
   if (!g) return; stageGame = g; stat('gamesStarted');
   $('#s-title').textContent = g.name; $('#s-help').hidden = !g.instructions;
-  $('#s-frame').title = g.name; $('#s-frame').src = gameUrl(g, g.entry); $('#stage').hidden = false;
+  const q = g.kit ? `?mode=solo&lang=${viLang() ? 'vi' : 'en'}&p=${encodeURIComponent(JSON.stringify(soloOf(g)))}` : '';
+  $('#s-frame').title = g.name; $('#s-frame').src = gameUrl(g, g.entry) + q; $('#stage').hidden = false;
 }
 function leaveGame() { $('#stage').hidden = true; $('#s-frame').src = 'about:blank'; stageGame = null; }
 $('#s-back').addEventListener('click', leaveGame);
@@ -752,8 +763,13 @@ window.addEventListener('message', e => {
     const S = state.games.scores[id] || (state.games.scores[id] = { best: null, last: null }); S.last = score;
     if (S.best === null || (g.better === 'low' ? score < S.best : score > S.best)) S.best = score;
   }
-  save(); stat('games'); toast(V('Game finished — well played!', 'Kết thúc trò chơi — chơi hay lắm!'));
-  awardXP('game', 10 + (score !== null && g.bonus ? g.bonus(score) : 0), { game: id, result: d.result, score });
+  const stars = Number.isFinite(d.stars) ? Math.max(0, Math.min(3, d.stars)) : null;
+  if (g.kit && d.progress && typeof d.progress === 'object') {   // keep only what the game may report: stars and best score per level
+    const P = {}; ['easy', 'moderate', 'hard'].forEach(l => { const x = d.progress[l]; if (x) P[l] = { stars: Math.max(0, Math.min(3, +x.stars || 0)), best: Math.max(0, +x.best || 0) }; });
+    (state.games.solo || (state.games.solo = {}))[id] = P;
+  }
+  save(); stat('games'); toast(stars !== null ? V(`Round finished — ${stars} star${stars === 1 ? '' : 's'}!`, `Kết thúc lượt — ${stars} sao!`) : V('Game finished — well played!', 'Kết thúc trò chơi — chơi hay lắm!'));
+  awardXP('game', 10 + (stars !== null ? stars * 3 : score !== null && g.bonus ? g.bonus(score) : 0), { game: id, result: d.result, score });
   if (gamesRedraw) gamesRedraw();
 });
 
