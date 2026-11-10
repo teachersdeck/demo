@@ -51,6 +51,18 @@ html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-item:hover{ back
 html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-item.active,
 html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-item.active .dock-ic{ background:rgba(127,212,255,.18); color:#a8e3ff; }
 html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-top-item{ background:rgba(8,30,66,.55); }
+/* The side docks (9 and 3 o'clock) and the top dock (12 o'clock: class, language, Light / Dark, Settings) */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .edge-dock{
+  background:rgba(8,30,66,.72);
+  -webkit-backdrop-filter:blur(16px) saturate(140%); backdrop-filter:blur(16px) saturate(140%);
+}
+/* The buttons in the top dock: class, language, theme, Light / Dark, Settings */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) :is(.class-pill,.lang-toggle,.icon-btn,.deck-mode-toggle,.deck-mode-switch){
+  background:rgba(255,255,255,.08); border-color:rgba(160,210,255,.30);
+}
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) :is(.class-pill,.icon-btn):hover{ background:rgba(255,255,255,.14); }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .lang-toggle button.active{ color:#05223f; }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) :is(.deck-mode-opt.on, .deck-mode-opt.on:hover){ background:#7fd4ff; color:#05223f; }
 
 /* Drawers (Theme, Settings) */
 html[data-td-theme="glass-blue"]:not([data-mode="light"]) .drawer{
