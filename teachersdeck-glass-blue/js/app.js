@@ -1497,7 +1497,7 @@ function renderDrawDeck(body, ctx){
 }
 
 const WIDGETS = [
-  { id:'clock', cat:'time', labelKey:'clock', icon:'clock', w:200, h:222, render:renderClock },
+  { id:'clock', cat:'time', labelKey:'clock', icon:'clock', w:200, h:246, render:renderClock },
   { id:'timer', cat:'time', labelKey:'timer', icon:'timer', w:220, h:210, render:renderTimer },
   { id:'stopwatch', cat:'time', labelKey:'stopwatch', icon:'stopwatch', w:220, h:280, render:renderStopwatch },
   { id:'traffic', cat:'tools', labelKey:'traffic', icon:'traffic', w:180, h:250, render:renderTraffic },
@@ -2125,6 +2125,48 @@ function buildDrawerSettings(){
   });
 }
 
+/* Phase 1 (UI polish): text widgets grow with their window, like Instructions does. The widget's content is zoomed to the
+   largest size at which it still fits (never smaller than today's 100%, at most 400%); more content than fits scrolls
+   as before. The content sits in one .fit-wrap inside the body; a widget that redraws its body is re-wrapped. */
+const AUTO_FIT = new Set(['checklist','calendar','announcements','agenda','idiomday','grammarref','convocards',
+  'exitticket','hallpass','poll','readinglog','timer','stopwatch','countdown','dice']);
+function attachAutoFit(id, body){
+  if(!AUTO_FIT.has(id) || body._autoFit) return;
+  let raf = 0, busy = false;
+  function wrap(){
+    const kids = [...body.childNodes];
+    if(kids.length === 1 && kids[0].classList && kids[0].classList.contains('fit-wrap')) return kids[0];
+    const w = document.createElement('div'); w.className = 'fit-wrap';
+    kids.forEach(k=>w.appendChild(k));
+    body.appendChild(w);
+    return w;
+  }
+  function fit(){
+    busy = true;
+    const w = wrap();
+    const cs = getComputedStyle(body);
+    const availH = body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const availW = body.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    if(availH <= 0 || availW <= 0 || body.closest('.minimized')){ busy = false; return; }
+    const fits = z => { w.style.zoom = z; w.style.width = (availW / z) + 'px'; return w.scrollHeight * z <= availH + 1 && w.scrollWidth <= availW / z + 1; };
+    let lo = 1, hi = 4;
+    if(!fits(1)){ fits(1); busy = false; return; }   // too much content: 100% and scroll, as before
+    if(fits(hi)) lo = hi;
+    else for(let i = 0; i < 9; i++){ const mid = (lo + hi) / 2; if(fits(mid)) lo = mid; else hi = mid; }
+    fits(Math.floor(lo * 100) / 100);
+    busy = false;
+  }
+  const schedule = () => { if(busy) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(fit); };
+  const ro = ('ResizeObserver' in window) ? new ResizeObserver(schedule) : null;
+  if(ro) ro.observe(body);
+  const mo = new MutationObserver(schedule);
+  mo.observe(body, { childList:true, subtree:true, characterData:true });
+  body.addEventListener('input', schedule);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+  body._autoFit = { schedule };
+  schedule();
+}
+
 function rerenderWidget(id){
   const rec = widgetEls[id];
   if(!rec) return;
@@ -2134,6 +2176,7 @@ function rerenderWidget(id){
   const body = rec.el.querySelector('.widget-body');
   body.innerHTML = '';
   rec.cleanup = def.render(body, { id, toast, preset: pfPreset(id) });
+  attachAutoFit(id, body);
 }
 
 const CAL_SYSTEM_OPTIONS = [
@@ -2237,6 +2280,7 @@ function openWidget(id){
   const body = el.querySelector('.widget-body');
   const cleanup = def.render(body, { id, toast, preset: pfPreset(id) });
   widgetEls[id].cleanup = cleanup;
+  attachAutoFit(id, body);
 }
 
 function toggleMinimize(id){
@@ -2481,27 +2525,41 @@ function renderSkinClock(body, skins){
   tickDate(); const iv = setInterval(tickDate, 30000);
   return ()=>{ ctl.stop(); clearInterval(iv); };
 }
+// Phase 1 (UI polish): the built-in face is an SVG, so it stays sharp at any window size (css/scale.css sizes it).
+function classicClockSvg(){
+  let ticks = '';
+  for(let i=0;i<60;i++){
+    const a = i*6*Math.PI/180, major = i%5===0, r1 = major ? 80 : 85, r2 = 89;
+    const x1 = (100+r1*Math.sin(a)).toFixed(2), y1 = (100-r1*Math.cos(a)).toFixed(2), x2 = (100+r2*Math.sin(a)).toFixed(2), y2 = (100-r2*Math.cos(a)).toFixed(2);
+    ticks += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${major?'#8f8a7c':'#c9c3b3'}" stroke-width="${major?3.2:1.4}" stroke-linecap="round"/>`;
+  }
+  return `<svg class="clock-svg" viewBox="0 0 200 200" role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+    <defs><radialGradient id="ck-face" cx="50%" cy="42%" r="60%"><stop offset="0" stop-color="#fbf9f4"/><stop offset="1" stop-color="#ede8dc"/></radialGradient></defs>
+    <circle cx="100" cy="100" r="99" fill="url(#ck-face)"/>
+    <circle cx="100" cy="100" r="95.5" fill="none" stroke="#dcd7c9" stroke-width="7"/>
+    ${ticks}
+    <line class="ck-h" x1="100" y1="108" x2="100" y2="48" stroke="#20242b" stroke-width="7" stroke-linecap="round"/>
+    <line class="ck-m" x1="100" y1="110" x2="100" y2="26" stroke="#20242b" stroke-width="4.6" stroke-linecap="round"/>
+    <line class="ck-s" x1="100" y1="118" x2="100" y2="20" stroke="#E06565" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="100" cy="100" r="6.5" fill="#20242b"/><circle cx="100" cy="100" r="2.4" fill="#E06565"/>
+  </svg>`;
+}
 function renderClassicClock(body){
   body.innerHTML = `
-    <div class="clock-face">
-      <div class="clock-hand hr"></div>
-      <div class="clock-hand min"></div>
-      <div class="clock-hand sec"></div>
-      <div class="clock-dot"></div>
-    </div>
+    ${classicClockSvg()}
     <div class="clock-digital">--:--</div>
     <div class="clock-date">--</div>
     <div class="clock-lunar"></div>
   `;
-  const hr = body.querySelector('.hr'), min = body.querySelector('.min'), sec = body.querySelector('.sec');
+  const hr = body.querySelector('.ck-h'), min = body.querySelector('.ck-m'), sec = body.querySelector('.ck-s');
   const digital = body.querySelector('.clock-digital'), dateEl = body.querySelector('.clock-date');
   const lunarEl = body.querySelector('.clock-lunar');
   function tick(){
     const d = new Date();
     const h = d.getHours()%12, m = d.getMinutes(), s = d.getSeconds();
-    hr.style.transform = `rotate(${h*30 + m*0.5}deg)`;
-    min.style.transform = `rotate(${m*6}deg)`;
-    sec.style.transform = `rotate(${s*6}deg)`;
+    hr.setAttribute('transform', `rotate(${h*30 + m*0.5} 100 100)`);
+    min.setAttribute('transform', `rotate(${m*6 + s*0.1} 100 100)`);
+    sec.setAttribute('transform', `rotate(${s*6} 100 100)`);
     let hh = d.getHours()%12; if(hh===0) hh=12;
     digital.textContent = `${hh}:${String(m).padStart(2,'0')} ${d.getHours()>=12?'PM':'AM'}`;
     if(state.calendarSystem === 'lunar'){
@@ -2652,17 +2710,31 @@ function renderTraffic(body, ctx){
     const pl = ctx && ctx.preset && ctx.preset.light; if(pl && names.includes(pl)) ctl.set(names.indexOf(pl));
     return null;
   }
+  // Phase 1 (UI polish): an SVG, so it scales sharply with the window (css/scale.css).
+  const lamp = (c, cy, hi, mid, lo) => `<g class="tl-lamp traffic-lamp ${c}" data-c="${c}">
+      <circle class="tl-glow" cx="50" cy="${cy}" r="27" fill="${mid}" filter="url(#tl-blur)"/>
+      <circle cx="50" cy="${cy}" r="24" fill="url(#tl-off)"/>
+      <circle class="tl-on" cx="50" cy="${cy}" r="24" fill="url(#tl-${c})"/>
+      <circle cx="50" cy="${cy}" r="24" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="2"/>
+    </g>`;
+  const grad = (c, hi, mid, lo) => `<radialGradient id="tl-${c}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${hi}"/><stop offset=".6" stop-color="${mid}"/><stop offset="1" stop-color="${lo}"/></radialGradient>`;
   body.innerHTML = `
-    <div class="traffic-housing">
-      <div class="traffic-hood"></div>
-      <div class="traffic-lamp red" data-c="red"></div>
-      <div class="traffic-lamp yellow" data-c="yellow"></div>
-      <div class="traffic-lamp green" data-c="green"></div>
-      <div class="traffic-base"></div>
-    </div>
+    <svg class="tl-svg" viewBox="0 0 100 238" role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="tl-housing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2e33"/><stop offset="1" stop-color="#17191c"/></linearGradient>
+        <radialGradient id="tl-off" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#3c3f44"/><stop offset=".72" stop-color="#16181b"/></radialGradient>
+        ${grad('red','#ff8f8f','#E0555A','#a02c2c')}${grad('yellow','#fbe38a','#E8C93D','#a3891c')}${grad('green','#9df0bf','#4FD18A','#1f8a56')}
+        <filter id="tl-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+      </defs>
+      <rect x="32" y="1" width="36" height="10" rx="5" fill="#111"/>
+      <rect x="6" y="8" width="88" height="200" rx="18" fill="url(#tl-housing)" stroke="rgba(0,0,0,.5)" stroke-width="2"/>
+      <rect x="8" y="9.5" width="84" height="3" rx="1.5" fill="rgba(255,255,255,.06)"/>
+      ${lamp('red',46)}${lamp('yellow',108)}${lamp('green',170)}
+      <rect x="43" y="207" width="14" height="22" rx="3" fill="#111"/>
+    </svg>
     <p class="traffic-hint" data-i18n="traffic_hint">${t('traffic_hint')}</p>
   `;
-  const lamps = body.querySelectorAll('.traffic-lamp');
+  const lamps = body.querySelectorAll('.tl-lamp');
   lamps.forEach(l=>{
     l.addEventListener('click', ()=>{
       lamps.forEach(x=>x.classList.remove('on'));
@@ -2670,7 +2742,7 @@ function renderTraffic(body, ctx){
       track('traffic', l.dataset.c);
     });
   });
-  { const pl = ctx && ctx.preset && ctx.preset.light; const lamp = pl && body.querySelector('.traffic-lamp.' + pl); if(lamp) lamp.classList.add('on'); }   // platform (ClassIn): ?light=
+  { const pl = ctx && ctx.preset && ctx.preset.light; const on = pl && body.querySelector('.tl-lamp.' + pl); if(on) on.classList.add('on'); }   // platform (ClassIn): ?light=
   return null;
 }
 
@@ -8155,7 +8227,42 @@ async function initCustomBg(){
   }
 }
 
+/* TEST (branch glass-blue-test): the Item Store's five dock styles in Theme → Dock, open to everyone here.
+   js/dockstyle.js (= studentdeck/js/dockstyle.js on item-store) draws them; the dock packs are in js/premium-packs.js. */
+function tdDockItems(){
+  const out = [];
+  (window.TD_PREMIUM_PACKS || []).forEach(r=>{
+    if(!window.StoreCore || !r || r.kind !== 'dock') return;
+    const v = StoreCore.validateStorePack(r); if(!v.ok) return;
+    v.pack.items.forEach(it=>out.push(it));
+  });
+  return out;
+}
+function applyTdDock(){
+  if(typeof DockStyle === 'undefined') return;
+  const it = tdDockItems().find(d=>d.style === state.dockStyle);
+  DockStyle.apply(it ? it.style : 'standard', it || null);
+}
+function buildDockSwatches(){
+  const grid = document.getElementById('dock-styles'); if(!grid) return;
+  grid.innerHTML = '';
+  const vi = state.lang === 'vi';
+  const opts = [{ style:'standard', name:{ en:'Standard', vi:'Tiêu chuẩn' }, swatch:'linear-gradient(180deg,#2a3542,#161c25)' }].concat(tdDockItems());
+  opts.forEach(o=>{
+    const b = document.createElement('button'); b.type = 'button';
+    const on = (state.dockStyle || 'standard') === o.style;
+    b.className = 'dock-style-opt' + (on ? ' active' : '');
+    b.setAttribute('aria-pressed', on);
+    b.innerHTML = `<span class="dock-style-sw"></span><span class="dock-style-name"></span>`;
+    b.querySelector('.dock-style-sw').style.background = o.swatch || '#1e2732';
+    b.querySelector('.dock-style-name').textContent = o.name[vi ? 'vi' : 'en'] || o.name.en;
+    b.addEventListener('click', ()=>{ state.dockStyle = o.style; saveState(); applyTdDock(); buildDockSwatches(); });
+    grid.appendChild(b);
+  });
+}
+
 function buildPresetSwatches(){
+  buildDockSwatches();
   const grid = document.getElementById('theme-presets');
   grid.innerHTML = '';
   PRESETS.forEach(p=>{
@@ -10515,3 +10622,17 @@ function init(){
 // teacher at all, so init() waits for canvas.js to call it. Everywhere else it runs straight away.
 if(PF && PF.deferInit) window.__tdInit = init;
 else init();
+
+/* TEST (branch glass-blue-test): dock styles (js/dockstyle.js) know TeachersDeck's widgets, categories and tray */
+if(typeof DockStyle !== 'undefined'){
+  DockStyle.configure({
+    widgets: () => WIDGETS.filter(w => !isOff(w.id)).map(w => ({ id: w.id, label: widgetLabel(w.labelKey), icon: iconSvg(w.icon), cat: w.cat })),
+    categories: () => CATEGORIES.map(c => [c.id, t(c.labelKey)]),
+    favourites: () => widgetsFor('bottom').map(w => w.id),
+    isOpen: id => !!widgetEls[id], toggle: id => toggleWidget(id), openTray: () => openAppTray(),
+    labels: state.lang === 'vi'
+      ? { tray:'Tất cả tiện ích', widgets:'Tiện ích', favourites:'Yêu thích', pin:'Giữ mở', unpin:'Thu gọn' }
+      : { tray:'All widgets', widgets:'Widgets', favourites:'Favourites', pin:'Keep open', unpin:'Let it fold' },
+  });
+  applyTdDock();
+}
