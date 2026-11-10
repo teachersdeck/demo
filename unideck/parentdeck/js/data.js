@@ -40,7 +40,7 @@ const PD = (() => {
     if (ready) return true;
     if (!isConfigured() || typeof firebase === 'undefined') return false;
     firebase.initializeApp(window.FIREBASE_CONFIG);
-    auth = firebase.auth(); db = firebase.firestore(); functions = firebase.functions();
+    auth = firebase.auth(); db = firebase.firestore(); functions = window.TDBackend ? TDBackend.functions() : firebase.functions();
     ready = true;
     return true;
   }
@@ -629,7 +629,7 @@ const PD = (() => {
     const role = await ensureParentRole();
     if (role && role !== 'parent') throw wrongRoleError(role);
     const token = await auth.currentUser.getIdToken();
-    const res = await fetch(`https://us-central1-${window.FIREBASE_CONFIG.projectId}.cloudfunctions.net/${name}`, {
+    const res = await fetch(window.TDBackend ? TDBackend.url(name) : `https://us-central1-${window.FIREBASE_CONFIG.projectId}.cloudfunctions.net/${name}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body || {}) });
     let data = {}; try { data = await res.json(); } catch (e) {}
     if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.code = data.code; e.status = res.status; throw e; }

@@ -35,7 +35,7 @@ const SDCloud = (() => {
     firebase.initializeApp(window.FIREBASE_CONFIG);
     auth = firebase.auth();
     db = firebase.firestore();
-    functions = firebase.functions();
+    functions = window.TDBackend ? TDBackend.functions() : firebase.functions();   // lights-on: the server's address comes from backend.json (js/backend.js)
     ready = true;
     return true;
   }
