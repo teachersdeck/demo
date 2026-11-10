@@ -1,0 +1,70 @@
+/* TEST (branch glass-blue-test): premium themes in TeachersDeck.
+   Glass Blue = the Item Store pack theme-glass-blue (backend/functions/store-packs on branch item-store):
+   bg #0c2a5a → #1565c0 → #0a1f44, card rgba(255,255,255,.10), line rgba(160,210,255,.35), ink #eaf4ff,
+   muted #a9c4e8, accent #7fd4ff, button text #05223f, dock rgba(8,30,66,.72), hover rgba(255,255,255,.14), radius 16.
+   app.js sets html[data-td-theme="glass-blue"] when the Glass Blue swatch is picked. It is a dark theme: in Light mode
+   only the background changes (pale blue) and the app keeps its light look. */
+
+html[data-td-theme="glass-blue"]:not([data-mode="light"]){
+  --ink-0:#0a1f44;
+  --ink-1:#0e2d5e;
+  --ink-2:#143a73;
+  --ink-3:#1c4b8c;
+  --line:rgba(160,210,255,.35);
+  --text-hi:#eaf4ff;
+  --text-lo:#a9c4e8;
+  --amber:#7fd4ff;
+  --amber-hi:#a8e3ff;
+  --teal:#7fd4ff;
+  --radius-panel:16px;
+  --radius-chip:12px;
+  --shadow-panel:0 14px 34px rgba(2,12,32,.45), 0 2px 6px rgba(2,12,32,.3);
+  /* phones and tablets (css/bento.css) */
+  --bento-tile:rgba(255,255,255,.10);
+  --bento-tile-hi:rgba(255,255,255,.14);
+  --bento-line:rgba(160,210,255,.35);
+  --bento-label:#a9c4e8;
+  --bento-glass:rgba(8,30,66,.72);
+  --bento-glass-line:rgba(160,210,255,.35);
+  --bento-pop:#0e2d5e;
+}
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) body{ background:#0a1f44; }
+
+/* Widgets: frosted glass over the blue */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .widget{
+  background:rgba(255,255,255,.10);
+  -webkit-backdrop-filter:blur(18px) saturate(140%); backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:var(--shadow-panel), inset 0 1px 0 rgba(255,255,255,.18);
+}
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .widget-head{ background:rgba(255,255,255,.05); }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .widget-min:hover,
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .widget-pin:hover,
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .widget-drag:hover{ background:rgba(255,255,255,.14); }
+
+/* Dock and top bar */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock{
+  background:rgba(8,30,66,.72);
+  -webkit-backdrop-filter:blur(16px) saturate(140%); backdrop-filter:blur(16px) saturate(140%);
+}
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-item{ background:rgba(255,255,255,.05); }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-item:hover{ background:rgba(255,255,255,.14); }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-item.active,
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-item.active .dock-ic{ background:rgba(127,212,255,.18); color:#a8e3ff; }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-top-item{ background:rgba(8,30,66,.55); }
+
+/* Drawers (Theme, Settings) */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .drawer{
+  background:rgba(14,45,94,.94);
+  -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+}
+
+/* Buttons that use the accent: dark text on light blue (pack token bt) */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .btn-primary,
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .primary{ background:#7fd4ff; color:#05223f; border-color:#7fd4ff; }
+
+/* The swatch grid marks premium themes with a star */
+.swatch.premium{ position:relative; }
+.swatch.premium::after{
+  content:"★"; position:absolute; top:4px; right:6px; font-size:11px; line-height:1;
+  color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5);
+}
