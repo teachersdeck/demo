@@ -23,7 +23,7 @@ const KinderParentCloud = (() => {
   const ms = v => (v && v.toMillis ? v.toMillis() : typeof v === 'number' ? v : 0);
 
   function live() {
-    const db = () => firebase.firestore(), fn = name => firebase.functions().httpsCallable(name);
+    const db = () => firebase.firestore(), fn = name => (window.TDBackend ? TDBackend.functions() : firebase.functions()).httpsCallable(name);
     const me = () => (PD.getSession() || {}).uid;
     const ts = () => firebase.firestore.FieldValue.serverTimestamp();
     const docs = s => s.docs.map(d => ({ id: d.id, ...d.data() }));

@@ -6,7 +6,7 @@
    what is left, the due date and how to pay. Teachers never see fees. Turning it off removes every month already sent.
    Only children in a class already published to teachers can be sent (the backend knows them by KinderDeck's child id). */
 (() => {
-  const BASE = 'https://backend.demo.invalid';
+  const BASE = window.TDBackend ? TDBackend.base() : 'https://backend.demo.invalid';   // lights-on: backend.json (js/backend.js)
   const F = () => state.feesDue || (state.feesDue = {on:false, rates:{}, child:{}, paid:{}, dueDay:10, howToPay:'', sent:{}});
   const key = () => (state.tsync && state.tsync.key) || '';
   const pad = n => String(n).padStart(2, '0');

@@ -36,7 +36,7 @@ const KinderCloud = (() => {
 
   /* ======================= live backend ======================= */
   function live() {
-    const db = () => firebase.firestore(), fn = name => firebase.functions().httpsCallable(name);
+    const db = () => firebase.firestore(), fn = name => (window.TDBackend ? TDBackend.functions() : firebase.functions()).httpsCallable(name);
     const me = () => (TDCloud.getSession() || {}).uid;
     const ts = () => firebase.firestore.FieldValue.serverTimestamp();
     return {

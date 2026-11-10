@@ -11,7 +11,7 @@
    the next publish removes the photos from the teachers' and families' apps.
    The key is kept in this browser (state.tsync.key), as AdminDeck keeps its own. */
 (() => {
-  const BASE = 'https://backend.demo.invalid';   // the suite backend (AdminDeck uses the same)
+  const BASE = window.TDBackend ? TDBackend.base() : 'https://backend.demo.invalid';   // lights-on: backend.json (js/backend.js)   // the suite backend (AdminDeck uses the same)
   const ts = () => state.tsync || (state.tsync = {key:'', classes:[], last:{}});
   const uid = () => 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   let open = null, busy = '', msg = '';

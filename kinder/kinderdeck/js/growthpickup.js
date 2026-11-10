@@ -11,7 +11,7 @@
    it at the gate in TinyTeachersDeck's Attendance. "New code" replaces a lost card's code. Codes are kept here
    (state.pickup.codes) for printing. QR codes are drawn by js/qrcode-lib.js (MIT, a copy of TinyTeachersDeck's). */
 (() => {
-  const BASE = 'https://backend.demo.invalid';
+  const BASE = window.TDBackend ? TDBackend.base() : 'https://backend.demo.invalid';   // lights-on: backend.json (js/backend.js)
   const key = () => (state.tsync && state.tsync.key) || '';
   const pad = n => String(n).padStart(2, '0');
   const todayISO = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
