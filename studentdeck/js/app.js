@@ -716,13 +716,14 @@ const soloOf = g => (state.games.solo || {})[g.folder] || {};
 const starsOf = g => ['easy', 'moderate', 'hard'].reduce((n, l) => n + ((soloOf(g)[l] || {}).stars || 0), 0);
 const SUBJ = { en: ['English', 'Tiếng Anh'], maths: ['Maths', 'Toán'], science: ['Science', 'Khoa học'], more: ['More games', 'Trò chơi khác'] };
 function renderGames(b) {
-  b.innerHTML = `<p class="muted" style="margin:0 0 8px">${V('Pick a game to play. Win stars to unlock harder levels.', 'Chọn một trò chơi. Giành sao để mở khóa mức khó hơn.')}</p><div id="gl"><p class="muted">${V('Loading games…', 'Đang tải trò chơi…')}</p></div>`;
+  const lib = GAMES.some(g => g.kit);   // Game Library games (StudentDeck); UniStudentDeck's own list has none
+  b.innerHTML = `<p class="muted" style="margin:0 0 8px">${lib ? V('Pick a game to play. Win stars to unlock harder levels.', 'Chọn một trò chơi. Giành sao để mở khóa mức khó hơn.') : V('Pick a game to play.', 'Chọn một trò chơi để chơi.')}</p><div id="gl"><p class="muted">${V('Loading games…', 'Đang tải trò chơi…')}</p></div>`;
   let list = GAMES, dead = false;
   const tile = (g, i) => `<div class="gtile"><div><b>${esc(g.name)}</b><div class="muted">${g.kit ? `★ ${starsOf(g)}/9 · ` : ''}${V('Finished', 'Đã hoàn thành')} ${state.games.plays[g.folder] || 0}×${g.kit ? '' : bestOf(g)}</div></div>
       <div class="row" style="margin:0"><button class="btn primary" data-play="${i}">${V('Play', 'Chơi')}</button>${g.instructions ? `<button class="btn" data-help="${i}" aria-label="${V('How to play', 'Cách chơi')} ${esc(g.name)}">?</button>` : ''}</div></div>`;
   const draw = () => {
     let last = null;
-    $('#gl', b).innerHTML = list.map((g, i) => { const s = g.subject || 'more', head = s !== last ? `<p class="muted" style="margin:10px 0 4px;font-weight:700">${V(...SUBJ[s] || SUBJ.more)}</p>` : ''; last = s; return head + tile(g, i); }).join('')
+    $('#gl', b).innerHTML = list.map((g, i) => { const s = g.subject || 'more', head = lib && s !== last ? `<p class="muted" style="margin:10px 0 4px;font-weight:700">${V(...SUBJ[s] || SUBJ.more)}</p>` : ''; last = s; return head + tile(g, i); }).join('')
       || `<p class="muted">${V('No games installed.', 'Chưa cài trò chơi nào.')}</p>`;
   };
   draw();
