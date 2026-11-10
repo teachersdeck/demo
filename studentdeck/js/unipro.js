@@ -58,7 +58,7 @@
     const F = fb(), u = F && F.auth().currentUser;
     if (!u) throw Object.assign(new Error('Sign in first.'), { code: 'signed-out' });
     const token = await u.getIdToken();
-    const res = await fetch(`https://us-central1-${window.FIREBASE_CONFIG.projectId}.cloudfunctions.net/${fn}`, {
+    const res = await fetch(window.TDBackend ? TDBackend.url(fn) : `https://us-central1-${window.FIREBASE_CONFIG.projectId}.cloudfunctions.net/${fn}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body || {}) });
     let data = {}; try { data = await res.json(); } catch (e) {}
     if (!res.ok) throw Object.assign(new Error(data.error || `HTTP ${res.status}`), { code: data.code, status: res.status });

@@ -47,7 +47,10 @@ const AD = (function(){
     }catch(e){ /* storage unavailable — settings just won't persist */ }
   }
   function isConfigured(){ return !!getConfig().secret; }
-  function baseUrl(cfg){ return `https://${cfg.region}-${cfg.project}.cloudfunctions.net`; }
+  function baseUrl(cfg){
+    if(window.TDBackend && cfg.project === DEFAULTS.project) return TDBackend.base();   // lights-on: backend.json says where the functions run
+    return `https://${cfg.region}-${cfg.project}.cloudfunctions.net`;
+  }
 
   async function callFn(name, { method = 'GET', body } = {}){
     const cfg = getConfig();
