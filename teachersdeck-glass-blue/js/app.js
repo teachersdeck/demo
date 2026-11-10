@@ -2422,7 +2422,66 @@ function makeResizable(el, id){
 
 /* ---------------- Widget implementations ---------------- */
 
+/* TEST (branch glass-blue-test): the Glass Blue pack's watch faces, noise meter and traffic light.
+   They show while the Glass Blue theme is picked (Theme → Backgrounds). Packs: js/premium-packs.js, drawn by js/store-core.js. */
+var tdPremiumCache = null;
+function tdPremiumSet(themeId){
+  if(!tdPremiumCache){
+    tdPremiumCache = {};
+    const raw = (window.TD_PREMIUM_PACKS || []);
+    if(window.StoreCore) raw.forEach(r=>{
+      const v = StoreCore.validateStorePack(r); if(!v.ok){ console.warn('TeachersDeck: pack refused', r && r.id, v.error); return; }
+      const pk = v.pack, m = /glass-blue/.test(pk.id) ? 'glass-blue' : null; if(!m) return;
+      const set = tdPremiumCache[m] || (tdPremiumCache[m] = { faces:[], meter:null, light:null });
+      pk.items.forEach(it=>{
+        if(pk.kind === 'face') set.faces.push(Object.assign({ key: pk.id }, it));
+        else if(pk.kind === 'meter' && !set.meter) set.meter = it;
+        else if(pk.kind === 'light' && !set.light) set.light = it;
+      });
+    });
+  }
+  return tdPremiumCache[themeId] || null;
+}
+function premiumSkins(){ return (!state.customBg && state.theme === 'glass-blue') ? tdPremiumSet('glass-blue') : null; }
+const reduceMotionNow = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function refreshSkinnedWidgets(){ ['clock','traffic','noise'].forEach(id=>{ if(widgetEls[id]) rerenderWidget(id); }); }
+
 function renderClock(body){
+  const skins = premiumSkins();
+  if(skins && skins.faces.length && state.premiumFace !== 'classic') return renderSkinClock(body, skins);
+  const classicCleanup = renderClassicClock(body);
+  if(skins && skins.faces.length) body.appendChild(faceSwitcher(skins));
+  return classicCleanup;
+}
+function faceSwitcher(skins){
+  const row = document.createElement('div'); row.className = 'skin-switch';
+  const cur = state.premiumFace === 'classic' ? 'classic' : (skins.faces.some(f=>f.key===state.premiumFace) ? state.premiumFace : skins.faces[0].key);
+  const opts = skins.faces.map(f=>({ key:f.key, label:f.name[state.lang==='vi'?'vi':'en'], swatch:f.swatch }))
+    .concat([{ key:'classic', label: state.lang==='vi' ? 'Cổ điển' : 'Classic', swatch:'#F4F1EA' }]);
+  opts.forEach(o=>{
+    const b = document.createElement('button'); b.type = 'button';
+    b.className = 'skin-dot' + (o.key===cur ? ' on' : ''); b.title = o.label; b.setAttribute('aria-label', o.label);
+    b.style.background = o.swatch;
+    b.addEventListener('click', ()=>{ state.premiumFace = o.key; saveState(); rerenderWidget('clock'); });
+    row.appendChild(b);
+  });
+  return row;
+}
+function renderSkinClock(body, skins){
+  const face = skins.faces.find(f=>f.key===state.premiumFace) || skins.faces[0];
+  body.innerHTML = `<div class="skin-face"></div><div class="clock-date">--</div>`;
+  const ctl = StoreCore.mountFace(body.querySelector('.skin-face'), face, { lang: state.lang==='vi'?'vi':'en', reduceMotion: reduceMotionNow() });
+  body.appendChild(faceSwitcher(skins));
+  const dateEl = body.querySelector('.clock-date');
+  function tickDate(){
+    const d = new Date();
+    dateEl.textContent = state.calendarSystem === 'lunar' ? lunarFullLabel(d)
+      : d.toLocaleDateString(LOCALE_MAP[state.lang] || 'en-US', {weekday:'short', month:'short', day:'numeric'});
+  }
+  tickDate(); const iv = setInterval(tickDate, 30000);
+  return ()=>{ ctl.stop(); clearInterval(iv); };
+}
+function renderClassicClock(body){
   body.innerHTML = `
     <div class="clock-face">
       <div class="clock-hand hr"></div>
@@ -2580,6 +2639,19 @@ function renderStopwatch(body, ctx){
 }
 
 function renderTraffic(body, ctx){
+  const skins = premiumSkins();
+  if(skins && skins.light){
+    body.innerHTML = `<div class="skin-light"></div><p class="traffic-hint" data-i18n="traffic_hint">${t('traffic_hint')}</p>`;
+    const box = body.querySelector('.skin-light');
+    const ctl = StoreCore.mountLight(box, skins.light);
+    const names = ['red','yellow','green'];
+    box.querySelectorAll('[data-lamp]').forEach(g=>{
+      g.style.cursor = 'pointer';
+      g.addEventListener('click', ()=>{ const i = +g.getAttribute('data-lamp'); ctl.set(i); track('traffic', names[i]); });
+    });
+    const pl = ctx && ctx.preset && ctx.preset.light; if(pl && names.includes(pl)) ctl.set(names.indexOf(pl));
+    return null;
+  }
   body.innerHTML = `
     <div class="traffic-housing">
       <div class="traffic-hood"></div>
@@ -5900,6 +5972,7 @@ const NOISE_ICONS = {
   vbar:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="3" width="7" height="18" rx="2"/><rect x="8.5" y="12" width="7" height="9" rx="2" fill="currentColor"/></svg>',
   hbar:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8.5" width="18" height="7" rx="2"/><rect x="3" y="8.5" width="9" height="7" rx="2" fill="currentColor"/></svg>'
 };
+const NOISE_SKIN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16l4-5"/></svg>';   // TEST: the pack's noise meter
 // Graph data lives here, not inside the widget, so closing and reopening the widget keeps it.
 const noiseHistory = { pts:[], step:NOISE_SAMPLE_MS };
 function noiseZone(db){
@@ -5919,12 +5992,20 @@ function renderNoise(body, ctx){
   const hist = noiseHistory;
   if(ctx && ctx.preset && ctx.preset.go) setTimeout(()=>{ const b = body.querySelector('#noise-toggle'); if(b && !running) b.click(); }, 300);   // platform (ClassIn): ?go=1
 
+  const skins = premiumSkins();
+  const styles = (skins && skins.meter) ? NOISE_STYLES.concat(['skin']) : NOISE_STYLES;
   function styleKey(){
     const s = state.noiseMeter && state.noiseMeter.style;
-    return NOISE_STYLES.includes(s) ? s : 'circle';
+    return styles.includes(s) ? s : (skins && skins.meter ? 'skin' : 'circle');
   }
 
   function stageMarkup(style){
+    if(style === 'skin'){
+      return `<div class="noise-stage skin">
+        <div class="noise-skin"></div>
+        <div class="noise-readout"><span class="noise-db">--</span> <span class="noise-unit">dB</span></div>
+      </div>`;
+    }
     if(style === 'vbar'){
       return `<div class="noise-stage vbar">
         <div class="noise-vtrack"><div class="noise-mask"></div></div>
@@ -5947,8 +6028,9 @@ function renderNoise(body, ctx){
       return `<p class="noise-msg" data-i18n="noise_insecure">${t('noise_insecure')}</p>`;
     }
     const cur = styleKey();
-    const pickers = NOISE_STYLES.map(k=>
-      `<button type="button" class="noise-style-btn${k===cur?' active':''}" data-style="${k}" aria-pressed="${k===cur}" title="${t('noise_style_'+k)}" aria-label="${t('noise_style_'+k)}" data-i18n-title="noise_style_${k}" data-i18n-aria="noise_style_${k}">${NOISE_ICONS[k]}</button>`
+    const pickers = styles.map(k=> k === 'skin'
+      ? `<button type="button" class="noise-style-btn${k===cur?' active':''}" data-style="skin" aria-pressed="${k===cur}" title="${skins.meter.name.en}" aria-label="${skins.meter.name.en}">${NOISE_SKIN_ICON}</button>`
+      : `<button type="button" class="noise-style-btn${k===cur?' active':''}" data-style="${k}" aria-pressed="${k===cur}" title="${t('noise_style_'+k)}" aria-label="${t('noise_style_'+k)}" data-i18n-title="noise_style_${k}" data-i18n-aria="noise_style_${k}">${NOISE_ICONS[k]}</button>`
     ).join('');
     return `
       <div class="noise-wrap">
@@ -5983,7 +6065,7 @@ function renderNoise(body, ctx){
   }
 
   function setStyle(style){
-    if(!NOISE_STYLES.includes(style)) return;
+    if(!styles.includes(style)) return;
     state.noiseMeter.style = style;
     saveState();
     body.querySelectorAll('.noise-style-btn').forEach(b=>{
@@ -6008,6 +6090,8 @@ function renderNoise(body, ctx){
     const dbEl = stage.querySelector('.noise-db');
     const labelEl = body.querySelector('.noise-level-label');
     const mask = stage.querySelector('.noise-mask');
+    const skinBox = stage.querySelector('.noise-skin');
+    if(skinBox && !skinBox._ctl) skinBox._ctl = StoreCore.mountMeter(skinBox, skins.meter);
     wrap.classList.toggle('holding', !!holding);
     let pct = 0, zoneCls = '';
     if(v === null){
@@ -6023,6 +6107,7 @@ function renderNoise(body, ctx){
     }
     const wanted = 'noise-stage ' + style + (zoneCls ? ' ' + zoneCls : '');
     if(stage.className !== wanted) stage.className = wanted;
+    if(skinBox && skinBox._ctl) skinBox._ctl.set(pct / 100);
     if(mask){
       if(style === 'vbar') mask.style.height = (100 - pct) + '%';
       else if(style === 'hbar') mask.style.width = (100 - pct) + '%';
@@ -6206,6 +6291,7 @@ function renderNoise(body, ctx){
   body.style.flexDirection = 'column';
   body.innerHTML = idleMarkup();
   wire();
+  if(styleKey()==='skin') showLevel(null, false);   // TEST: draw the pack meter before the mic starts
 
   return ()=>{ stop(); if(ro) ro.disconnect(); body.style.display = ''; body.style.flexDirection = ''; };
 }
@@ -8004,7 +8090,7 @@ const presetBg = p => (p.light && document.documentElement.dataset.mode === 'lig
   : (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
 // ?theme=glass-blue opens the app in that theme (for testing the demo)
 { const q = new URLSearchParams(location.search).get('theme');
-  if(q && PRESETS.some(p=>p.id===q && p.premium)){ state.theme = q; state.customBg = false; } }
+  if(q && PRESETS.some(p=>p.id===q && p.premium)){ state.theme = q; state.customBg = false; state.premiumFace = null; if(state.noiseMeter) state.noiseMeter.style = 'skin'; } }
 
 const bgLayer = document.getElementById('bg-layer');
 const bgOverlay = document.getElementById('bg-overlay');
@@ -8078,9 +8164,12 @@ function buildPresetSwatches(){
     sw.style.background = presetBg(p);
     sw.title = p.name || p.id;
     sw.addEventListener('click', ()=>{
+      const was = premiumSkins();
       state.theme = p.id; state.customBg = false;
       if(sessionBgUrl){ URL.revokeObjectURL(sessionBgUrl); sessionBgUrl = null; }
+      if(p.premium){ state.premiumFace = null; if(state.noiseMeter) state.noiseMeter.style = 'skin'; }
       saveState(); applyTheme(); buildPresetSwatches();
+      if(was || premiumSkins()) refreshSkinnedWidgets();
     });
     grid.appendChild(sw);
   });
