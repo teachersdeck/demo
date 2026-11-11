@@ -15,6 +15,11 @@ html[data-td-theme="glass-blue"]:not([data-mode="light"]){
   --text-lo:#a9c4e8;
   --amber:#7fd4ff;
   --amber-hi:#a8e3ff;
+  --amber-rgb:127,212,255;        /* polish phase 3: every accent in style.css reads these */
+  --amber-hi-rgb:168,227,255;
+  --text-on-accent:#05223f;
+  --text-on-accent-rgb:5,34,63;
+  --bento-accent:#7fd4ff;
   --teal:#7fd4ff;
   --radius-panel:16px;
   --radius-chip:12px;
@@ -144,6 +149,15 @@ html[data-td-theme="glass-blue"][data-td-tint="1"] .bg-layer::after{ background:
 .bg-photo-state[hidden]{ display:none; }
 .bg-photo-reset{ border:1px solid var(--line); background:transparent; color:var(--text-hi); border-radius:8px; padding:5px 9px; font:600 11px 'Quicksand',sans-serif; cursor:pointer; }
 #photo-tint-row[hidden]{ display:none; }
+
+/* Polish phase 3: accents written as literals in the shared files (bento.css, mode.css, drawdeck.css stay identical
+   across the four apps, so Glass Blue overrides them here) */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .bento-seg button[aria-checked="true"]{ background:#7fd4ff; color:#05223f; }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .bento-seg button:focus-visible{ outline-color:#7fd4ff; }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .bento-menu-sizes button[aria-checked="true"]{ background:rgba(127,212,255,.16); color:#7fd4ff; }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .deck-mode-opt:focus-visible{ outline-color:#7fd4ff; }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dd-sw.on{ box-shadow:0 0 0 2px var(--amber-hi), 0 0 0 4px rgba(127,212,255,.28); }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dd-size.on{ background:rgba(127,212,255,.22); }
 
 /* The swatch grid marks premium themes with a star */
 .swatch.premium{ position:relative; }

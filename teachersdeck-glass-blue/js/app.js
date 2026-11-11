@@ -6341,7 +6341,8 @@ function renderNoise(body, ctx){
     ctx.stroke();
     ctx.lineTo(lastX, yOf(0)); ctx.lineTo(xOf(0), yOf(0)); ctx.closePath();
     const g = ctx.createLinearGradient(0, padT, 0, padT+ph);
-    g.addColorStop(0, 'rgba(245,184,92,0.28)'); g.addColorStop(1, 'rgba(245,184,92,0)');
+    const accRgb = cs.getPropertyValue('--amber-hi-rgb').trim() || '245,184,92';   // polish phase 3: the theme's accent
+    g.addColorStop(0, `rgba(${accRgb},0.28)`); g.addColorStop(1, `rgba(${accRgb},0)`);
     ctx.fillStyle = g; ctx.fill();
     ctx.beginPath(); ctx.arc(lastX, lastY, 3, 0, Math.PI*2); ctx.fillStyle = lineCol; ctx.fill();
   }
