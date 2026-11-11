@@ -2239,6 +2239,7 @@ function openWidget(id){
   el.className = 'widget' + (def.full ? ' widget-full' : '') + (layout.minimized && !def.full ? ' minimized' : '') + (pinnedNow ? ' is-pinned' : '');
   el.dataset.onTop = pinnedNow ? '1' : '0';
   el.dataset.wid = id;   // which widget this is (js/bento.js: tile sizes and order on phones and tablets)
+  el.classList.add('td-opening'); el.addEventListener('animationend', ()=> el.classList.remove('td-opening'), { once:true });   // polish phase 4
   if(!def.full){          // a full-screen widget is sized by CSS (.widget-full), not by a saved layout
     el.style.left = layout.x+'px';
     el.style.top = layout.y+'px';
@@ -2344,6 +2345,8 @@ let topPinZ = DOC_Z;         // last z handed out in the pinned band
 let docStage = null;         // built lazily by buildDocStage()
 let docCur = null;           // the document currently on the stage, or null
 function bringToFront(el){
+  document.querySelectorAll('.widget.is-front').forEach(w=>{ if(w !== el) w.classList.remove('is-front'); });   // polish phase 4: css/polish.css
+  el.classList.add('is-front');
   const pinned = el.dataset.onTop === '1';
   // Already the front-most panel in its band (typing in a widget re-clicks it
   // constantly): leave the counter alone instead of inflating it on every click.
@@ -2839,6 +2842,11 @@ function renderChecklist(body){
       });
       ul.appendChild(li);
     });
+    if(!state.checklist.length){   // polish phase 4: an empty list says what to do instead of showing a blank box
+      const vi = state.lang === 'vi';
+      ul.insertAdjacentHTML('afterend', `<div class="td-empty"><span class="td-empty-ic">✅</span><span><strong>${vi ? 'Chưa có việc nào' : 'Nothing on the list yet'}</strong><br>${vi ? 'Gõ một việc ở trên và nhấn Thêm.' : 'Type a task above and press Add.'}</span></div>`);
+      const inp = body.querySelector('#cl-input'); if(inp) setTimeout(()=>{ if(document.activeElement === document.body) inp.focus({ preventScroll:true }); }, 0);
+    }
     body.querySelector('#cl-add').addEventListener('click', addItem);
     body.querySelector('#cl-input').addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
     function addItem(){
@@ -8153,6 +8161,9 @@ const PRESETS = [
   { id:'sunrise', css:'linear-gradient(180deg,#3a2140 0%, #7a4a55 45%, #c98a5e 100%)' },
   { id:'slate', css:'linear-gradient(180deg,#20242c 0%, #2b3038 100%)' },
   { id:'plain', css:'#12161C' },
+  // Polish phase 4 (TEST): two free classroom backgrounds; css/polish.css adds their texture
+  { id:'paper', name:'Paper', css:'linear-gradient(180deg,#2b2721 0%, #25221d 55%, #1f1c18 100%)', light:'linear-gradient(180deg,#f8f4ea 0%, #f3ede0 60%, #efe8d9 100%)' },
+  { id:'chalkboard', name:'Chalkboard', css:'linear-gradient(180deg,#1f3a2c 0%, #284836 55%, #1b3326 100%)', light:'linear-gradient(180deg,#e7f0ea 0%, #dce9e1 60%, #e3eee7 100%)' },
   // TEST (branch glass-blue-test): the Item Store's Glass Blue theme (theme-glass-blue pack tokens), open to everyone here.
   // Besides the background it sets html[data-td-theme] so css/premium.css repaints widgets, dock and drawers.
   { id:'glass-blue', name:'Glass Blue', premium:true,
@@ -8195,7 +8206,8 @@ function paintPreset(){
 function applyTheme(){
   const root = document.documentElement, pt = premiumTheme(), photo = !!(sessionBgUrl || state.customBg);
   if(pt) root.dataset.tdTheme = pt.id; else delete root.dataset.tdTheme;
-  root.dataset.tdBg = photo ? 'image' : (pt && state.bgTheme ? 'theme' : 'preset');   // css/premium.css: stronger glass over a photo
+  root.dataset.tdBg = photo ? 'image' : (pt && state.bgTheme ? 'theme' : 'preset');
+  root.dataset.tdBgid = photo ? '' : (pt && state.bgTheme ? pt.id : state.theme);   // css/polish.css: paper / chalkboard texture   // css/premium.css: stronger glass over a photo
   if(pt && photo && state.photoTint) root.dataset.tdTint = '1'; else delete root.dataset.tdTint;
   if(sessionBgUrl){
     bgLayer.style.background = `center/cover no-repeat url(${sessionBgUrl})`;
@@ -8326,7 +8338,7 @@ function buildPresetSwatches(){
   const grid = document.getElementById('theme-presets');
   grid.innerHTML = '';
   const opts = (pt ? [{ kind:'theme', p:pt, title: vi ? 'Nền của giao diện' : "Theme's background" }] : [])
-    .concat(PRESETS.filter(p=>!p.premium).map(p=>({ kind:'preset', p, title:p.id })));
+    .concat(PRESETS.filter(p=>!p.premium).map(p=>({ kind:'preset', p, title:p.name || p.id })));
   opts.forEach(o=>{
     const sw = document.createElement('div');
     const on = !photo && (o.kind === 'theme' ? (pt && state.bgTheme) : (!(pt && state.bgTheme) && state.theme === o.p.id));
