@@ -7,7 +7,8 @@
  *   sidebar  a 56px icon rail on the left, two levels: categories (with the class, Favourites, All widgets, Theme,
  *            language, Light / Dark, Settings, Keep open), then the chosen category's widgets beside it; the app's
  *            docks and top bar step aside (menus scope, owner 11 Nov 2026)
- *   circle   one round button (bottom right) opens two rings: categories inside; pointing at one opens its widgets outside
+ *   circle   one round button (bottom left; AgentDeck keeps the bottom right) opens two rings: Favourites, the categories
+ *            and a gear inside, icons only; the chosen list outside, at most 8 + More (menus scope, owner 11 Nov 2026)
  *   radial   right-click (or long-press) on an empty part of the wall opens the same two rings at the pointer; the
  *            standard docks stay
  * Esc or a click outside closes a ring; Tab moves through every button. */
@@ -28,7 +29,7 @@
     var b = el('button', cls, '<span class="dk-ic">' + w.icon + '</span><span class="dk-lb">' + esc(w.label) + '</span>');
     b.type = 'button'; b.dataset.id = w.id; b.title = w.label; b.setAttribute('aria-label', w.label);
     if (cfg.isOpen(w.id)) b.classList.add('on');
-    b.addEventListener('click', function (e) { e.stopPropagation(); cfg.toggle(w.id); closeRings(); refresh(); });
+    b.addEventListener('click', function (e) { e.stopPropagation(); launch(w.id); closeRings(); refresh(); });
     return b;
   }
   function trayButton(cls) {
@@ -183,7 +184,7 @@
   function panelWidget(w) {
     var b = el('button', 'dk-sb-item dk-pw' + (cfg.isOpen(w.id) ? ' on' : '') + (ownFavs().indexOf(w.id) >= 0 ? ' fav' : ''), '<span class="dk-ic">' + w.icon + '</span><span class="dk-lb">' + esc(w.label) + '</span>');
     b.type = 'button'; b.dataset.id = w.id; b.title = w.label; b.setAttribute('aria-label', w.label);
-    b.addEventListener('click', function (e) { e.stopPropagation(); cfg.toggle(w.id); if (pinned) refresh(); else foldAll(true); });
+    b.addEventListener('click', function (e) { e.stopPropagation(); launch(w.id); if (pinned) refresh(); else foldAll(true); });
     b.addEventListener('contextmenu', function (e) {
       e.preventDefault(); e.stopPropagation();
       var f = ownFavs(), i = f.indexOf(w.id);
@@ -285,46 +286,217 @@
     if (nodes.sidebar.classList.contains('expanded')) foldAll(true);
   });
 
-  /* ---------- circle and radial: two rings ---------- */
-  function closeRings() { if (nodes.rings) { nodes.rings.remove(); nodes.rings = null; } document.removeEventListener('keydown', ringKeys, true); }
-  function ringKeys(e) { if (e.key === 'Escape') { e.stopPropagation(); closeRings(); if (nodes.launcher) nodes.launcher.focus(); } }
+  /* ---------- circle and radial: two rings (menus scope, owner 11 Nov 2026) ----------
+   * Inner ring: Favourites, each category and a gear, icons only. The hub in the middle shows the name of whatever the
+   * pointer or focus is on (a click on it opens All widgets). Outer ring: the chosen list, at most 8 icons plus a
+   * "+N" More button that opens the rest in a panel beside the ring (search + a grid of icons with names). The order
+   * is most-used on this device (counted from opens; cfg.ringDefaults[catId] breaks ties on a fresh install) until
+   * the teacher drags an icon: dropping an icon on another swaps them, from the ring or from the More panel, and that
+   * list keeps the teacher's order from then on. The gear's ring: class, theme, language, Light / Dark, Settings.
+   * Touch: the first tap shows the name in the hub, a second tap opens it; a long-press opens it at once.
+   * Closes on Esc, a click outside, or after 8 s with no pointer near it. */
+  var RING_MAX = 8, USES_KEY = 'dockstyle.uses', ORDER_KEY = 'dockstyle.order';
+  function readJSON(k) { try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } }
+  function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function launch(id) { if (!cfg.isOpen(id)) { var u = readJSON(USES_KEY); u[id] = (u[id] || 0) + 1; writeJSON(USES_KEY, u); } cfg.toggle(id); }
+  function ringList(key) {
+    var ws = cfg.widgets(), list;
+    if (key === 'fav') {
+      var seen = {};
+      list = cfg.favourites().concat(ownFavs()).filter(function (id) { if (seen[id]) return false; seen[id] = 1; return true; })
+        .map(function (id) { return ws.filter(function (w) { return w.id === id; })[0]; }).filter(Boolean);
+    } else list = ws.filter(function (w) { return 'cat:' + w.cat === key; });
+    var order = readJSON(ORDER_KEY)[key], uses = readJSON(USES_KEY);
+    var def = (cfg.ringDefaults && cfg.ringDefaults[key.replace('cat:', '')]) || [];
+    var rank = function (arr, id) { var i = arr ? arr.indexOf(id) : -1; return i < 0 ? 999 : i; };
+    if (order) list.sort(function (a, b) { return rank(order, a.id) - rank(order, b.id) || (uses[b.id] || 0) - (uses[a.id] || 0); });
+    else if (key !== 'fav') list.sort(function (a, b) { return (uses[b.id] || 0) - (uses[a.id] || 0) || rank(def, a.id) - rank(def, b.id) || a.label.localeCompare(b.label); });
+    return list;
+  }
+  function swapOrder(key, a, b) {
+    var ids = ringList(key).map(function (w) { return w.id; }), i = ids.indexOf(a), j = ids.indexOf(b);
+    if (i < 0 || j < 0) return;
+    ids[i] = b; ids[j] = a;
+    var all = readJSON(ORDER_KEY); all[key] = ids; writeJSON(ORDER_KEY, all);
+  }
+  var ring = { armed: null, idleT: 0 };
+  function closeRingPanel() { if (nodes.ringPanel) { nodes.ringPanel.remove(); nodes.ringPanel = null; } }
+  function closeRings() {
+    closeRingPanel(); clearTimeout(ring.idleT); ring.armed = null;
+    if (nodes.rings) { nodes.rings.remove(); nodes.rings = null; }
+    document.removeEventListener('keydown', ringKeys, true);
+  }
+  function ringKeys(e) {
+    if (e.key !== 'Escape') return;
+    e.stopPropagation();
+    if (nodes.ringPanel) { closeRingPanel(); return; }
+    closeRings(); if (nodes.launcher) nodes.launcher.focus();
+  }
+  function ringIdle() { clearTimeout(ring.idleT); ring.idleT = setTimeout(closeRings, 8000); }
   function place(node, cx, cy, r, a) { var rad = a * Math.PI / 180; node.style.left = (cx + r * Math.sin(rad)) + 'px'; node.style.top = (cy - r * Math.cos(rad)) + 'px'; }
+  /** Drag an icon onto a ring icon to swap them (ring order is then the teacher's); a touch long-press opens it instead. */
+  function ringDrag(b, key, onSwap) {
+    b.addEventListener('pointerdown', function (e) {
+      if (e.button > 0) return;
+      var x0 = e.clientX, y0 = e.clientY, dragging = false, ghost = null, lp = 0;
+      if (e.pointerType === 'touch') lp = setTimeout(function () { if (!dragging) { b._skip = true; launch(b.dataset.id); closeRings(); refresh(); } }, 550);
+      function mv(ev) {
+        var dx = ev.clientX - x0, dy = ev.clientY - y0;
+        if (!dragging && dx * dx + dy * dy > 64) {
+          dragging = true; clearTimeout(lp);
+          ghost = b.cloneNode(true); ghost.className += ' dk-ghost'; ghost.style.left = ev.clientX + 'px'; ghost.style.top = ev.clientY + 'px';
+          document.body.appendChild(ghost); b.classList.add('dk-dragging');
+        }
+        if (dragging) { ghost.style.left = ev.clientX + 'px'; ghost.style.top = ev.clientY + 'px'; ev.preventDefault(); }
+      }
+      function up(ev) {
+        document.removeEventListener('pointermove', mv, true); document.removeEventListener('pointerup', up, true); document.removeEventListener('pointercancel', up, true);
+        clearTimeout(lp);
+        if (!dragging) return;
+        b._skip = true; ghost.remove(); b.classList.remove('dk-dragging');
+        var t = document.elementFromPoint(ev.clientX, ev.clientY); t = t && t.closest && t.closest('.dk-outer .dk-wid[data-id]');
+        if (t && t !== b) { swapOrder(key, b.dataset.id, t.dataset.id); onSwap(); }
+      }
+      document.addEventListener('pointermove', mv, true); document.addEventListener('pointerup', up, true); document.addEventListener('pointercancel', up, true);
+    });
+  }
   function openRings(cx, cy) {
     closeRings();
-    var veil = el('div', 'dk-veil'), cats = cfg.categories().filter(function (c) { return cfg.widgets().some(function (w) { return w.cat === c[0]; }); });
-    var W = window.innerWidth, H = window.innerHeight, R1 = 74, R2 = 150, pad = R2 + 40;
+    var n = nav(), veil = el('div', 'dk-veil');
+    var cats = cfg.categories().filter(function (c) { return cfg.widgets().some(function (w) { return w.cat === c[0]; }); });
+    var inner = [{ key: 'fav', label: L('favourites'), icon: IC.star }].concat(cats.map(function (c) { return { key: 'cat:' + c[0], label: c[1], icon: (n.catIcon && n.catIcon(c[0])) || IC.folder }; }));
+    if (n.openSettings || n.openTheme || n.languages) inner.push({ key: 'gear', label: L('settings'), icon: IC.gear });
+    var W = window.innerWidth, H = window.innerHeight, R1 = 70, R2 = 146, pad = R2 + 34;
     cx = Math.max(pad, Math.min(W - pad, cx)); cy = Math.max(pad, Math.min(H - pad, cy));
     veil.addEventListener('click', closeRings);
     veil.addEventListener('contextmenu', function (e) { e.preventDefault(); closeRings(); });
-    var ring = el('div', 'dk-rings'); ring.style.left = cx + 'px'; ring.style.top = cy + 'px';
-    ring.setAttribute('role', 'menu'); ring.setAttribute('aria-label', L('widgets'));
-    ring.addEventListener('click', function (e) { e.stopPropagation(); });
-    veil.appendChild(ring);
-    var hub = trayButton('dk-hub'); ring.appendChild(hub);
-    var outer = el('div', 'dk-outer'); ring.appendChild(outer);
-    function showCat(i) {
-      Array.prototype.forEach.call(ring.querySelectorAll('.dk-cat'), function (b, j) { b.classList.toggle('on', j === i); b.setAttribute('aria-expanded', String(j === i)); });
-      outer.innerHTML = '';
-      var list = cfg.widgets().filter(function (w) { return w.cat === cats[i][0]; }), mid = i * 360 / cats.length;
-      var span = Math.min(300, Math.max(90, list.length * 34)), step = list.length > 1 ? span / (list.length - 1) : 0;
-      list.forEach(function (w, k) { var b = widgetButton(w, 'dk-wid'); place(b, 0, 0, R2, mid - span / 2 + k * step); b.setAttribute('role', 'menuitem'); outer.appendChild(b); });
+    veil.addEventListener('pointerdown', function (e) { sb.ptr = e.pointerType || 'mouse'; ringIdle(); }, true);
+    veil.addEventListener('pointermove', ringIdle);
+    var rg = el('div', 'dk-rings'); rg.style.left = cx + 'px'; rg.style.top = cy + 'px';
+    rg.setAttribute('role', 'menu'); rg.setAttribute('aria-label', L('widgets'));
+    rg.addEventListener('click', function (e) { e.stopPropagation(); });
+    veil.appendChild(rg);
+    var hub = el('button', 'dk-hub', '<span class="dk-ic">' + TRAY_ICON + '</span><span class="dk-hub-name"></span>');
+    hub.type = 'button'; hub.setAttribute('aria-label', L('tray'));
+    hub.addEventListener('click', function (e) { e.stopPropagation(); closeRings(); cfg.openTray(); });
+    hub.addEventListener('mouseenter', function () { say(L('tray')); });
+    var hubName = hub.querySelector('.dk-hub-name');
+    function say(t) { hubName.textContent = t; }
+    rg.appendChild(hub);
+    var outer = el('div', 'dk-outer'); rg.appendChild(outer);
+    var current = null;
+    function tapOpen(b, label, act) {
+      b.addEventListener('mouseenter', function () { say(label); });
+      b.addEventListener('focus', function () { say(label); });
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (b._skip) { b._skip = false; return; }
+        if (sb.ptr === 'touch' && ring.armed !== b) { ring.armed = b; say(label); return; }   // first tap: the name; second: open
+        act();
+      });
     }
-    cats.forEach(function (c, i) {
-      var b = el('button', 'dk-cat', '<span>' + esc(c[1]) + '</span>'); b.type = 'button'; b.setAttribute('aria-haspopup', 'true');
-      place(b, 0, 0, R1, i * 360 / cats.length);
-      b.addEventListener('mouseenter', function () { showCat(i); });
-      b.addEventListener('focus', function () { showCat(i); });
-      b.addEventListener('click', function () { showCat(i); var f = outer.querySelector('button'); if (f) f.focus(); });
-      ring.appendChild(b);
+    function wid(w, key) {
+      var b = el('button', 'dk-wid' + (cfg.isOpen(w.id) ? ' on' : ''), '<span class="dk-ic">' + w.icon + '</span><span class="dk-lb">' + esc(w.label) + '</span>');
+      b.type = 'button'; b.dataset.id = w.id; b.setAttribute('aria-label', w.label); b.setAttribute('role', 'menuitem');
+      tapOpen(b, w.label, function () { launch(w.id); closeRings(); refresh(); });
+      ringDrag(b, key, function () { show(key); });
+      return b;
+    }
+    function action(icon, label, fn) {
+      var b = el('button', 'dk-wid', '<span class="dk-ic">' + icon + '</span><span class="dk-lb">' + esc(label) + '</span>');
+      b.type = 'button'; b.setAttribute('aria-label', label); b.setAttribute('role', 'menuitem');
+      tapOpen(b, label, function () { fn(b); });
+      return b;
+    }
+    function lay(btns, mid) {
+      var step = 24, start = mid - (btns.length - 1) * step / 2;
+      btns.forEach(function (b, k) { place(b, 0, 0, R2, start + k * step); outer.appendChild(b); });
+    }
+    function show(key) {
+      current = key; closeRingPanel(); outer.innerHTML = '';
+      var idx = 0; inner.forEach(function (it, i) { if (it.key === key) idx = i; });
+      Array.prototype.forEach.call(rg.querySelectorAll('.dk-cat'), function (b, j) { b.classList.toggle('on', j === idx); b.setAttribute('aria-expanded', String(j === idx)); });
+      var mid = idx * 360 / inner.length, btns = [];
+      if (key === 'gear') {
+        if (n.classes) btns.push(action(IC.people, n.classLabel ? n.classLabel() : L('classes'), function (b) { listPanel(L('classes'), n.classes().map(function (c) { return { label: c.label, on: c.active, icon: IC.people, act: function () { n.switchClass(c.id); updateNavRows(); } }; }), b); }));
+        if (n.openTheme) btns.push(action(IC.theme, L('theme'), function () { closeRings(); n.openTheme(); }));
+        if (n.languages) btns.push(action(IC.globe, n.langLabel ? n.langLabel() : L('language'), function (b) { listPanel(L('language'), n.languages().map(function (l) { return { label: l.label, on: l.active, code: l.code, act: function () { n.setLanguage(l.code); updateNavRows(); } }; }), b); }));
+        if (n.toggleMode) { var lt = n.isLight && n.isLight(); btns.push(action(lt ? IC.sun : IC.moon, lt ? L('light') : L('dark'), function (b) { n.toggleMode(); var now = n.isLight && n.isLight(); b.querySelector('.dk-ic').innerHTML = now ? IC.sun : IC.moon; var t = now ? L('light') : L('dark'); b.querySelector('.dk-lb').textContent = t; b.setAttribute('aria-label', t); say(t); })); }
+        if (n.openSettings) btns.push(action(IC.gear, L('settings'), function () { closeRings(); n.openSettings(); }));
+        return lay(btns, mid);
+      }
+      var list = ringList(key), cut = list.length > RING_MAX + 1 ? RING_MAX : list.length;
+      list.slice(0, cut).forEach(function (w) { btns.push(wid(w, key)); });
+      if (cut < list.length) {
+        var rest = list.slice(cut), more = el('button', 'dk-wid dk-more', '<span class="dk-more-n">+' + rest.length + '</span>');
+        var ml = L('more') + ' (' + rest.length + ')';
+        more.type = 'button'; more.setAttribute('aria-label', ml); more.setAttribute('aria-haspopup', 'true');
+        tapOpen(more, ml, function () { morePanel(key, rest, more); });
+        btns.push(more);
+      }
+      lay(btns, mid);
+    }
+    function panelAt(anchor) {
+      closeRingPanel();
+      var p = el('div', 'dk-ring-panel'); p.addEventListener('click', function (e) { e.stopPropagation(); });
+      var r = anchor.getBoundingClientRect(), x = r.right + 14, y = r.top - 140;
+      if (x + 260 > W - 8) x = r.left - 274;
+      p.style.left = Math.max(8, x) + 'px'; p.style.top = Math.max(8, Math.min(H - 360, y)) + 'px';
+      veil.appendChild(p); nodes.ringPanel = p;
+      return p;
+    }
+    function morePanel(key, rest, anchor) {
+      var p = panelAt(anchor), cat = inner.filter(function (it) { return it.key === key; })[0];
+      p.appendChild(el('p', 'dk-sb-ph', esc(cat ? cat.label : '') + ' <span class="dk-sb-count">' + rest.length + '</span>'));
+      var search = el('input', 'dk-sb-search'); search.type = 'search'; search.placeholder = L('search'); search.setAttribute('aria-label', L('search'));
+      p.appendChild(search);
+      var grid = el('div', 'dk-rp-grid'); p.appendChild(grid);
+      p.appendChild(el('p', 'dk-rp-hint', esc(L('dragHint'))));
+      function fill() {
+        var q = search.value.trim().toLowerCase(); grid.innerHTML = '';
+        var src = q ? cfg.widgets().filter(function (w) { return w.label.toLowerCase().indexOf(q) >= 0; }) : rest;
+        if (!src.length) grid.appendChild(el('p', 'dk-sb-empty', esc(L('noMatch'))));
+        src.forEach(function (w) {
+          var b = el('button', 'dk-rp-item' + (cfg.isOpen(w.id) ? ' on' : ''), '<span class="dk-ic">' + w.icon + '</span><span class="dk-lb">' + esc(w.label) + '</span>');
+          b.type = 'button'; b.dataset.id = w.id; b.title = w.label;
+          b.addEventListener('click', function (e) { e.stopPropagation(); if (b._skip) { b._skip = false; return; } launch(w.id); closeRings(); refresh(); });
+          b.addEventListener('mouseenter', function () { say(w.label); });
+          if (!q) ringDrag(b, key, function () { show(key); });
+          grid.appendChild(b);
+        });
+      }
+      fill(); search.addEventListener('input', fill); search.focus();
+    }
+    function listPanel(title, items, anchor) {
+      var p = panelAt(anchor);
+      p.appendChild(el('p', 'dk-sb-ph', esc(title)));
+      var list = el('div', 'dk-sb-list'); p.appendChild(list);
+      items.forEach(function (it) {
+        var b = el('button', 'dk-sb-item dk-pw' + (it.on ? ' on' : ''), '<span class="dk-ic' + (it.code ? ' dk-code' : '') + '">' + (it.code ? esc(it.code.toUpperCase()) : it.icon) + '</span><span class="dk-lb">' + esc(it.label) + '</span>');
+        b.type = 'button'; b.addEventListener('click', function (e) { e.stopPropagation(); it.act(); closeRings(); });
+        list.appendChild(b);
+      });
+    }
+    inner.forEach(function (it, i) {
+      var b = el('button', 'dk-cat', '<span class="dk-ic">' + it.icon + '</span>');
+      b.type = 'button'; b.setAttribute('aria-haspopup', 'true'); b.setAttribute('aria-label', it.label);
+      place(b, 0, 0, R1, i * 360 / inner.length);
+      b.addEventListener('mouseenter', function () { say(it.label); if (current !== it.key) show(it.key); });
+      b.addEventListener('focus', function () { say(it.label); if (current !== it.key) show(it.key); });
+      b.addEventListener('click', function (e) { e.stopPropagation(); say(it.label); show(it.key); var f = outer.querySelector('button'); if (f && sb.ptr !== 'touch') f.focus(); });
+      rg.appendChild(b);
     });
     document.body.appendChild(veil); nodes.rings = veil;
+    nodes.rings._show = show;
     document.addEventListener('keydown', ringKeys, true);
-    if (cats.length) showCat(0);
-    var first = ring.querySelector('.dk-cat'); if (first) first.focus();
+    if (inner.length) { show(inner[0].key); say(inner[0].label); }
+    var first = rg.querySelector('.dk-cat'); if (first && sb.ptr !== 'touch') first.focus();
+    ringIdle();
   }
   function buildLauncher() {
     var b = nodes.launcher || (nodes.launcher = el('button', 'dk-launcher', TRAY_ICON));
     b.type = 'button'; b.title = L('widgets'); b.setAttribute('aria-label', L('widgets')); b.setAttribute('aria-haspopup', 'menu');
+    b.onpointerdown = function (e) { sb.ptr = e.pointerType || 'mouse'; };
     b.onclick = function () { var r = b.getBoundingClientRect(); nodes.rings ? closeRings() : openRings(r.left + r.width / 2, r.top + r.height / 2); };
     if (!b.parentNode) document.body.appendChild(b);
   }
@@ -336,6 +508,7 @@
     e.preventDefault(); openRings(e.clientX, e.clientY);
   }
   function onDown(e) {
+    sb.ptr = e.pointerType || 'mouse';
     if (style !== 'radial' || e.pointerType !== 'touch') return;
     var x = e.clientX, y = e.clientY, t = e.target;
     press = setTimeout(function () { onContext({ target: t, clientX: x, clientY: y, preventDefault: function () {} }); }, 550);

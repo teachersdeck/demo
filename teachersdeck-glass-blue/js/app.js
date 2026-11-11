@@ -10646,10 +10646,11 @@ if(typeof DockStyle !== 'undefined'){
     labels: state.lang === 'vi'
       ? { tray:'Tất cả tiện ích', widgets:'Tiện ích', favourites:'Yêu thích', pin:'Giữ mở', unpin:'Thu gọn', classes:'Lớp', theme:'Giao diện',
           language:'Ngôn ngữ', light:'Sáng', dark:'Tối', settings:'Cài đặt', search:'Tìm tiện ích', searchClass:'Tìm lớp', searchLang:'Tìm ngôn ngữ',
-          noMatch:'Không tìm thấy', noFavs:'Nhấp chuột phải vào tiện ích để thêm vào Yêu thích' }
+          noMatch:'Không tìm thấy', noFavs:'Nhấp chuột phải vào tiện ích để thêm vào Yêu thích', more:'Thêm', dragHint:'Kéo một biểu tượng lên vòng để đổi chỗ' }
       : { tray:'All widgets', widgets:'Widgets', favourites:'Favourites', pin:'Keep open', unpin:'Let it fold', classes:'Classes', theme:'Theme',
           language:'Language', light:'Light', dark:'Dark', settings:'Settings', search:'Search widgets', searchClass:'Search classes', searchLang:'Search languages',
-          noMatch:'Nothing found', noFavs:'Right-click a widget to add it to Favourites' },
+          noMatch:'Nothing found', noFavs:'Right-click a widget to add it to Favourites', more:'More', dragHint:'Drag an icon onto the ring to swap it in' },
+    ringDefaults: { tools:['traffic','dice','namepicker','groupmaker','checklist','poll','scoreboard','exitticket'] },   // a fresh install's outer ring, before usage counts
     nav: {   // menus scope step 2: what the top bar did, inside the sidebar
       classLabel: () => classDisplayName(activeClass()),
       classes: () => classes.list.map(c => ({ id: c.id, label: classDisplayName(c), active: c.id === classes.active })),
