@@ -788,6 +788,10 @@
 :where(html[data-mode="light"]) .dd-modal{
   background:rgba(0,0,0,0.3);
 }
+:where(html[data-mode="light"]) .dd-stk-b:hover,
+:where(html[data-mode="light"]) .dd-stk-b:focus-visible{
+  background:rgba(15,23,42,0.066);
+}
 
 /* ---- css/light.extra.css (hand-written) ---- */
 /* TeachersDeck — hand-written part of css/light.css (tools/gen_light_css.py appends this file).
