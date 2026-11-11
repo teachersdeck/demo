@@ -8321,6 +8321,7 @@ function buildDockSwatches(){
       rm.appendChild(b);
     });
   }
+  buildFloatingIcons();
   // Top bar: drop down at the top edge (default for Floating, Magnifying, Circle, and Radial without docks) or always shown
   const tb = document.getElementById('topbar-mode'); if(!tb) return;
   const applies = tbDropStyle();
@@ -10889,3 +10890,36 @@ function buildIdleSwitch(){
 }
 document.getElementById('idle-clock-toggle')?.addEventListener('change', e=>{ state.idleClock = e.target.checked; saveState(); tdIdle.arm(); });
 buildIdleSwitch();
+
+/* Floating icons (Pro; menus scope, owner 11 Nov 2026): take the panel away behind a dock so its icons float on the
+   wallpaper by themselves, chosen per dock. Each icon keeps a faint backing and a soft shadow so it stays readable
+   on any background (css/premium.css, body.df-*). Without Pro the switches show a Pro badge and open the Pro window. */
+var FLOAT_PARTS = [['bottom', 'Bottom dock', 'Dock dưới'], ['sides', 'Side docks', 'Dock bên'], ['top', 'Top bar', 'Thanh trên'], ['rings', 'Rings', 'Vòng tròn']];
+function applyFloatingIcons(){
+  const f = (isPro() && state.dockFrameless) || {};
+  FLOAT_PARTS.forEach(([k]) => document.body.classList.toggle('df-' + k, !!f[k]));
+}
+function buildFloatingIcons(){
+  const box = document.getElementById('floating-icons'); if(!box || !FLOAT_PARTS) return;   // FLOAT_PARTS is set at the end of this file; the call at startup comes first
+  const vi = state.lang === 'vi', pro = isPro(), f = state.dockFrameless || {};
+  box.innerHTML = '';
+  const head = document.createElement('p'); head.className = 'drawer-label floating-head';
+  head.innerHTML = `<span></span><span class="pro-badge">Pro</span>`;
+  head.querySelector('span').textContent = vi ? 'Biểu tượng nổi (bỏ viền dock)' : 'Floating icons (no dock frame)';
+  box.appendChild(head);
+  const row = document.createElement('div'); row.className = 'topbar-mode floating-opts';
+  FLOAT_PARTS.forEach(([k, en, viL])=>{
+    const b = document.createElement('button'); b.type = 'button';
+    const on = pro && !!f[k];
+    b.className = 'topbar-mode-opt' + (on ? ' active' : '') + (pro ? '' : ' locked'); b.setAttribute('aria-pressed', on);
+    b.textContent = vi ? viL : en;
+    b.addEventListener('click', ()=>{
+      if(!isPro()){ openProModal(); return; }
+      state.dockFrameless = Object.assign({}, state.dockFrameless, { [k]: !f[k] });
+      saveState(); applyFloatingIcons(); buildFloatingIcons();
+    });
+    row.appendChild(b);
+  });
+  box.appendChild(row);
+}
+applyFloatingIcons(); buildFloatingIcons();
