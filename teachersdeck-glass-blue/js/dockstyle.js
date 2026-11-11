@@ -43,7 +43,7 @@
   function decorateDock() {
     var dock = document.getElementById('dock'); if (!dock) return;
     if (observer) observer.disconnect();
-    var items = dock.querySelectorAll('.dock-item[data-id]');   // widgets only: the tray button is never one of the nine (fix from glass-blue-drag)
+    var items = dock.querySelectorAll('.dock-item[data-id]');   // widget icons only: the tray button (and a drag's placeholder) never count toward the 9
     for (var i = 0; i < items.length; i++) items[i].classList.toggle('dk-over', i >= MAX_DOCK);
     var t = dock.querySelector('.dk-tray-btn');
     if (!t) { t = trayButton('dock-item dk-tray-btn'); dock.appendChild(t); } else dock.appendChild(t);   // keep it last
