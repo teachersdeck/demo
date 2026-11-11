@@ -30,7 +30,7 @@ const SHELL_I18N = {
   emoji_section: {"en":"Widget icons","vi":"Biểu tượng widget"},
   show_emojis_label: {"en":"Show emoji icons","vi":"Hiện biểu tượng cảm xúc"},
   dock_buttons: {"en":"Dock buttons","vi":"Nút trên thanh dock","es":"Botones del dock","fr":"Boutons du dock","zh":"底部工具栏按钮","ja":"ドックのボタン","ko":"독 버튼","tl":"Mga Button sa Dock"},
-  dock_buttons_hint: {"en":"Choose where each widget’s launcher lives — bottom dock, a side drawer, or hidden","vi":"Chọn nơi hiển thị nút mở từng widget — thanh dock dưới, ngăn hai bên, hoặc ẩn"},
+  dock_buttons_hint: {"en":"Choose where each widget’s launcher lives — bottom dock, a side drawer, or hidden. You can also drag the buttons themselves.","vi":"Chọn nơi hiển thị nút mở từng widget — thanh dock dưới, ngăn hai bên, hoặc ẩn. Bạn cũng có thể kéo thả trực tiếp các nút."},
   drawers_section: {"en":"Side drawers","vi":"Ngăn hai bên"},
   drawer_left_visible_label: {"en":"Show left drawer","vi":"Hiện ngăn bên trái"},
   drawer_right_visible_label: {"en":"Show right drawer","vi":"Hiện ngăn bên phải"},

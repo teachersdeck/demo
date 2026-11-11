@@ -1950,7 +1950,11 @@ const WIDGET_CAT = { timer: 'study', todo: 'study', reading: 'study', notes: 'st
 if (UNI) (window.UNI_WIDGETS || []).forEach(w => { WIDGET_CAT[w.id] = w.cat || 'cloud'; });   // UniDeck's course widgets
 const CATEGORIES = [['study', V('Study', 'Học tập')], ['language', V('Language', 'Ngôn ngữ')], ['me', U(V('Me & fun', 'Tôi & giải trí'), V('Me', 'Tôi'))], ['cloud', U(V('Class', 'Lớp'), V('Courses', 'Khóa học'))]];
 
-const widgetsFor = loc => WIDGETS.filter(w => state.dockPlacement[w.id] === loc).slice(0, DOCK_CAPS[loc] || 99);   // a dock never shows more than its cap; the rest stay reachable in the tray
+function widgetsFor(loc) {                            // a dock never shows more than its cap; the rest stay reachable in the tray
+  // the order the student dragged the icons into comes first (js/dockdrag.js), before the cap; the rest keep the usual order
+  const order = (state.dockOrder || {})[loc] || [], at = id => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+  return WIDGETS.filter(w => state.dockPlacement[w.id] === loc).sort((a, b) => at(a.id) - at(b.id)).slice(0, DOCK_CAPS[loc] || 99);
+}
 const placementCount = loc => widgetsFor(loc).length;
 function ensureDockPlacement() {                       // first run, and any widget added in a later version: default launcher (or hidden if that dock is full)
   let changed = false;
@@ -2019,7 +2023,7 @@ function buildLockedControls() {                       // everything the mode lo
   left.onchange = e => { state.edgeDock.left.visible = e.target.checked; save(); rebuildAllDocks(); };
   right.onchange = e => { state.edgeDock.right.visible = e.target.checked; save(); rebuildAllDocks(); };
   const auto = $('#dock-autohide-toggle'); auto.checked = !!state.dockAutoHide; auto.onchange = e => { state.dockAutoHide = e.target.checked; save(); buildDock(); };
-  buildDockPlacementList(locked);
+  buildDockPlacementList(false);   // placing launchers works in every mode (v0.26.0), as dragging them does
 }
 function buildDockPlacementList(locked) {
   const box = $('#dock-vis-list'); box.innerHTML = ''; $('#dock-buttons-lock-hint').hidden = !locked;
@@ -2055,6 +2059,25 @@ $('#app-tray-handle').addEventListener('click', closeAppTray);
 $('#app-tray-backdrop').addEventListener('click', e => { if (e.target.id === 'app-tray-backdrop') closeAppTray(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#app-tray-backdrop').hidden) closeAppTray(); else if (!settingsDrawer.hidden) closeSettings(); } });
 ensureDockPlacement(); rebuildAllDocks(); buildLayoutModeSelector(); buildLockedControls();
+/* Dragging launchers (js/dockdrag.js, the same file in every suite app): a dock icon to another place or dock, a tray icon onto a
+   dock, a dock icon onto the tray tab (off the docks). Saved once, on drop. An empty drawer is hidden, so while dragging, the
+   drawers the layout mode shows come back as drop targets. */
+if (window.DockDrag) DockDrag.init({
+  zones: { bottom: '#dock', left: '#dock-left-items', right: '#dock-right-items' },
+  item: '.dock-item[data-id]', caps: DOCK_CAPS,
+  tray: { grid: '#app-tray-grid', item: '.app-tray-item[data-id]', tab: '#app-tray-tab' },
+  move(id, loc, ids) {
+    const from = state.dockPlacement[id], order = state.dockOrder = state.dockOrder || {};
+    state.dockPlacement[id] = loc;
+    if (from && from !== loc && order[from]) order[from] = order[from].filter(x => x !== id);
+    if (ids) order[loc] = ids;
+    save(); rebuildAllDocks(); buildDockPlacementList(false);
+  },
+  full: loc => toast(V(PLACE_LABEL[loc] + ' is full (' + DOCK_CAPS[loc] + ' max)', PLACE_LABEL[loc] + ' đã đầy (tối đa ' + DOCK_CAPS[loc] + ')')),
+  closeTray: closeAppTray, openTray: openAppTray,
+  onStart: () => ['left', 'right'].forEach(sd => { if (effectiveSideVisible(sd)) $('#dock-' + sd).hidden = false; }),
+  onEnd: () => { buildSideDock('left'); buildSideDock('right'); },
+});
 $('#ver').textContent = 'v' + VERSION;
 
 /* New-tab pages: several can be open at once and every save writes the whole state, so

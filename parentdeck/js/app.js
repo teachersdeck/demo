@@ -64,7 +64,7 @@ const STRINGS = {
   lay_custom:  { en:'Custom', vi:'Tùy chỉnh' },
   lay_custom_d:{ en:'Pick each widget’s dock and switch the drawers on or off yourself', vi:'Tự chọn dock cho từng widget và bật/tắt các ngăn bên' },
   lay_buttons: { en:'Dock buttons', vi:'Nút trên dock' },
-  lay_buttons_hint:{ en:'Choose where each widget’s launcher lives', vi:'Chọn nơi đặt nút mở của từng widget' },
+  lay_buttons_hint:{ en:'Choose where each widget’s launcher lives. You can also drag the buttons themselves.', vi:'Chọn nơi đặt nút mở của từng widget. Bạn cũng có thể kéo thả trực tiếp các nút.' },
   lay_locked:  { en:'Set by the layout mode above — switch to Custom to control this yourself', vi:'Do chế độ bố cục ở trên quy định — chuyển sang Tùy chỉnh để tự điều chỉnh' },
   lay_drawers: { en:'Side drawers', vi:'Ngăn bên' },
   lay_left:    { en:'Show left drawer', vi:'Hiện ngăn bên trái' },
@@ -1730,7 +1730,11 @@ if (KINDER) (window.KINDER_WIDGETS || []).forEach(w => { DEFAULT_PLACEMENT[w.id]
 const TRAY_CATS = ['overview', 'homework', 'rewards', 'share', 'settings'];
 
 const isVisible = w => !w.show || w.show();                      // Family Overview only exists with two or more linked children
-const widgetsFor = loc => WIDGETS.filter(w => !w.bar && ui.dockPlacement[w.id] === loc && isVisible(w)).slice(0, DOCK_CAPS[loc] || 99);   // bar: launched from the top bar instead (Theme)   // a dock never shows more than its cap
+function widgetsFor(loc) {                                     // bar: launched from the top bar instead (Theme); a dock never shows more than its cap
+  // the order the parent dragged the icons into comes first (js/dockdrag.js), before the cap; the rest keep the usual order
+  const order = (ui.dockOrder || {})[loc] || [], at = id => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+  return WIDGETS.filter(w => !w.bar && ui.dockPlacement[w.id] === loc && isVisible(w)).sort((a, b) => at(a.id) - at(b.id)).slice(0, DOCK_CAPS[loc] || 99);
+}
 const placementCount = loc => widgetsFor(loc).length;
 function ensureDockPlacement() {                                  // first run, and any widget added in a later version: its default launcher (or hidden if that dock is full)
   let changed = false;
@@ -1823,8 +1827,7 @@ function renderLayoutSettings(host) {
     <h4 style="margin-top:0">${esc(t('lay_title'))}</h4><p class="muted">${esc(t('lay_hint'))}</p>
     <div class="layout-mode-grid">${LAYOUT_MODES.map(m => `<button type="button" class="layout-mode-opt${ui.layoutMode === m ? ' active' : ''}" data-mode="${m}"><span class="layout-mode-name">${esc(t('lay_' + m))}</span><span class="layout-mode-desc">${esc(t('lay_' + m + '_d'))}</span></button>`).join('')}</div>
     <h4>${esc(t('lay_buttons'))}</h4><p class="muted" style="margin:0 0 6px">${esc(t('lay_buttons_hint'))}</p>
-    ${locked ? `<p class="muted lock-hint">${esc(t('lay_locked'))}</p>` : ''}
-    <div class="dock-vis-list">${WIDGETS.filter(w => isVisible(w) && !w.bar).map(w => `<div class="dock-vis-row placement-row${locked ? ' locked' : ''}"><span>${esc(t(w.titleKey))}</span><select data-place="${w.id}" ${locked ? 'disabled' : ''} aria-label="${esc(t(w.titleKey))}">${PLACES.map(pl => `<option value="${pl}" ${(ui.dockPlacement[w.id] || 'hidden') === pl ? 'selected' : ''}>${esc(t('place_' + pl))}</option>`).join('')}</select></div>`).join('')}</div>
+    <div class="dock-vis-list">${WIDGETS.filter(w => isVisible(w) && !w.bar).map(w => `<div class="dock-vis-row placement-row"><span>${esc(t(w.titleKey))}</span><select data-place="${w.id}" aria-label="${esc(t(w.titleKey))}">${PLACES.map(pl => `<option value="${pl}" ${(ui.dockPlacement[w.id] || 'hidden') === pl ? 'selected' : ''}>${esc(t('place_' + pl))}</option>`).join('')}</select></div>`).join('')}</div>
     <h4>${esc(t('lay_drawers'))}</h4>
     ${['left', 'right'].map(sd => `<label class="switch-row${locked ? ' locked' : ''}"><span>${esc(t('lay_' + sd))}</span><input type="checkbox" data-drawer="${sd}" ${effectiveSideVisible(sd) ? 'checked' : ''} ${locked ? 'disabled' : ''}></label>`).join('')}
     ${locked ? `<p class="muted lock-hint">${esc(t('lay_locked'))}</p>` : ''}
@@ -1847,6 +1850,27 @@ function renderLayoutSettings(host) {
 }
 
 ensureDockPlacement(); rebuildAllDocks();
+/* Dragging launchers (js/dockdrag.js, the same file in every suite app): a dock icon to another place or dock, a tray icon onto a
+   dock, a dock icon onto the tray tab (off the docks). Saved once, on drop; Settings' Layout section redraws if it is open. An
+   empty drawer is hidden, so while dragging, the drawers the layout mode shows come back as drop targets. Placing launchers works
+   in every layout mode (v0.28.0); the mode only decides which drawers are shown. */
+if (window.DockDrag) DockDrag.init({
+  zones: { bottom: '#dock', left: '#dock-left-items', right: '#dock-right-items' },
+  item: '.dock-item[data-id]', caps: DOCK_CAPS,
+  tray: { grid: '#app-tray-grid', item: '.app-tray-item[data-id]', tab: '#app-tray-tab' },
+  move(id, loc, ids) {
+    const from = ui.dockPlacement[id], order = ui.dockOrder = ui.dockOrder || {};
+    ui.dockPlacement[id] = loc;
+    if (from && from !== loc && order[from]) order[from] = order[from].filter(x => x !== id);
+    if (ids) order[loc] = ids;
+    saveUI(); rebuildAllDocks();
+    const host = document.getElementById('st-layout'); if (host) renderLayoutSettings(host);
+  },
+  full: loc => toast(t('place_full', { place: t('place_' + loc), n: DOCK_CAPS[loc] })),
+  closeTray: closeAppTray, openTray: openAppTray,
+  onStart: () => ['left', 'right'].forEach(sd => { if (effectiveSideVisible(sd)) $('#dock-' + sd).hidden = false; }),
+  onEnd: () => { buildSideDock('left'); buildSideDock('right'); },
+});
 $('#app-tray-tab').addEventListener('click', () => $('#app-tray-backdrop').hidden ? openAppTray() : closeAppTray());
 $('#app-tray-handle').addEventListener('click', closeAppTray);
 $('#app-tray-backdrop').addEventListener('click', e => { if (e.target.id === 'app-tray-backdrop') closeAppTray(); });
