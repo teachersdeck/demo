@@ -8242,6 +8242,7 @@ function applyTdDock(){
   if(typeof DockStyle === 'undefined') return;
   const it = tdDockItems().find(d=>d.style === state.dockStyle);
   DockStyle.apply(it ? it.style : 'standard', it || null);
+  if(typeof applyTopBarMode === 'function') applyTopBarMode();
 }
 function buildDockSwatches(){
   const grid = document.getElementById('dock-styles'); if(!grid) return;
@@ -8258,6 +8259,18 @@ function buildDockSwatches(){
     b.querySelector('.dock-style-name').textContent = o.name[vi ? 'vi' : 'en'] || o.name.en;
     b.addEventListener('click', ()=>{ state.dockStyle = o.style; saveState(); applyTdDock(); buildDockSwatches(); });
     grid.appendChild(b);
+  });
+  // Top bar: drop down at the top edge (default for Floating, Magnifying, Circle) or always shown
+  const tb = document.getElementById('topbar-mode'); if(!tb) return;
+  const applies = (TOPBAR_DROP_STYLES || []).includes(state.dockStyle);
+  tb.hidden = !applies;
+  tb.innerHTML = '';
+  [['drop', vi ? 'Thả xuống ở mép trên' : 'Drop down at the top edge'], ['shown', vi ? 'Luôn hiện' : 'Always shown']].forEach(([k, label])=>{
+    const b = document.createElement('button'); b.type = 'button';
+    const on = (state.topBarMode === 'shown' ? 'shown' : 'drop') === k;
+    b.className = 'topbar-mode-opt' + (on ? ' active' : ''); b.setAttribute('aria-pressed', on); b.textContent = label;
+    b.addEventListener('click', ()=>{ state.topBarMode = k; saveState(); applyTopBarMode(); buildDockSwatches(); });
+    tb.appendChild(b);
   });
 }
 
@@ -10636,3 +10649,62 @@ if(typeof DockStyle !== 'undefined'){
   });
   applyTdDock();
 }
+
+/* TEST (branch glass-blue-test), menus scope step 1: the top bar (#dock-top: class, language, theme, Light / Dark,
+   Settings) stays reachable with every dock style. Floating, Magnifying and Circle tuck it away; it drops down when the
+   pointer rests on the top 6 px for 120 ms, closes 600 ms after the pointer leaves (or with Esc), stays down while the
+   class list is open or focus is inside it. Touchscreens get a pull handle at the top centre; Tab opens it.
+   Theme → Dock → Top bar: "Always shown" keeps it visible. Sidebar hides it (its contents move into the sidebar);
+   Standard and Radial keep it as before. */
+var TOPBAR_DROP_STYLES = ['float', 'magnify', 'circle'];
+var topBar = (function(){
+  let edge = null, handle = null, openT = 0, closeT = 0;
+  const bar = () => document.getElementById('dock-top');
+  const isDrop = () => document.body.classList.contains('tb-drop');
+  const menuOpen = () => { const m = document.getElementById('class-menu'); return !!(m && !m.hidden); };
+  function open(){ clearTimeout(closeT); document.body.classList.add('tb-open'); }
+  function close(force){
+    clearTimeout(openT);
+    const b = bar();
+    if(!force && (menuOpen() || (b && b.contains(document.activeElement)))) return;
+    document.body.classList.remove('tb-open');
+  }
+  function laterClose(){ clearTimeout(closeT); closeT = setTimeout(()=>close(false), 600); }
+  function build(){
+    if(edge) return;
+    edge = document.createElement('div'); edge.id = 'tb-edge'; edge.setAttribute('aria-hidden', 'true');
+    edge.addEventListener('mouseenter', ()=>{ if(!isDrop()) return; clearTimeout(openT); openT = setTimeout(open, 120); });
+    edge.addEventListener('mouseleave', ()=>{ clearTimeout(openT); if(!document.body.classList.contains('tb-open')) return; laterClose(); });
+    handle = document.createElement('button'); handle.id = 'tb-handle'; handle.type = 'button';
+    handle.setAttribute('aria-label', state.lang === 'vi' ? 'Mở thanh trên cùng' : 'Show the top bar');
+    handle.addEventListener('click', ()=>{ document.body.classList.contains('tb-open') ? close(true) : open(); });
+    let y0 = null;
+    handle.addEventListener('touchstart', e=>{ y0 = e.touches[0].clientY; }, { passive:true });
+    handle.addEventListener('touchmove', e=>{ if(y0 !== null && e.touches[0].clientY - y0 > 16){ open(); y0 = null; } }, { passive:true });
+    document.body.appendChild(edge); document.body.appendChild(handle);
+    const b = bar();
+    if(b){
+      b.addEventListener('mouseenter', ()=>{ if(isDrop()) clearTimeout(closeT); });
+      b.addEventListener('mouseleave', ()=>{ if(isDrop()) laterClose(); });
+      b.addEventListener('focusin', ()=>{ if(isDrop()) open(); });
+      b.addEventListener('focusout', ()=>{ if(isDrop()) laterClose(); });
+    }
+    document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && isDrop() && document.body.classList.contains('tb-open') && !menuOpen()) close(true); });
+    document.addEventListener('pointerdown', e=>{   // a tap elsewhere folds it (touch has no "pointer leaves")
+      if(!isDrop() || !document.body.classList.contains('tb-open')) return;
+      const b = bar(); if((b && b.contains(e.target)) || e.target === handle || menuOpen()) return;
+      close(true);
+    });
+  }
+  return { build, close };
+})();
+function applyTopBarMode(){
+  const s = state.dockStyle || 'standard';
+  const dropStyle = (TOPBAR_DROP_STYLES || ['float','magnify','circle']).includes(s);
+  const drop = dropStyle && state.topBarMode !== 'shown';
+  document.body.classList.toggle('tb-drop', drop);
+  document.body.classList.toggle('tb-keep', dropStyle && !drop);
+  if(!topBar) return;   // called by applyTdDock() before this part of the file has run; the call below catches up
+  if(drop) topBar.build(); else topBar.close(true);
+}
+applyTopBarMode();

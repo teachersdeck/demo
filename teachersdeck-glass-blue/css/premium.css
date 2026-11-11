@@ -100,6 +100,31 @@ html[data-td-theme="glass-blue"]:not([data-mode="light"]) body{ --dk-bg:rgba(8,3
 .dock-style-opt.active .dock-style-sw{ border-color:var(--amber); }
 .dock-style-opt.active{ color:var(--text-hi); }
 
+/* Top bar with the new docks (menus scope step 1; js/app.js applyTopBarMode). css/dockstyle.css hides every
+   .edge-dock for Floating, Magnifying, Circle; the top bar comes back, tucked (tb-drop) or always shown (tb-keep). */
+html:not(.bento-phone) body:is(.tb-drop,.tb-keep) #dock-top.edge-dock:not([hidden]){ display:block !important; }
+html:not(.bento-phone) body.tb-drop #dock-top.edge-dock{
+  transform:translateY(calc(-100% - 14px)); transition:transform .22s ease, box-shadow .22s ease; box-shadow:none;
+}
+html:not(.bento-phone) body.tb-drop.tb-open #dock-top.edge-dock{ transform:none; box-shadow:var(--shadow-panel); }
+#tb-edge{ display:none; position:fixed; left:0; right:0; top:0; height:6px; z-index:7; }
+#tb-handle{
+  display:none; position:fixed; top:4px; left:50%; transform:translateX(-50%); z-index:7;
+  width:56px; height:20px; padding:0; border:0; background:transparent; cursor:pointer;
+}
+#tb-handle::before{
+  content:""; position:absolute; left:8px; right:8px; top:4px; height:5px; border-radius:3px;
+  background:var(--text-lo); opacity:.7;
+}
+html:not(.bento-phone) body.tb-drop #tb-edge{ display:block; }
+html:not(.bento-phone) body.tb-drop.tb-open #tb-edge{ display:none; }
+@media (pointer:coarse){ html:not(.bento-phone) body.tb-drop:not(.tb-open) #tb-handle{ display:block; } }
+@media (prefers-reduced-motion:reduce){ html:not(.bento-phone) body.tb-drop #dock-top.edge-dock{ transition:none; } }
+.topbar-mode{ display:flex; gap:6px; margin:-8px 0 20px; }
+.topbar-mode[hidden]{ display:none; }
+.topbar-mode-opt{ flex:1; padding:7px 8px; border-radius:9px; border:1px solid var(--line); background:transparent; color:var(--text-lo); cursor:pointer; font:600 11.5px 'Quicksand',sans-serif; }
+.topbar-mode-opt.active{ border-color:var(--amber); color:var(--text-hi); background:rgba(255,255,255,.06); }
+
 /* The swatch grid marks premium themes with a star */
 .swatch.premium{ position:relative; }
 .swatch.premium::after{
