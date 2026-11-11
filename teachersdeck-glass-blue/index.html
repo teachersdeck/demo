@@ -120,8 +120,13 @@
       <p class="drawer-label" data-i18n="mode_title">Mode</p>
       <div id="mode-switch"></div>
 
+      <p class="drawer-label">Theme</p>   <!-- TEST polish phase 2: Theme and Background are two settings -->
+      <div class="ui-theme-grid" id="ui-themes"></div>
+
       <p class="drawer-label" data-i18n="backgrounds">Backgrounds</p>
       <div class="swatch-grid" id="theme-presets"></div>
+      <div class="bg-photo-state" id="bg-photo-state" hidden><span class="bg-photo-text">Using your image</span><button type="button" class="bg-photo-reset" id="bg-photo-reset">Use a background instead</button></div>
+      <label class="switch-row" id="photo-tint-row" hidden><span>Tint my image</span><input type="checkbox" id="photo-tint-toggle"></label>
 
       <p class="drawer-label">Dock</p>   <!-- TEST: Item Store dock styles -->
       <div class="dock-style-grid" id="dock-styles"></div>

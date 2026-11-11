@@ -2486,7 +2486,7 @@ function tdPremiumSet(themeId){
   }
   return tdPremiumCache[themeId] || null;
 }
-function premiumSkins(){ return (!state.customBg && state.theme === 'glass-blue') ? tdPremiumSet('glass-blue') : null; }
+function premiumSkins(){ return state.uiTheme === 'glass-blue' ? tdPremiumSet('glass-blue') : null; }   // polish phase 2: the Theme alone decides (a photo behind it keeps it)
 const reduceMotionNow = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 function refreshSkinnedWidgets(){ ['clock','traffic','noise'].forEach(id=>{ if(widgetEls[id]) rerenderWidget(id); }); }
 
@@ -8160,9 +8160,18 @@ const PRESETS = [
 ];
 const presetBg = p => (p.light && document.documentElement.dataset.mode === 'light') ? p.light
   : (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
-// ?theme=glass-blue opens the app in that theme (for testing the demo)
+/* Polish phase 2 (TEST): Theme and Background are two settings.
+   state.uiTheme   'classic' | a premium theme id ('glass-blue'): colours, drawings in Clock / Noise Meter / Traffic Light
+   state.bgTheme   true = the premium theme's own background; false = the preset in state.theme
+   state.customBg  true = your own image (as before; it wins over both)
+   state.photoTint true = wash your image with the theme's colour (offered with a premium theme over a photo; off by default) */
+const PREMIUM_THEMES = PRESETS.filter(p => p.premium);
+if(state.theme && PREMIUM_THEMES.some(p => p.id === state.theme)){ state.uiTheme = state.theme; state.theme = 'dusk'; state.bgTheme = true; }   // saves from the first test build
+if(!state.uiTheme || (state.uiTheme !== 'classic' && !PREMIUM_THEMES.some(p => p.id === state.uiTheme))) state.uiTheme = 'classic';
+// ?theme=glass-blue opens the app in that theme (for testing the demo); your own background, if you have one, stays
 { const q = new URLSearchParams(location.search).get('theme');
-  if(q && PRESETS.some(p=>p.id===q && p.premium)){ state.theme = q; state.customBg = false; state.premiumFace = null; if(state.noiseMeter) state.noiseMeter.style = 'skin'; } }
+  if(q && PREMIUM_THEMES.some(p=>p.id===q) && state.uiTheme !== q){ state.uiTheme = q; if(!state.customBg) state.bgTheme = true; state.premiumFace = null; if(state.noiseMeter) state.noiseMeter.style = 'skin'; } }
+const premiumTheme = () => PREMIUM_THEMES.find(p => p.id === state.uiTheme) || null;
 
 const bgLayer = document.getElementById('bg-layer');
 const bgOverlay = document.getElementById('bg-overlay');
@@ -8176,14 +8185,17 @@ let logoImgEl = null;
 let sessionBgUrl = null;
 
 function paintPreset(){
-  const p = PRESETS.find(p=>p.id===state.theme) || PRESETS[0];
+  const pt = premiumTheme();
+  const p = (pt && state.bgTheme) ? pt : (PRESETS.find(p=>p.id===state.theme && !p.premium) || PRESETS[0]);
   bgLayer.style.background = presetBg(p);
   bgLayer.style.backgroundSize = 'cover';
 }
 
 function applyTheme(){
-  const prem = (!sessionBgUrl && !state.customBg && (PRESETS.find(p=>p.id===state.theme)||{}).premium) ? state.theme : '';
-  if(prem) document.documentElement.dataset.tdTheme = prem; else delete document.documentElement.dataset.tdTheme;
+  const root = document.documentElement, pt = premiumTheme(), photo = !!(sessionBgUrl || state.customBg);
+  if(pt) root.dataset.tdTheme = pt.id; else delete root.dataset.tdTheme;
+  root.dataset.tdBg = photo ? 'image' : (pt && state.bgTheme ? 'theme' : 'preset');   // css/premium.css: stronger glass over a photo
+  if(pt && photo && state.photoTint) root.dataset.tdTint = '1'; else delete root.dataset.tdTint;
   if(sessionBgUrl){
     bgLayer.style.background = `center/cover no-repeat url(${sessionBgUrl})`;
   } else if(state.customBg){
@@ -8274,26 +8286,70 @@ function buildDockSwatches(){
   });
 }
 
+function setUiTheme(id){
+  const was = premiumSkins();
+  state.uiTheme = id;
+  const pt = premiumTheme();
+  if(pt){ if(!state.customBg && !sessionBgUrl) state.bgTheme = true; state.premiumFace = null; if(state.noiseMeter) state.noiseMeter.style = 'skin'; }
+  else state.bgTheme = false;
+  saveState(); applyTheme(); buildPresetSwatches();
+  if(was || premiumSkins()) refreshSkinnedWidgets();
+}
+function useBackground(kind, presetId){   // kind: 'theme' (the premium theme's own) | 'preset'
+  if(sessionBgUrl){ URL.revokeObjectURL(sessionBgUrl); sessionBgUrl = null; }
+  state.customBg = false;
+  state.bgTheme = kind === 'theme';
+  if(kind === 'preset') state.theme = presetId;
+  saveState(); applyTheme(); buildPresetSwatches();
+}
 function buildPresetSwatches(){
   buildDockSwatches();
+  const vi = state.lang === 'vi', pt = premiumTheme(), photo = !!(state.customBg || sessionBgUrl);
+  // Theme row: Classic + the premium themes
+  const tg = document.getElementById('ui-themes');
+  if(tg){
+    tg.innerHTML = '';
+    [{ id:'classic', name: vi ? 'Cổ điển' : 'Classic', css: presetBg(PRESETS[0]) }].concat(PREMIUM_THEMES.map(p => ({ id:p.id, name:p.name, css:p.css, premium:true }))).forEach(o=>{
+      const b = document.createElement('button'); b.type = 'button';
+      const on = state.uiTheme === o.id;
+      b.className = 'ui-theme-opt' + (on ? ' active' : '') + (o.premium ? ' premium' : '');
+      b.setAttribute('aria-pressed', on);
+      b.innerHTML = '<span class="ui-theme-sw"></span><span class="ui-theme-name"></span>';
+      b.querySelector('.ui-theme-sw').style.background = o.css;
+      b.querySelector('.ui-theme-name').textContent = o.name;
+      b.addEventListener('click', ()=> setUiTheme(o.id));
+      tg.appendChild(b);
+    });
+  }
+  // Background row: the theme's own background (premium themes only), then the six presets; your image is the upload below
   const grid = document.getElementById('theme-presets');
   grid.innerHTML = '';
-  PRESETS.forEach(p=>{
+  const opts = (pt ? [{ kind:'theme', p:pt, title: vi ? 'Nền của giao diện' : "Theme's background" }] : [])
+    .concat(PRESETS.filter(p=>!p.premium).map(p=>({ kind:'preset', p, title:p.id })));
+  opts.forEach(o=>{
     const sw = document.createElement('div');
-    sw.className = 'swatch' + (p.premium ? ' premium' : '') + ((!state.customBg && !sessionBgUrl && state.theme===p.id) ? ' active' : '');
-    sw.style.background = presetBg(p);
-    sw.title = p.name || p.id;
-    sw.addEventListener('click', ()=>{
-      const was = premiumSkins();
-      state.theme = p.id; state.customBg = false;
-      if(sessionBgUrl){ URL.revokeObjectURL(sessionBgUrl); sessionBgUrl = null; }
-      if(p.premium){ state.premiumFace = null; if(state.noiseMeter) state.noiseMeter.style = 'skin'; }
-      saveState(); applyTheme(); buildPresetSwatches();
-      if(was || premiumSkins()) refreshSkinnedWidgets();
-    });
+    const on = !photo && (o.kind === 'theme' ? (pt && state.bgTheme) : (!(pt && state.bgTheme) && state.theme === o.p.id));
+    sw.className = 'swatch' + (o.kind === 'theme' ? ' premium theme-bg' : '') + (on ? ' active' : '');
+    sw.style.background = presetBg(o.p);
+    sw.title = o.title;
+    sw.addEventListener('click', ()=> useBackground(o.kind, o.p.id));
     grid.appendChild(sw);
   });
+  // "Your image" status + the tint switch (a premium theme over your photo)
+  const st = document.getElementById('bg-photo-state');
+  if(st){
+    st.hidden = !photo;
+    st.querySelector('.bg-photo-text').textContent = vi ? 'Đang dùng ảnh của bạn' : 'Using your image';
+  }
+  const tint = document.getElementById('photo-tint-row');
+  if(tint){
+    tint.hidden = !(pt && photo);
+    const cb = tint.querySelector('input'); cb.checked = !!state.photoTint;
+    tint.querySelector('span').textContent = vi ? `Phủ màu ${pt ? pt.name : ''} lên ảnh` : `Tint my image ${pt ? pt.name : ''}`;
+  }
 }
+document.getElementById('photo-tint-toggle')?.addEventListener('change', e=>{ state.photoTint = e.target.checked; saveState(); applyTheme(); });
+document.getElementById('bg-photo-reset')?.addEventListener('click', ()=> useBackground(premiumTheme() ? 'theme' : 'preset', state.theme && !PRESETS.find(p=>p.id===state.theme)?.premium ? state.theme : 'dusk'));
 
 document.querySelector('label[for="bg-upload"]').addEventListener('click', e=>{
   if(!isPro()){ e.preventDefault(); openProModal('bg'); }
@@ -8414,7 +8470,7 @@ async function applyAdminTheme(classId, th){
     state.activeBgId = bgIdForClass(); state.customBg = true;
   } else {
     if(sessionBgUrl){ URL.revokeObjectURL(sessionBgUrl); sessionBgUrl = null; }
-    state.theme = th.preset; state.customBg = false;
+    state.theme = th.preset; state.customBg = false; state.bgTheme = false;   // a school's background is a Background: the teacher's Theme stays
   }
   if(typeof th.dim === 'boolean') state.dim = th.dim;
   state.adminThemeSeen[classId] = version;
