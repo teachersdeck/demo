@@ -8299,12 +8299,31 @@ function buildDockSwatches(){
     b.innerHTML = `<span class="dock-style-sw"></span><span class="dock-style-name"></span>`;
     b.querySelector('.dock-style-sw').style.background = o.swatch || '#1e2732';
     b.querySelector('.dock-style-name').textContent = o.name[vi ? 'vi' : 'en'] || o.name.en;
-    b.addEventListener('click', ()=>{ state.dockStyle = o.style; saveState(); applyTdDock(); buildDockSwatches(); });
+    b.addEventListener('click', ()=>{
+      state.dockStyle = o.style; saveState(); applyTdDock(); buildDockSwatches();
+      if(o.style === 'radial' && !state.radialHintSeen){   // one time: how to open the rings
+        state.radialHintSeen = true; saveState();
+        toast(vi ? 'Nhấp chuột phải vào chỗ trống (hoặc nhấn giữ trên màn hình cảm ứng) để mở tiện ích.' : 'Right-click an empty part of the screen (or long-press on a touchscreen) to open your widgets.', 7000);
+      }
+    });
     grid.appendChild(b);
   });
-  // Top bar: drop down at the top edge (default for Floating, Magnifying, Circle) or always shown
+  // With Radial (owner 11 Nov 2026): the rings hold every widget and the gear holds settings, so the docks can go
+  const rm = document.getElementById('radial-mode');
+  if(rm){
+    rm.hidden = state.dockStyle !== 'radial';
+    rm.innerHTML = '';
+    const cur = ['off','compact','keep'].includes(state.radialDocks) ? state.radialDocks : 'off';
+    [['off', vi ? 'Tắt dock' : 'Docks off'], ['compact', vi ? 'Dock gọn' : 'Compact dock'], ['keep', vi ? 'Giữ dock' : 'Keep docks']].forEach(([k, label])=>{
+      const b = document.createElement('button'); b.type = 'button';
+      b.className = 'topbar-mode-opt' + (cur === k ? ' active' : ''); b.setAttribute('aria-pressed', cur === k); b.textContent = label;
+      b.addEventListener('click', ()=>{ state.radialDocks = k; saveState(); applyTopBarMode(); buildDockSwatches(); });
+      rm.appendChild(b);
+    });
+  }
+  // Top bar: drop down at the top edge (default for Floating, Magnifying, Circle, and Radial without docks) or always shown
   const tb = document.getElementById('topbar-mode'); if(!tb) return;
-  const applies = (TOPBAR_DROP_STYLES || []).includes(state.dockStyle);
+  const applies = tbDropStyle();
   tb.hidden = !applies;
   tb.innerHTML = '';
   [['drop', vi ? 'Thả xuống ở mép trên' : 'Drop down at the top edge'], ['shown', vi ? 'Luôn hiện' : 'Always shown']].forEach(([k, label])=>{
@@ -10809,9 +10828,16 @@ var topBar = (function(){
   }
   return { build, close };
 })();
+function radialDocks(){ return ['off','compact','keep'].includes(state.radialDocks) ? state.radialDocks : 'off'; }
+function tbDropStyle(){   // a dock style whose top bar tucks away: Floating, Magnifying, Circle, and Radial unless it keeps the docks
+  const s = state.dockStyle || 'standard';
+  return (TOPBAR_DROP_STYLES || ['float','magnify','circle']).includes(s) || (s === 'radial' && radialDocks() !== 'keep');
+}
 function applyTopBarMode(){
   const s = state.dockStyle || 'standard';
-  const dropStyle = (TOPBAR_DROP_STYLES || ['float','magnify','circle']).includes(s);
+  document.body.classList.toggle('rad-off', s === 'radial' && radialDocks() === 'off');
+  document.body.classList.toggle('rad-compact', s === 'radial' && radialDocks() === 'compact');
+  const dropStyle = tbDropStyle();
   const drop = dropStyle && state.topBarMode !== 'shown';
   document.body.classList.toggle('tb-drop', drop);
   document.body.classList.toggle('tb-keep', dropStyle && !drop);

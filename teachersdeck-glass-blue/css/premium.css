@@ -205,6 +205,15 @@ html.td-arrive :is(.dock, .edge-dock){ animation:td-settle .7s cubic-bezier(.2,.
   .td-idle{ transition:none; }
 }
 
+/* Radial menu layouts (owner 11 Nov 2026): Docks off clears the wall (the rings and the top-edge bar hold everything);
+   Compact keeps a small icon-only bottom dock; Keep docks leaves the standard docks as they are. */
+body.rad-off #dock-wrap, body.rad-off .edge-dock-left, body.rad-off .edge-dock-right, body.rad-off .app-tray-tab{ display:none !important; }
+body.rad-compact .edge-dock-left, body.rad-compact .edge-dock-right{ display:none !important; }
+body.rad-compact #dock{ gap:4px; padding:6px; }
+body.rad-compact #dock .dock-item{ width:46px; padding:6px 0; }
+body.rad-compact #dock .dock-item > span:not(.dock-ic){ display:none; }
+#radial-mode{ margin:-8px 0 12px; }
+
 /* The swatch grid marks premium themes with a star */
 .swatch.premium{ position:relative; }
 .swatch.premium::after{
