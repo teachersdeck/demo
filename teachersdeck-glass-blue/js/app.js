@@ -10639,13 +10639,30 @@ else init();
 /* TEST (branch glass-blue-test): dock styles (js/dockstyle.js) know TeachersDeck's widgets, categories and tray */
 if(typeof DockStyle !== 'undefined'){
   DockStyle.configure({
-    widgets: () => WIDGETS.filter(w => !isOff(w.id)).map(w => ({ id: w.id, label: widgetLabel(w.labelKey), icon: iconSvg(w.icon), cat: w.cat })),
+    widgets: () => WIDGETS.filter(w => !isOff(w.id)).map(w => ({ id: w.id, label: widgetLabel(w.labelKey).replace(/^[^\p{L}\p{N}]+/u, ''), icon: iconSvg(w.icon), cat: w.cat })),   // the dock shows its own icon: no leading emoji
     categories: () => CATEGORIES.map(c => [c.id, t(c.labelKey)]),
     favourites: () => widgetsFor('bottom').map(w => w.id),
     isOpen: id => !!widgetEls[id], toggle: id => toggleWidget(id), openTray: () => openAppTray(),
     labels: state.lang === 'vi'
-      ? { tray:'Tất cả tiện ích', widgets:'Tiện ích', favourites:'Yêu thích', pin:'Giữ mở', unpin:'Thu gọn' }
-      : { tray:'All widgets', widgets:'Widgets', favourites:'Favourites', pin:'Keep open', unpin:'Let it fold' },
+      ? { tray:'Tất cả tiện ích', widgets:'Tiện ích', favourites:'Yêu thích', pin:'Giữ mở', unpin:'Thu gọn', classes:'Lớp', theme:'Giao diện',
+          language:'Ngôn ngữ', light:'Sáng', dark:'Tối', settings:'Cài đặt', search:'Tìm tiện ích', searchClass:'Tìm lớp', searchLang:'Tìm ngôn ngữ',
+          noMatch:'Không tìm thấy', noFavs:'Nhấp chuột phải vào tiện ích để thêm vào Yêu thích' }
+      : { tray:'All widgets', widgets:'Widgets', favourites:'Favourites', pin:'Keep open', unpin:'Let it fold', classes:'Classes', theme:'Theme',
+          language:'Language', light:'Light', dark:'Dark', settings:'Settings', search:'Search widgets', searchClass:'Search classes', searchLang:'Search languages',
+          noMatch:'Nothing found', noFavs:'Right-click a widget to add it to Favourites' },
+    nav: {   // menus scope step 2: what the top bar did, inside the sidebar
+      classLabel: () => classDisplayName(activeClass()),
+      classes: () => classes.list.map(c => ({ id: c.id, label: classDisplayName(c), active: c.id === classes.active })),
+      switchClass: id => switchClass(id),
+      languages: () => LANGS.map(l => ({ code: l.code, label: l.name, active: l.code === state.lang })),
+      langLabel: () => (LANGS.find(l => l.code === state.lang) || LANGS[0]).name,
+      setLanguage: code => setLanguage(code),
+      isLight: () => typeof DeckMode !== 'undefined' && DeckMode.get() === 'light',
+      toggleMode: () => { if(typeof DeckMode !== 'undefined') DeckMode.set(DeckMode.get() === 'light' ? 'dark' : 'light'); },
+      openTheme: () => { const b = document.getElementById('btn-theme'); if(b) b.click(); },
+      openSettings: () => { const b = document.getElementById('btn-settings'); if(b) b.click(); },
+      catIcon: id => iconSvg({ time:'clock', media:'musicNote', tools:'clipboard', language:'chat', cloud:'cloud', course:'book' }[id] || 'files'),
+    },
   });
   applyTdDock();
 }
