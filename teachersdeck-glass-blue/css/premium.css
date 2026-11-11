@@ -159,6 +159,52 @@ html[data-td-theme="glass-blue"]:not([data-mode="light"]) .deck-mode-opt:focus-v
 html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dd-sw.on{ box-shadow:0 0 0 2px var(--amber-hi), 0 0 0 4px rgba(127,212,255,.28); }
 html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dd-size.on{ background:rgba(127,212,255,.22); }
 
+/* ---------- Polish phase 5: premium extras (Glass Blue) ---------- */
+/* Real glass: a soft highlight along the top edge, a faint inner glow, edges that catch the light */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .widget{
+  background-image:linear-gradient(180deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.03) 28%, rgba(255,255,255,0) 55%);
+  box-shadow:var(--shadow-panel), inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(160,210,255,.10), inset 0 -18px 30px -24px rgba(127,212,255,.25);
+}
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .widget.is-front:not(.dragging){
+  box-shadow:var(--shadow-panel), 0 18px 46px rgba(2,12,32,.4), inset 0 1px 0 rgba(255,255,255,.34), inset 0 0 0 1px rgba(160,210,255,.16), inset 0 -18px 30px -24px rgba(127,212,255,.32);
+}
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) :is(.dock, .edge-dock){
+  background-image:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 60%);
+  box-shadow:var(--shadow-panel), inset 0 1px 0 rgba(255,255,255,.22);
+}
+/* Icon tint: dock icons in the theme's accent */
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) :is(.dock-item, .edge-dock .dock-item) .dock-ic{ color:#a8e3ff; }
+html[data-td-theme="glass-blue"]:not([data-mode="light"]) .dock-item:hover .dock-ic{ color:#eaf4ff; }
+/* Theme font (the pack's font field; Glass Blue: system) for titles and big readouts */
+html[data-td-theme] :is(.widget-head, .big-readout, .clock-digital, .cd-days, .brand-name, .noise-db){ font-family:var(--theme-font, inherit); }
+/* Living background: the theme's own gradient drifts very slowly (60 s); still while a Timer or Noise Meter runs */
+@keyframes td-drift{ 0%{ background-position:0% 30%; } 100%{ background-position:100% 70%; } }
+html[data-td-theme="glass-blue"][data-td-bg="theme"] .bg-layer{ background-size:240% 240% !important; animation:td-drift 60s ease-in-out infinite alternate; }
+body.td-busy .bg-layer{ animation-play-state:paused !important; }
+/* Arrival: picking a premium theme fades its background in and settles the widgets (1 s) */
+@keyframes td-arrive-bg{ from{ opacity:.25; filter:saturate(.6) blur(6px); } to{ opacity:1; filter:none; } }
+@keyframes td-settle{ 0%{ transform:translateY(10px) scale(.985); opacity:.6; } 100%{ transform:none; opacity:1; } }
+html.td-arrive .bg-layer{ animation:td-arrive-bg .9s cubic-bezier(.2,.8,.2,1); }
+html.td-arrive .widget{ animation:td-settle .7s cubic-bezier(.2,.8,.2,1) both; }
+html.td-arrive .widget:nth-child(2n){ animation-delay:60ms; }
+html.td-arrive .widget:nth-child(3n){ animation-delay:120ms; }
+html.td-arrive :is(.dock, .edge-dock){ animation:td-settle .7s cubic-bezier(.2,.8,.2,1) 80ms both; }
+/* Idle clock: the theme's watch face fills the screen */
+.td-idle{ position:fixed; inset:0; z-index:200; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  background:radial-gradient(120% 90% at 50% 40%, rgba(12,42,90,.72), rgba(4,14,32,.94)); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+  opacity:0; transition:opacity .3s ease; cursor:none; }
+.td-idle.on{ opacity:1; }
+.td-idle-face{ width:min(64vh, 70vw); height:min(64vh, 70vw); }
+.td-idle-face svg{ filter:drop-shadow(0 20px 50px rgba(0,0,0,.5)); }
+.td-idle-time{ font:700 clamp(28px, 6vh, 72px)/1 var(--theme-font, 'Quicksand', sans-serif); color:#eaf4ff; letter-spacing:.5px; }
+.td-idle-date{ font-size:clamp(14px, 2.4vh, 26px); color:#a9c4e8; }
+#idle-clock-row[hidden]{ display:none; }
+@media (prefers-reduced-motion:reduce){
+  html[data-td-theme="glass-blue"][data-td-bg="theme"] .bg-layer{ animation:none; }
+  html.td-arrive .bg-layer, html.td-arrive .widget, html.td-arrive :is(.dock, .edge-dock){ animation:none; }
+  .td-idle{ transition:none; }
+}
+
 /* The swatch grid marks premium themes with a star */
 .swatch.premium{ position:relative; }
 .swatch.premium::after{

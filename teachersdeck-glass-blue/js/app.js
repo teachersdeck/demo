@@ -2489,9 +2489,22 @@ function tdPremiumSet(themeId){
   }
   return tdPremiumCache[themeId] || null;
 }
+function tdThemeItem(themeId){
+  if(!window.StoreCore) return null;
+  for(const r of (window.TD_PREMIUM_PACKS || [])){
+    if(!r || r.kind !== 'theme') continue;
+    const v = StoreCore.validateStorePack(r); if(!v.ok) continue;
+    const it = v.pack.items.find(i => i.id === themeId); if(it) return it;
+  }
+  return null;
+}
 function premiumSkins(){ return state.uiTheme === 'glass-blue' ? tdPremiumSet('glass-blue') : null; }   // polish phase 2: the Theme alone decides (a photo behind it keeps it)
 const reduceMotionNow = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 function refreshSkinnedWidgets(){ ['clock','traffic','noise'].forEach(id=>{ if(widgetEls[id]) rerenderWidget(id); }); }
+
+/* Polish phase 5: while a Timer, Stopwatch or Noise Meter runs, nothing moves behind it and the idle clock stays away. */
+const tdBusySet = new Set();
+function tdBusy(key, on){ if(on) tdBusySet.add(key); else tdBusySet.delete(key); document.body.classList.toggle('td-busy', tdBusySet.size > 0); }
 
 function renderClock(body){
   const skins = premiumSkins();
@@ -2609,7 +2622,7 @@ function renderTimer(body, ctx){
   });
   const startBtn = body.querySelector('#t-start');
   function setRunning(isRunning){
-    running = isRunning;
+    running = isRunning; tdBusy('timer', running);
     startBtn.dataset.key = running ? 'pause' : 'start';
     startBtn.textContent = t(startBtn.dataset.key);
   }
@@ -2636,7 +2649,7 @@ function renderTimer(body, ctx){
   });
   render();
   if(pre && pre.go) startBtn.click();   // platform (ClassIn): ?go=1
-  return ()=>clearInterval(iv);
+  return ()=>{ clearInterval(iv); tdBusy('timer', false); };
 }
 
 function renderStopwatch(body, ctx){
@@ -2667,7 +2680,7 @@ function renderStopwatch(body, ctx){
   const startBtn = body.querySelector('#s-start');
   const lapBtn = body.querySelector('#s-lap');
   function setRunning(isRunning){
-    running = isRunning;
+    running = isRunning; tdBusy('stopwatch', running);
     startBtn.dataset.key = running ? 'stop' : 'start';
     startBtn.textContent = t(startBtn.dataset.key);
     lapBtn.disabled = !running;
@@ -2696,7 +2709,7 @@ function renderStopwatch(body, ctx){
   render();
   renderLaps();
   if(ctx && ctx.preset && ctx.preset.go) startBtn.click();   // platform (ClassIn): ?go=1
-  return ()=>clearInterval(iv);
+  return ()=>{ clearInterval(iv); tdBusy('stopwatch', false); };
 }
 
 function renderTraffic(body, ctx){
@@ -6239,7 +6252,7 @@ function renderNoise(body, ctx){
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = 1024;
     source.connect(analyser);
-    running = true;
+    running = true; tdBusy('noise', true);
     const btn = body.querySelector('#noise-toggle');
     if(btn){ btn.dataset.key = 'noise_stop'; btn.textContent = t('noise_stop'); }
     held = 0; holdUntil = 0; liveNow = 0; bucketMax = 0;
@@ -6356,7 +6369,7 @@ function renderNoise(body, ctx){
   }
 
   function stop(){
-    running = false;
+    running = false; tdBusy('noise', false);
     if(rafId) cancelAnimationFrame(rafId);
     if(source) try{ source.disconnect(); }catch(e){}
     if(audioCtx) try{ audioCtx.close(); }catch(e){}
@@ -8209,6 +8222,10 @@ function applyTheme(){
   root.dataset.tdBg = photo ? 'image' : (pt && state.bgTheme ? 'theme' : 'preset');
   root.dataset.tdBgid = photo ? '' : (pt && state.bgTheme ? pt.id : state.theme);   // css/polish.css: paper / chalkboard texture   // css/premium.css: stronger glass over a photo
   if(pt && photo && state.photoTint) root.dataset.tdTint = '1'; else delete root.dataset.tdTint;
+  // polish phase 5: the theme pack's display font (THEME_FONTS in js/store-core.js) for titles and big readouts
+  const tItem = pt && typeof tdThemeItem === 'function' ? tdThemeItem(pt.id) : null;
+  if(tItem && window.StoreCore && StoreCore.THEME_FONTS[tItem.font]) root.style.setProperty('--theme-font', StoreCore.THEME_FONTS[tItem.font]);
+  else root.style.removeProperty('--theme-font');
   if(sessionBgUrl){
     bgLayer.style.background = `center/cover no-repeat url(${sessionBgUrl})`;
   } else if(state.customBg){
@@ -8301,8 +8318,13 @@ function buildDockSwatches(){
 
 function setUiTheme(id){
   const was = premiumSkins();
+  const arriving = id !== 'classic' && state.uiTheme !== id;
   state.uiTheme = id;
   const pt = premiumTheme();
+  if(arriving && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)){   // polish phase 5: a 1 s arrival
+    const r = document.documentElement; r.classList.remove('td-arrive'); void r.offsetWidth; r.classList.add('td-arrive');
+    setTimeout(()=> r.classList.remove('td-arrive'), 1100);
+  }
   if(pt){ if(!state.customBg && !sessionBgUrl) state.bgTheme = true; state.premiumFace = null; if(state.noiseMeter) state.noiseMeter.style = 'skin'; }
   else state.bgTheme = false;
   saveState(); applyTheme(); buildPresetSwatches();
@@ -8354,6 +8376,8 @@ function buildPresetSwatches(){
     st.hidden = !photo;
     st.querySelector('.bg-photo-text').textContent = vi ? 'Đang dùng ảnh của bạn' : 'Using your image';
   }
+  if(typeof buildIdleSwitch === 'function') buildIdleSwitch();
+  if(typeof tdIdle !== 'undefined') tdIdle.arm();
   const tint = document.getElementById('photo-tint-row');
   if(tint){
     tint.hidden = !(pt && photo);
@@ -10795,3 +10819,47 @@ function applyTopBarMode(){
   if(drop) topBar.build(); else topBar.close(true);
 }
 applyTopBarMode();
+
+/* Polish phase 5 (TEST): the idle clock. With a premium theme that has a watch face, after a few minutes with no pointer,
+   key or touch (and nothing running: Timer, Stopwatch, Noise Meter), the theme's face fills the screen as a projector
+   screensaver, with the time and date under it. Any move, key or tap brings the wall back. Theme → "Watch face when
+   idle" turns it off. ?idle=10 shortens the wait to 10 seconds for testing. */
+var tdIdle = (function(){   // var: buildPresetSwatches() asks for it before this line runs
+  const q = Number(new URLSearchParams(location.search).get('idle'));
+  const WAIT = (q > 0 && q < 3600 ? q : 180) * 1000;
+  let timer = 0, overlay = null, face = null, tick = 0;
+  function enabled(){ const s = premiumSkins(); return !!(s && s.faces.length) && state.idleClock !== false; }
+  function arm(){ clearTimeout(timer); if(enabled()) timer = setTimeout(show, WAIT); }
+  function show(){
+    if(overlay || !enabled()) return;
+    if(document.body.classList.contains('td-busy') || document.querySelector('.drawer:not([hidden])') || document.hidden){ arm(); return; }
+    const s = premiumSkins(), f = s.faces.find(x => x.key === state.premiumFace) || s.faces[0];
+    overlay = document.createElement('div'); overlay.className = 'td-idle';
+    overlay.innerHTML = '<div class="td-idle-face"></div><div class="td-idle-time"></div><div class="td-idle-date"></div>';
+    document.body.appendChild(overlay);
+    face = StoreCore.mountFace(overlay.querySelector('.td-idle-face'), f, { lang: state.lang === 'vi' ? 'vi' : 'en', reduceMotion: reduceMotionNow() });
+    const tEl = overlay.querySelector('.td-idle-time'), dEl = overlay.querySelector('.td-idle-date');
+    const paint = () => { const d = new Date(); let h = d.getHours() % 12 || 12; tEl.textContent = `${h}:${String(d.getMinutes()).padStart(2,'0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; dEl.textContent = d.toLocaleDateString(LOCALE_MAP[state.lang] || 'en-US', { weekday:'long', month:'long', day:'numeric' }); };
+    paint(); tick = setInterval(paint, 15000);
+    requestAnimationFrame(()=> overlay && overlay.classList.add('on'));
+  }
+  function hide(){
+    if(!overlay) return;
+    clearInterval(tick); if(face) face.stop(); face = null;
+    const o = overlay; overlay = null; o.classList.remove('on'); setTimeout(()=> o.remove(), 300);
+  }
+  function wake(){ if(overlay) hide(); arm(); }
+  ['pointermove','pointerdown','keydown','wheel','touchstart'].forEach(ev => document.addEventListener(ev, wake, { passive:true, capture:true }));
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) arm(); });
+  arm();
+  return { arm, hide };
+})();
+function buildIdleSwitch(){
+  const row = document.getElementById('idle-clock-row'); if(!row) return;
+  const s = premiumSkins();
+  row.hidden = !(s && s.faces.length);
+  row.querySelector('span').textContent = state.lang === 'vi' ? 'Hiện mặt đồng hồ khi không dùng' : 'Watch face when idle';
+  const cb = row.querySelector('input'); cb.checked = state.idleClock !== false;
+}
+document.getElementById('idle-clock-toggle')?.addEventListener('change', e=>{ state.idleClock = e.target.checked; saveState(); tdIdle.arm(); });
+buildIdleSwitch();
