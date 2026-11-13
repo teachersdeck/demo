@@ -1,0 +1,23 @@
+/* LectureDeck's own styles, loaded after the shared stylesheets (which come from TeachersDeck through tools/sync_shared.py).
+   Anything only LectureDeck needs goes here, scoped under html.uni. Empty for now: the shell looks like TeachersDeck. */
+/* Course mode styles moved to css/course-mode.css (v0.5.0), shared with UniStudentDeck's TAdeck. */
+
+/* ---------- Phones (web app, UniDeck phase 3) ----------
+   Phones and tablets show live tiles (css/bento.css and js/bento.js, shared with TeachersDeck). The rules under
+   html:not(.bento) are the older one-widget-at-a-time layout, kept for Settings → Tiles → Off on a phone: each open widget
+   fills the screen below the top bar, the last one opened on top, with moving and resizing off. */
+@media (max-width:700px){
+  .topbar{padding:10px 10px 0;gap:8px}
+  .brand-name{font-size:15px}
+  .dock-top-widgets,.xp-pill,.badge-chip{display:none}
+  .top-actions{gap:4px}
+  .edge-dock-top:not([hidden]){display:flex !important;top:6px;right:6px;padding:4px 6px;transform:none !important}   /* TeachersDeck hides it on small screens; it holds Settings and the switches */
+  .edge-dock-top .edge-dock-items{gap:4px}
+  .edge-dock-top .class-pill,.edge-dock-top [id^="class-switch"]{display:none}
+  html:not(.bento) .widget:not(.widget-full){left:6px !important;right:6px !important;top:58px !important;width:auto !important;height:calc(100% - 58px - 112px) !important;min-width:0}   /* the wall spans the whole screen here: clear the top bar and the dock */
+  html:not(.bento) .widget:not(.widget-full).minimized{height:auto !important}
+  html:not(.bento) .widget .widget-resize,html:not(.bento) .widget .widget-drag{display:none}
+  html:not(.bento) .dock-wrap{bottom:calc(8px + env(safe-area-inset-bottom))}
+  .cm-cols{grid-template-columns:1fr}
+  .cm-two{grid-template-columns:1fr}
+}

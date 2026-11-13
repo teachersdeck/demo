@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Guess the Number</title>
+<style>
+  body{ font-family:'Segoe UI',sans-serif; background:#11161d; color:#e9edf2; display:flex;
+        flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; }
+  h1{ font-size:22px; margin-bottom:4px; }
+  p{ color:#9aa4b2; font-size:13px; margin-top:0; }
+  input{ font-size:18px; padding:8px 10px; border-radius:8px; border:1px solid #2a3441; width:100px; text-align:center;
+         background:#1a212b; color:#e9edf2; }
+  button{ font-size:15px; padding:8px 16px; border-radius:8px; border:none; background:#e8a33d; color:#231604;
+          font-weight:700; cursor:pointer; margin-left:8px; }
+  #msg{ margin-top:16px; font-size:15px; min-height:20px; }
+  #tries{ font-size:12px; color:#9aa4b2; margin-top:6px; }
+</style>
+</head>
+<body>
+  <h1>Guess the Number</h1>
+  <p>I'm thinking of a number between 1 and 50.</p>
+  <div>
+    <input id="guess" type="number" min="1" max="50" placeholder="?">
+    <button id="go">Guess</button>
+  </div>
+  <div id="msg"></div>
+  <div id="tries"></div>
+  <button id="again" style="display:none;margin:12px 0 0">Play again</button>
+
+<script>
+  let target = Math.floor(Math.random()*50)+1;
+  let tries = 0;
+  const input = document.getElementById('guess');
+  const msg = document.getElementById('msg');
+  const triesEl = document.getElementById('tries');
+  function check(){
+    const g = parseInt(input.value, 10);
+    if(!g) return;
+    tries++;
+    if(g === target){
+      msg.textContent = `🎉 Correct! It was ${target}.`;
+      triesEl.textContent = `Solved in ${tries} ${tries===1?'try':'tries'}. `;
+      input.disabled = true;
+      document.getElementById('again').style.display = 'inline-block';
+      try{ parent.postMessage({ type:'sd-xp', game:'guess-the-number', result:'won', score:tries }, '*'); }catch(e){}
+    } else if(g < target){
+      msg.textContent = 'Higher ⬆️';
+      triesEl.textContent = `Tries: ${tries}`;
+    } else {
+      msg.textContent = 'Lower ⬇️';
+      triesEl.textContent = `Tries: ${tries}`;
+    }
+  }
+  document.getElementById('go').addEventListener('click', check);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') check(); });
+  document.getElementById('again').addEventListener('click', ()=>{
+    target = Math.floor(Math.random()*50)+1; tries = 0; input.disabled = false; input.value = '';
+    msg.textContent = ''; triesEl.textContent = ''; document.getElementById('again').style.display = 'none'; input.focus();
+  });
+  input.focus();
+</script>
+</body>
+</html>
