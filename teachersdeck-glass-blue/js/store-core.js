@@ -66,10 +66,27 @@
     serif: 'Georgia, "Times New Roman", serif',
     display: '"Playfair Display", Georgia, "Times New Roman", serif',
     rounded: 'Nunito, "Segoe UI Rounded", system-ui, sans-serif',
-    hand: '"Comic Sans MS", "Segoe Print", cursive',
+    hand: '"Mystery Quest", "Segoe Print", "Comic Sans MS", cursive',   // Noel; bundled where an app ships fonts/ (TeachersDeck)
+    // 13 Nov 2026: a face of its own for every premium theme (SIL OFL, with Vietnamese; bundled in TeachersDeck's fonts/)
+    modern: 'Lexend, "Segoe UI", system-ui, sans-serif',
+    soft: 'Comfortaa, "Segoe UI Rounded", system-ui, sans-serif',
+    classic: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+    deco: '"Josefin Sans", "Segoe UI", system-ui, sans-serif',
+    script: '"Dancing Script", "Segoe Script", cursive',
   };
   var THEME_TOKENS = ['bg', 'bgs', 'card', 'line', 'ink', 'muted', 'acc', 'bb', 'bt', 'dock', 'hov'];
   var THEME_DECOS = ['none', 'snow', 'lanterns'];
+  // Animated wallpapers (13 Nov 2026): a theme may name one of the shaders the apps ship (TeachersDeck's js/wallpaper.js)
+  // and give it colours. Data only, like everything in a pack: the shader code is never in the pack.
+  var WALLPAPER_SHADERS = { 'glass-fold': 3, 'fluted-glass': 8 };   // shader -> most colours it takes
+  var HEX6_RE = /^#[0-9a-fA-F]{6}$/;   // wallpaper colours go to WebGL as #rrggbb
+  function validateWallpaper(w) {
+    if (!w || typeof w !== 'object' || !WALLPAPER_SHADERS[w.shader]) return null;
+    var cs = Array.isArray(w.colors) ? w.colors : [];
+    if (cs.length < 2 || cs.length > WALLPAPER_SHADERS[w.shader] || !cs.every(function (c) { return typeof c === 'string' && HEX6_RE.test(c); })) return null;
+    var num = function (v, lo, hi, d) { v = Number(v); return isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; };
+    return { shader: w.shader, colors: cs.map(function (c) { return c.toLowerCase(); }), speed: num(w.speed, 0, 2, 0.5), scale: num(w.scale, 0.25, 4, 1) };
+  }
   function validateThemeItem(r, where, errors) {
     var nm = bilingual(r.name); if (!nm) { errors.push(where + '.name'); return null; }
     var t = r.tokens || {}, tokens = {};
@@ -81,9 +98,13 @@
     }
     var light = r.light !== undefined ? r.light : null;
     if (light !== null && !isGradient(light)) { errors.push(where + '.light'); return null; }
+    var greeting = r.greeting !== undefined ? bilingual(r.greeting) : null;   // a short line the app shows in its top bar (Tết: Chúc Mừng Năm Mới)
+    if (r.greeting !== undefined && !greeting) { errors.push(where + '.greeting'); return null; }
+    var wallpaper = null;
+    if (r.wallpaper !== undefined) { wallpaper = validateWallpaper(r.wallpaper); if (!wallpaper) { errors.push(where + '.wallpaper'); return null; } }
     var swatch = r.swatch !== undefined ? r.swatch : tokens.bg;
     if (!isGradient(swatch)) { errors.push(where + '.swatch'); return null; }
-    return {
+    var item = {
       id: r.id, name: nm, tokens: tokens, light: light, swatch: swatch,
       scheme: r.scheme === 'light' ? 'light' : 'dark',
       radius: Math.max(0, Math.min(40, Math.round(Number(r.radius) || 18))),
@@ -91,6 +112,9 @@
       fontBody: THEME_FONTS[r.fontBody] ? r.fontBody : 'system',
       deco: THEME_DECOS.indexOf(r.deco) >= 0 ? r.deco : 'none',
     };
+    if (wallpaper) item.wallpaper = wallpaper;
+    if (greeting) item.greeting = greeting;   // only when the theme has one, so older packs stay byte-for-byte the same
+    return item;
   }
   /** The CSS custom properties an app sets on its root for a theme item (`--st-*`), plus the body background. */
   function themeVars(item) {
@@ -344,7 +368,7 @@
   }
 
   return {
-    FORMAT: FORMAT, TIERS: TIERS, SKIN_KINDS: SKIN_KINDS, DOCK_STYLES: DOCK_STYLES, FACE_FORMS: FACE_FORMS, THEME_TOKENS: THEME_TOKENS, THEME_FONTS: THEME_FONTS, MAX_SVG: MAX_SVG,
+    FORMAT: FORMAT, TIERS: TIERS, SKIN_KINDS: SKIN_KINDS, DOCK_STYLES: DOCK_STYLES, FACE_FORMS: FACE_FORMS, THEME_TOKENS: THEME_TOKENS, THEME_FONTS: THEME_FONTS, WALLPAPER_SHADERS: WALLPAPER_SHADERS, MAX_SVG: MAX_SVG,
     isColor: isColor, isGradient: isGradient, checkSkinSvg: checkSkinSvg, validateStorePack: validateStorePack,
     themeVars: themeVars, themeBackground: themeBackground, scopeSvg: scopeSvg, slotText: slotText, handAngles: handAngles, segDigit: segDigit, litSegments: litSegments,
     mountFace: mountFace, mountMeter: mountMeter, mountLight: mountLight,

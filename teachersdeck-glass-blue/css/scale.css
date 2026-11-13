@@ -13,7 +13,6 @@
 .widget[data-wid="clock"] .clock-date{ font-size:clamp(12.5px, 5.5cqmin, 64px); flex:none; }
 .widget[data-wid="clock"] .clock-lunar{ font-size:clamp(11px, 4.5cqmin, 52px); min-height:0; flex:none; }
 .widget[data-wid="clock"] .skin-switch{ flex:none; }
-.widget[data-wid="clock"] .skin-dot{ width:clamp(18px, 6cqmin, 40px); height:clamp(18px, 6cqmin, 40px); }
 
 /* Traffic light: the light fills the window above its hint */
 .widget[data-wid="traffic"] > .widget-body{ display:flex; flex-direction:column; align-items:center; }

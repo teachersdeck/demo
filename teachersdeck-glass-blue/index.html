@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/premium.css?v=0.42.0">   <!-- TEST: premium themes (Glass Blue) -->
 <link rel="stylesheet" href="css/scale.css?v=0.42.0">
 <link rel="stylesheet" href="css/dockstyle.css?v=0.42.0">   <!-- TEST: Item Store dock styles (= studentdeck/css/dockstyle.css on item-store) -->   <!-- UI polish phase 1: widgets that grow with their window -->   <!-- phones and tablets: the bento grid -->
+<link rel="stylesheet" href="css/facepicker.css?v=0.42.0">   <!-- the Clock widget's face picker (the same file in StudentDeck) -->
 <link rel="stylesheet" href="css/polish.css?v=0.42.0">   <!-- UI polish phase 4: corners, title bars, depth, motion, backgrounds, empty states -->
 </head>
 <body>
@@ -130,6 +131,7 @@
       <div class="swatch-grid" id="theme-presets"></div>
       <div class="bg-photo-state" id="bg-photo-state" hidden><span class="bg-photo-text">Using your image</span><button type="button" class="bg-photo-reset" id="bg-photo-reset">Use a background instead</button></div>
       <label class="switch-row" id="photo-tint-row" hidden><span>Tint my image</span><input type="checkbox" id="photo-tint-toggle"></label>
+      <label class="switch-row" id="wallpaper-row" hidden><span>Moving wallpaper</span><input type="checkbox" id="wallpaper-toggle"></label>   <!-- a premium theme's animated wallpaper (js/wallpaper.js) -->
 
       <p class="drawer-label">Dock</p>   <!-- TEST: Item Store dock styles -->
       <div class="dock-style-grid" id="dock-styles"></div>
@@ -358,7 +360,10 @@
   <script src="js/drawdeck.js?v=0.42.0"></script>
   <script src="js/store-core.js?v=0.42.0"></script>   <!-- TEST: draws premium faces, meters, lights (= studentdeck/js/store-core.js on item-store) -->
   <script src="js/premium-packs.js?v=0.42.0"></script>
+  <script src="js/tdstore.js?v=0.42.0"></script>   <!-- after the packs, before app.js: the Shop in the LMS editions and the items bought there -->
+  <script src="js/wallpaper.js?v=0.42.0"></script>   <!-- animated wallpapers for premium themes (WebGL; the theme's gradient is the fallback) -->
   <script src="js/dockstyle.js?v=0.42.0"></script>   <!-- TEST: draws the dock styles -->   <!-- TEST: the Glass Blue packs -->
+  <script src="js/facepicker.js?v=0.42.0"></script>   <!-- before app.js: the Clock widget's face picker (the same file in StudentDeck) -->
   <script src="js/dockdrag.js?v=0.42.0"></script>   <!-- before app.js: dragging launchers (the same file in every suite app) -->
   <script src="js/app.js?v=0.42.0"></script>
   <script src="js/bento.js?v=0.42.0"></script>   <!-- after app.js: the widget wall as a bento grid on phones and tablets -->
