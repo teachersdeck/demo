@@ -13,7 +13,7 @@
    The version lives here (tools/release.py checks it against manifest.json, index.html and the README). */
 window.DECK_EDITION = Object.freeze({
   name: 'TinyParentDeck',
-  version: '0.7.1',
+  version: '0.8.0',
   uni: false,
   kinder: true,
   officialIds: ['jchohfpfmfkcbofccdgjoakcjpcbnkae']

@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3URTlI9L9xpJBnBR8mkIGTXx9vpqiOljT8OX+c0dm4h8Y9deABvjCZ8LGHpAHAZGORlF5B817Ek37Mb/xOL4Pxx71JzaaO1Av/7gHK91db0wPdozau/Kx/6IrQZByT1z479cgy4V7DrDEi6SHdWpfBU2qVfFl5ZJg9YTneYN6gkZ9nc2t+IZ6gZiAfIHfDN8LfgP4rZxm55Fm5qP+s8KDu88hvmfAjNbMBb3/6L9lYngmNR6ilxck7uL76bzhPy1gPktu42iXgPrGcDwDY0p/AIKTxN0mdWhN7lnk4ncUfr+EN82ljZrWWpeewxyeSLJ/0DDP5CvRuEIfsQwpcLAtQIDAQAB",
   "name": "TinyParentDeck",
-  "version": "0.7.1",
-  "version_name": "0.7.1 beta",
+  "version": "0.8.0",
+  "version_name": "0.8.0 beta",
   "description": "The parents' app for preschool and kindergarten: today at school, attendance and notes from the teacher.",
   "chrome_url_overrides": {
     "newtab": "index.html"

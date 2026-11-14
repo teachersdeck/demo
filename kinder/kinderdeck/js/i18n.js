@@ -12,7 +12,7 @@ const STR = {
   layout_mode_cozy:['Cozy','Thoải mái'], layout_mode_cozy_desc:['Emoji, bottom dock and both side drawers.','Có emoji, dock dưới và hai ngăn bên.'],
   layout_mode_custom:['Custom','Tùy chỉnh'], layout_mode_custom_desc:['You choose where each widget lives and what shows.','Bạn chọn vị trí từng widget và những gì hiển thị.'],
   emoji_section:['Widget icons','Biểu tượng widget'], show_emojis_label:['Show emoji icons','Hiện biểu tượng emoji'], layout_lock_hint:['Set by the layout mode above.','Do chế độ bố cục phía trên quyết định.'],
-  dock_buttons:['Dock buttons','Nút trên dock'], dock_buttons_hint:['Choose where each widget’s launcher lives','Chọn nơi đặt nút mở từng widget'],
+  dock_buttons:['Dock buttons','Nút trên dock'], dock_buttons_hint:['Choose where each widget’s launcher lives. You can also drag the buttons themselves.','Chọn nơi đặt nút mở từng widget. Bạn cũng có thể kéo thả trực tiếp các nút.'],
   placement_bottom:['Bottom dock','Dock dưới'], placement_left:['Left drawer','Ngăn trái'], placement_right:['Right drawer','Ngăn phải'], placement_top:['Top bar','Thanh trên'],
   placement_hidden:['Hidden','Ẩn'], placement_shown:['Shown','Hiện'],
   drawer_full_toast:['The {side} is full (max {max}).','{side} đã đầy (tối đa {max}).'],

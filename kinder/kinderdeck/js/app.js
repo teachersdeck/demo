@@ -1,6 +1,6 @@
 'use strict';
 /* KinderDeck shell: same structure as AdminDeck (wall, floating widgets, docks, app tray, theme + settings drawers). */
-const APP_VERSION = '0.10.0';
+const APP_VERSION = '0.11.0';
 const $ = (s, r) => (r || document).querySelector(s);
 const LS_KEY = 'kd_state_v1';
 const DEFAULTS = {lang:'vi', theme:'sunrise', dim:true, loc:'all', active:{}, layout:{}, deactivated:{}, layoutMode:'cozy', showEmojisCustom:true,
@@ -124,7 +124,9 @@ window.addEventListener('pointermove', moveGesture); window.addEventListener('po
 /* ---------- Docks, side drawers, top dock, app tray ---------- */
 const DOCK_CAPS = {bottom:10, left:5, right:5, top:5}, LAYOUT_MODES = ['compact', 'cozy', 'custom'], PLACEMENTS = ['bottom', 'left', 'right', 'top', 'hidden'];
 const DEFAULT_PLACEMENT = {dashboard:'bottom', inbox:'bottom', roster:'bottom', parents:'bottom', suppliers:'bottom', overview:'bottom', fees:'left', meals:'left', kitchen:'bottom', cashflow:'bottom', accounts:'bottom', staff:'bottom', health:'left', attendance:'right', calendar:'right', announce:'right', agenda:'right'};
-const widgetsFor = side => WIDGETS.filter(w => widgetOn(w.id) && state.dockPlacement[w.id] === side).slice(0, DOCK_CAPS[side]);
+// the order the user dragged the icons into comes first (js/dockdrag.js), before the cap; the rest keep the usual order
+function widgetsFor(side) { const order = (state.dockOrder || {})[side] || [], at = id => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+  return WIDGETS.filter(w => widgetOn(w.id) && state.dockPlacement[w.id] === side).sort((a, b) => at(a.id) - at(b.id)).slice(0, DOCK_CAPS[side]); }
 const placementCount = side => widgetsFor(side).length;
 function ensurePlacement() { let ch = false; WIDGETS.forEach(w => { if (!state.dockPlacement[w.id]) { state.dockPlacement[w.id] = DEFAULT_PLACEMENT[w.id] || 'hidden'; ch = true; } }); if (ch) saveState(); }
 const sideVisible = s => state.layoutMode !== 'compact' && (state.layoutMode === 'cozy' || !!state.edgeDock[s].visible);
@@ -137,11 +139,34 @@ function rebuildAllDocks() {
   const tp = $('#dock-top-widgets'); tp.innerHTML = ''; widgetsFor('top').forEach(w => tp.appendChild(topBtn(w)));
   const g = $('#app-tray-grid'); g.innerHTML = ''; WIDGETS.filter(w => widgetOn(w.id)).forEach(w => g.appendChild(trayBtn(w))); syncDock();
 }
+function openAppTray() { const tab = $('#app-tray-tab'); $('#app-tray-backdrop').hidden = false; tab.classList.add('open'); tab.setAttribute('aria-expanded', 'true'); }
+function closeAppTray() { const tab = $('#app-tray-tab'); $('#app-tray-backdrop').hidden = true; tab.classList.remove('open'); tab.setAttribute('aria-expanded', 'false'); }
 function wireAppTray() {
-  const tab = $('#app-tray-tab'), bd = $('#app-tray-backdrop');
-  const open = () => { bd.hidden = false; tab.classList.add('open'); tab.setAttribute('aria-expanded', 'true'); }, close = () => { bd.hidden = true; tab.classList.remove('open'); tab.setAttribute('aria-expanded', 'false'); };
+  const tab = $('#app-tray-tab'), bd = $('#app-tray-backdrop'), open = openAppTray, close = closeAppTray;
   tab.onclick = () => bd.hidden ? open() : close(); $('#app-tray-handle').onclick = close; bd.onclick = e => { if (e.target === bd) close(); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !bd.hidden) close(); });
+}
+/* Dragging launchers (v0.11.0; js/dockdrag.js, the suite's file, a copy of TinyTeachersDeck's): a dock icon to another place or
+   dock, a tray icon onto a dock, a dock icon onto the tray tab (off the docks). Saved once, on drop. An empty drawer is hidden,
+   so while dragging, the drawers the layout mode shows come back as drop targets. Works in every layout mode. */
+function wireDockDrag() {
+  if (!window.DockDrag) return;
+  DockDrag.init({
+    zones: {bottom:'#dock', left:'#dock-left-items', right:'#dock-right-items', top:'#dock-top-widgets'},
+    item: '.dock-item[data-id], .dock-top-item[data-id]', caps: DOCK_CAPS,
+    tray: {grid:'#app-tray-grid', item:'.app-tray-item[data-id]', tab:'#app-tray-tab'},
+    move(id, loc, ids) {
+      const from = state.dockPlacement[id], order = state.dockOrder = state.dockOrder || {};
+      state.dockPlacement[id] = loc;
+      if (from && from !== loc && order[from]) order[from] = order[from].filter(x => x !== id);
+      if (ids) order[loc] = ids;
+      saveState(); rebuildAllDocks(); if (!$('#settings-drawer').hidden) buildPlacementList();   // Settings' list follows if it is open
+    },
+    full: loc => toast(t('drawer_full_toast', {side:t('placement_' + loc), max:DOCK_CAPS[loc]})),
+    closeTray: closeAppTray, openTray: openAppTray,
+    onStart: () => ['left', 'right'].forEach(sd => { if (sideVisible(sd)) $('#dock-' + sd).hidden = false; }),
+    onEnd: () => rebuildAllDocks(),
+  });
 }
 
 /* ---------- Settings drawer ---------- */
@@ -153,7 +178,7 @@ function buildLayoutModes() {
 function buildEmojiToggle() { const e = $('#show-emojis-toggle'), locked = state.layoutMode !== 'custom'; e.checked = emojisVisible(); e.disabled = locked; e.closest('.switch-row').classList.toggle('locked', locked); $('#emoji-lock-hint').hidden = !locked;
   e.onchange = x => { state.showEmojisCustom = x.target.checked; saveState(); rebuildAllDocks(); refreshTitles(); }; }
 function buildPlacementList() {
-  const list = $('#dock-vis-list'); list.innerHTML = ''; const locked = state.layoutMode !== 'custom'; $('#dock-buttons-lock-hint').hidden = !locked;
+  const list = $('#dock-vis-list'); list.innerHTML = ''; const locked = false; $('#dock-buttons-lock-hint').hidden = true;   // every layout mode (v0.11.0), as dragging
   WIDGETS.filter(w => widgetOn(w.id)).forEach(w => { const row = document.createElement('div'); row.className = 'dock-vis-row placement-row' + (locked ? ' locked' : ''); row.innerHTML = `<span>${esc(widgetLabel(w))}</span>`;
     const s = document.createElement('select'); s.disabled = locked; PLACEMENTS.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = t('placement_' + p); s.appendChild(o); }); s.value = state.dockPlacement[w.id] || 'hidden';
     s.onchange = () => { const v = s.value; if (v !== 'hidden' && placementCount(v) >= DOCK_CAPS[v]) { toast(t('drawer_full_toast', {side:t('placement_' + v), max:DOCK_CAPS[v]})); s.value = state.dockPlacement[w.id] || 'hidden'; return; } state.dockPlacement[w.id] = v; saveState(); rebuildAllDocks(); };
@@ -207,7 +232,7 @@ function feesOff() { if (state.feesOff) return; state.deactivated.fees = true; s
 (function init() {
   accMove(); feesOff();  // the client line (branch client/tp) also runs its first-run prefill here
   document.documentElement.lang = state.lang; applyTheme(); initCustomBg(); buildLang(); buildLocSelect(); ensurePlacement(); rebuildAllDocks(); applyPills(); applyToolbarAutoHide(); applyDemo(); buildLocSelect();
-  wireAppTray(); wireSettings(); wireThemeDrawer(); localizeNode(document);
+  wireAppTray(); wireDockDrag(); wireSettings(); wireThemeDrawer(); localizeNode(document);
   if (!state.seeded) { state.active.dashboard = true; state.seeded = true; saveState(); }
   WIDGETS.forEach(w => { if (state.active[w.id] && widgetOn(w.id)) openWidget(w.id); });
   rescueWidgets(); syncDock();

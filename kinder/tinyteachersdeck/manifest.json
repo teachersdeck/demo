@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtHDjrHGXdhc0xOeyxFoX1+DKh1dnDXaRRJQu5+wfz+V3pDTOsedyzL7dIJtbXm6CCxoNFFSv1e/5c15xmbXSIeMtX14fD+Zdd36fP7arKZGNtvnF19+Gy2JUNt2+Fq9IyKMGGQ1xPF4mkxZ/7U1mbk9ubN2NUzn1wQhNnr+8HmPuZVrmf9FiWYpFOKcPWBUNg0IEaZd8YrOwNBO3XtdHSBOt6bnN1+fdPivKvYpAFdjQmr7hYWmToQki2jcBn91HAm/iuHdqx+16dCRT7Wy6y1eJ9hlOwj1H19UOnoJHMi508nG2FLp2cIRisp5M3bmlDrYlPneU0uPPt/XWsM5b+wIDAQAB",
   "name": "TinyTeachersDeck",
-  "version": "0.14.1",
-  "version_name": "0.14.1 beta",
+  "version": "0.16.0",
+  "version_name": "0.16.0 beta",
   "description": "A classroom app for kindergarten and preschool teachers: attendance, daily report and notes home.",
   "chrome_url_overrides": {
     "newtab": "index.html"
