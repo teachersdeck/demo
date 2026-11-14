@@ -637,11 +637,25 @@ const PD = (() => {
   }
   const createProOrder = (o) => orderFn('createOrder', { ...o, product: 'parentdeck' });
   const getProOrder = (id, secret) => orderFn('getOrder', { id, secret });
+  /* v0.28.0 (backend v2.32.0): the Item Store. The Shop pays through the same createOrder (product 'items', token
+     "IT …"); the owner's Mark paid adds the items to the family. getStore / getMyPacks / setStoreSettings are callables. */
+  const createItemsOrder = (o) => orderFn('createOrder', { ...o, product: 'items' });
+  async function storeCall(name, data) {
+    if (!ready || !auth.currentUser) throw new Error('Sign in first.');
+    const role = await ensureParentRole();
+    if (role && role !== 'parent') throw wrongRoleError(role);
+    return (await functions.httpsCallable(name)(data || {})).data;
+  }
+  const getStore = () => storeCall('getStore');
+  const getMyPacks = (have) => storeCall('getMyPacks', { have: have || {} });
+  const setStoreSettings = (s) => storeCall('setStoreSettings', s);
+  const getMyPackFile = () => storeCall('getMyPackFile');
   function getPro() { return { active: proOn, info: proInfo }; }
   function onProChanged(fn) { proListeners.add(fn); return () => proListeners.delete(fn); }
 
   return {
     activatePro, getPro, onProChanged, createProOrder, getProOrder,
+    createItemsOrder, getStore, getMyPacks, setStoreSettings, getMyPackFile,
     isConfigured, onAuthChanged, signInWithGoogle, signOut, getSession,
     getLinkedChildren, onLinksChanged, linkChild, unlinkChild,
     getChildSnapshot, subscribeChild, refreshChild, getRanking, getClassPulse, onPointsAwarded, onHomeworkCompleted, onBadgeEarned,

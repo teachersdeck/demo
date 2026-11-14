@@ -248,7 +248,7 @@
         it.align = oneOf(raw.align, ALIGNS, 'left'); break;
       case 'sticker':
         if (typeof raw.glyph === 'string' && raw.glyph.length > 0 && raw.glyph.length <= 16) it.glyph = raw.glyph;
-        else if (typeof raw.svgId === 'string' && SVGID_RE.test(raw.svgId)) it.svgId = raw.svgId;
+        else if (typeof raw.svgId === 'string' && (SVGID_RE.test(raw.svgId) || PACK_REF_RE.test(raw.svgId))) it.svgId = raw.svgId;   // Item Store: "packid:itemid"
         else return null;
         break;
       case 'shape':
@@ -422,8 +422,13 @@
     return out.join(' ');
   }
 
-  /* ---------- packs (stickers, stamps, cutout frames) ---------- */
-  var PACK_KINDS = ['sticker', 'stamp', 'mask'];
+  /* ---------- packs (stickers, stamps, cutout frames, page templates) ---------- */
+  // Item Store S0: `layout` packs are ready-made pages (a background plus items, each through sanitizeItem).
+  // Store fields on any pack: sku (the store's product code; absent = a free bundled pack), tier (free | paid | pro)
+  // and preview (up to 6 item ids the ParentDeck Shop shows).
+  var PACK_KINDS = ['sticker', 'stamp', 'mask', 'layout'];
+  var PACK_TIERS = ['free', 'paid', 'pro'];
+  var SKU_RE = /^[a-z0-9][a-z0-9-]{1,39}$/;
   var UNSAFE_SVG = /<script|<foreignobject|<image|<iframe|<use\b|<style|<a\b|\bon[a-z]+\s*=|href\s*=|url\s*\(|@import|javascript:|data:/i;
   function checkSvg(svg) {
     if (typeof svg !== 'string' || svg.length > 8192) return 'too-big';
@@ -450,6 +455,22 @@
       seen[r.id] = true;
       var nm = bilingual(r.name); if (!nm) { errors.push(where + '.name'); return; }
       var it = { id: r.id, name: nm, w: clamp(num(r.w, 100), 8, 1000), h: clamp(num(r.h, 100), 8, 1000) };
+      if (raw.kind === 'layout') {
+        // A template page: data only. Each item is checked by sanitizeItem; a template uses glyph stickers or pack
+        // references, never markup of its own. Photos can't be in a template (no assetId to point at).
+        if (!Array.isArray(r.items) || !r.items.length || r.items.length > 40) { errors.push(where + ':items'); return; }
+        var pageItems = [];
+        r.items.forEach(function (x, j) {
+          if (!x || x.type === 'photo') return;
+          var clean = sanitizeItem(Object.assign({ id: 'it' + j, z: j + 1, rot: 0 }, x));
+          if (clean) pageItems.push(clean);
+        });
+        if (!pageItems.length) { errors.push(where + ':items'); return; }
+        delete it.w; delete it.h;
+        it.bg = oneOf(r.bg, BACKGROUNDS, 'white');
+        it.items = pageItems;
+        items.push(it); return;
+      }
       if (raw.kind === 'sticker') {
         var e = r.svg !== undefined ? checkSvg(r.svg) : checkPath(r.path);
         if (e) { errors.push(where + ':' + e); return; }
@@ -461,8 +482,24 @@
       }
       items.push(it);
     });
+    if (raw.sku !== undefined && !(typeof raw.sku === 'string' && SKU_RE.test(raw.sku))) errors.push('sku');
+    if (raw.tier !== undefined && PACK_TIERS.indexOf(raw.tier) < 0) errors.push('tier');
+    if (raw.preview !== undefined && !(Array.isArray(raw.preview) && raw.preview.length <= 6 && raw.preview.every(function (x) { return seen[x] === true; }))) errors.push('preview');
     if (errors.length) return { ok: false, errors: errors };
-    return { ok: true, pack: { id: raw.id, version: raw.version, kind: raw.kind, name: name, license: typeof raw.license === 'string' ? raw.license.slice(0, 200) : '', items: items } };
+    var pack = { id: raw.id, version: raw.version, kind: raw.kind, name: name, license: typeof raw.license === 'string' ? raw.license.slice(0, 200) : '', items: items };
+    if (raw.sku) pack.sku = raw.sku;
+    pack.tier = raw.tier || (raw.sku ? 'paid' : 'free');
+    pack.preview = Array.isArray(raw.preview) && raw.preview.length ? raw.preview.slice() : items.slice(0, 6).map(function (x) { return x.id; });
+    return { ok: true, pack: pack };
+  }
+  /** A new page from a template pack's item (a validated `layout` pack); every item passes sanitizeItem again. */
+  function layoutPageFromPack(pack, itemId, rng) {
+    if (!pack || pack.kind !== 'layout') return null;
+    var L = null; (pack.items || []).forEach(function (x) { if (x.id === itemId) L = x; });
+    if (!L) return null;
+    var p = newPage(L.bg, rng);
+    p.items = L.items.map(function (r, i) { return sanitizeItem(Object.assign({}, r, { id: uid('it', rng), z: i + 1 })); }).filter(Boolean);
+    return p;
   }
 
   /* ---------- pen ---------- */
@@ -576,11 +613,11 @@
   }
 
   return {
-    MASKS: MASKS, STAMPS: STAMPS, LAYOUTS: LAYOUTS, PACK_KINDS: PACK_KINDS, BACKUP_FORMAT: BACKUP_FORMAT,
+    MASKS: MASKS, STAMPS: STAMPS, LAYOUTS: LAYOUTS, PACK_KINDS: PACK_KINDS, PACK_TIERS: PACK_TIERS, BACKUP_FORMAT: BACKUP_FORMAT,
     normalizeCrop: normalizeCrop, cropSource: cropSource, panCrop: panCrop, scaleUnitPath: scaleUnitPath, starPath: starPath,
     checkSvg: checkSvg, checkPath: checkPath, validatePack: validatePack, rdp: rdp, penItemFromPoints: penItemFromPoints,
     groupIds: groupIds, selectionBounds: selectionBounds, moveItems: moveItems, groupItems: groupItems, ungroupItems: ungroupItems, itemsInRect: itemsInRect,
-    layoutPage: layoutPage, makeBackup: makeBackup, parseBackup: parseBackup,
+    layoutPage: layoutPage, layoutPageFromPack: layoutPageFromPack, makeBackup: makeBackup, parseBackup: parseBackup,
     PAGE_W: PAGE_W, PAGE_H: PAGE_H, LIMITS: LIMITS, ITEM_TYPES: ITEM_TYPES,
     BACKGROUNDS: BACKGROUNDS, FRAMES: FRAMES, SHAPES: SHAPES, FONTS: FONTS,
     clamp: clamp, normDeg: normDeg, round: round, snap: snap, uid: uid,

@@ -94,6 +94,7 @@ const STRINGS = {
   w_summary:    { en:'Student Summary', vi:'Tóm tắt học sinh' },
   w_stats:      { en:'Student Stats and XP', vi:'Thống kê & XP của học sinh' },
   w_homework:   { en:'Homework Assignments', vi:'Bài tập được giao' },
+  w_clock:      { en:'Clock', vi:'Đồng hồ' },
   w_settings:   { en:'Settings', vi:'Cài đặt' },
   w_theme:      { en:'Theme', vi:'Giao diện' },
 
@@ -328,7 +329,35 @@ const STRINGS = {
   mode_light:           { en:'Light', vi:'Sáng' },
   mode_dark:            { en:'Dark', vi:'Tối' },
   theme_backgrounds:    { en:'Background', vi:'Hình nền' },
-  settings_theme_hint:  { en:'Pick a background for ParentDeck \u2014 the same six as StudentDeck. Applies instantly, saved on this device.', vi:'Chọn nền cho ParentDeck \u2014 giống sáu nền của StudentDeck. Áp dụng ngay, lưu trên thiết bị này.' },
+  settings_theme_hint:  { en:'Pick a background for ParentDeck. Each one colours the widgets and docks too. Applies instantly, saved on this device.', vi:'Chọn nền cho ParentDeck. Mỗi nền cũng tô màu các widget và thanh dock. Áp dụng ngay, lưu trên thiết bị này.' },
+  /* UI polish (from TeachersDeck): theme and dock extras in the Theme widget */
+  th_wallpaper:   { en:'Moving wallpaper', vi:'Hình nền chuyển động' },
+  th_radial:      { en:'With the Radial menu', vi:'Khi dùng menu vòng tròn' },
+  th_rad_off:     { en:'Docks off', vi:'Tắt dock' },
+  th_rad_compact: { en:'Compact dock', vi:'Dock gọn' },
+  th_rad_keep:    { en:'Keep docks', vi:'Giữ dock' },
+  th_radial_hint: { en:'Right-click an empty part of the screen (or long-press on a touchscreen) to open your widgets.', vi:'Nhấp chuột phải vào chỗ trống (hoặc nhấn giữ trên màn hình cảm ứng) để mở tiện ích.' },
+  th_topbar:      { en:'Top bar', vi:'Thanh trên cùng' },
+  th_tb_drop:     { en:'Drop down at the top edge', vi:'Thả xuống ở mép trên' },
+  th_tb_shown:    { en:'Always shown', vi:'Luôn hiện' },
+  th_tb_handle:   { en:'Show the top bar', vi:'Mở thanh trên cùng' },
+  th_floating:    { en:'Floating icons (no dock frame)', vi:'Biểu tượng nổi (bỏ viền dock)' },
+  th_fl_bottom:   { en:'Bottom dock', vi:'Dock dưới' },
+  th_fl_sides:    { en:'Side docks', vi:'Dock bên' },
+  th_fl_rings:    { en:'Rings', vi:'Vòng tròn' },
+  dk_classes:     { en:'Children', vi:'Các con' },
+  dk_theme:       { en:'Theme', vi:'Giao diện' },
+  dk_language:    { en:'Language', vi:'Ngôn ngữ' },
+  dk_light:       { en:'Light', vi:'Sáng' },
+  dk_dark:        { en:'Dark', vi:'Tối' },
+  dk_settings:    { en:'Settings', vi:'Cài đặt' },
+  dk_search:      { en:'Search widgets', vi:'Tìm widget' },
+  dk_search_kid:  { en:'Search children', vi:'Tìm con' },
+  dk_search_lang: { en:'Search languages', vi:'Tìm ngôn ngữ' },
+  dk_no_match:    { en:'Nothing found', vi:'Không tìm thấy' },
+  dk_no_favs:     { en:'Right-click a widget to add it to Favourites', vi:'Nhấp chuột phải vào widget để thêm vào Yêu thích' },
+  dk_more:        { en:'More', vi:'Thêm' },
+  dk_drag_hint:   { en:'Drag an icon onto the ring to swap it in', vi:'Kéo một biểu tượng lên vòng để đổi chỗ' },
   settings_account:     { en:'Account', vi:'Tài khoản' },
   settings_reset_layout:{ en:'Reset widget layout', vi:'Đặt lại bố cục widget' },
   settings_reset_done:  { en:'Layout reset. Reopen widgets from the dock.', vi:'Đã đặt lại bố cục. Mở lại widget từ thanh dock.' },
@@ -340,6 +369,7 @@ Object.assign(STRINGS, BADGE_STRINGS);   // js/badges.js (loaded first) — Badg
 Object.assign(STRINGS, T1_STRINGS);   // js/tier1.js (loaded first) — titles, tray labels and every Tier 1 widget string
 Object.assign(STRINGS, DrawDeck.strings);   // js/drawdeck-engine.js (loaded first) — toolbar/menu strings
 Object.assign(STRINGS, KD_STRINGS);   // js/keepdeck.js (loaded first) — KeepDeck's own strings, v0.23.0
+Object.assign(STRINGS, SHOP_STRINGS);   // js/shop.js (loaded first) — the Shop, v0.28.0
 function t(key, vars) {
   let s = (STRINGS[key] && (STRINGS[key][ui.lang] || STRINGS[key].en)) || key;
   if (vars) for (const k in vars) s = s.replace('{' + k + '}', vars[k]);
@@ -397,13 +427,126 @@ const THEME_PRESETS = [
   { id: 'ocean',   name: 'Ocean',   css: 'linear-gradient(180deg,#0e2f3f 0%, #164a5c 55%, #0c2733 100%)' },
   { id: 'sunrise', name: 'Sunrise', css: 'linear-gradient(180deg,#3a2140 0%, #7a4a55 45%, #c98a5e 100%)' },
   { id: 'slate',   name: 'Slate',   css: 'linear-gradient(180deg,#20242c 0%, #2b3038 100%)' },
-  { id: 'plain',   name: 'Plain',   css: '#12161C' }
+  { id: 'plain',   name: 'Plain',   css: '#12161C' },
+  // UI polish (from TeachersDeck): two free classroom backgrounds; css/polish.css adds their texture
+  { id: 'paper',      name: 'Paper',      css: 'linear-gradient(180deg,#2b2721 0%, #25221d 55%, #1f1c18 100%)', light: 'linear-gradient(180deg,#f8f4ea 0%, #f3ede0 60%, #efe8d9 100%)' },
+  { id: 'chalkboard', name: 'Chalkboard', css: 'linear-gradient(180deg,#1f3a2c 0%, #284836 55%, #1b3326 100%)', light: 'linear-gradient(180deg,#e7f0ea 0%, #dce9e1 60%, #e3eee7 100%)' }
 ];
-const presetBg = p => (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
+const isLightMode = () => typeof DeckMode !== 'undefined' && DeckMode.get() === 'light';
+const presetBg = p => (p.light && isLightMode()) ? p.light
+  : (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
+let lastTheme = null;   // the theme applied last: putting on a different bought theme plays the 1 s arrival
 function applyThemePreset(id) {
+  // v0.28.0: a premium theme the family bought in the Shop ("pk:<pack>:<item>", js/shop.js). Like the presets it
+  // paints the page background (its own pale variant in Light mode, when the theme has one).
+  // UI polish (from TeachersDeck): every theme also colours the widgets, docks and top bar (applySkin, css/premium.css),
+  // and a bought theme brings its font, decorations, greeting and moving wallpaper. Only themes the family owns.
+  const root = document.documentElement;
+  const prem = String(id || '').startsWith('pk:') && (typeof PD_SHOP !== 'undefined') ? PD_SHOP.themeByKey(id) : null;
+  if (prem && lastTheme !== null && lastTheme !== id && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    root.classList.remove('td-arrive'); void root.offsetWidth; root.classList.add('td-arrive');
+    setTimeout(() => root.classList.remove('td-arrive'), 1100);
+  }
+  lastTheme = id;
+  if (prem) root.dataset.tdTheme = prem.item.id; else delete root.dataset.tdTheme;
+  root.dataset.tdBg = prem ? 'theme' : 'preset';
+  root.dataset.tdBgid = prem ? prem.item.id : (THEME_PRESETS.find(x => x.id === id) || THEME_PRESETS[0]).id;   // css/polish.css: paper / chalkboard texture
+  if (prem && window.StoreCore && StoreCore.THEME_FONTS && StoreCore.THEME_FONTS[prem.item.font]) root.style.setProperty('--theme-font', StoreCore.THEME_FONTS[prem.item.font]);
+  else root.style.removeProperty('--theme-font');
+  applySkin(prem ? prem.item : null, prem ? prem.key : (THEME_PRESETS.find(x => x.id === id) || THEME_PRESETS[0]).id);
+  themeGreeting(prem ? prem.item : null);
+  applyWallpaper(prem ? prem.item : null);
+  if (prem) {
+    document.body.style.background = StoreCore.themeBackground(prem.item, isLightMode()); document.body.style.backgroundSize = 'cover';
+    return;
+  }
   const p = THEME_PRESETS.find(x => x.id === id) || THEME_PRESETS[0];
   document.body.style.background = presetBg(p); document.body.style.backgroundSize = 'cover';
 }
+/* A bought theme's animated wallpaper (js/wallpaper.js, the same file as TeachersDeck's) over its gradient, which stays
+   underneath as the fallback. Dark mode only, and while "Moving wallpaper" is on (Theme widget). */
+let wallpaperKey = '';
+function applyWallpaper(item) {
+  if (typeof TDWallpaper === 'undefined') return;
+  const w = item && item.wallpaper;
+  const want = !!(w && ui.wallpaper !== false && !isLightMode());
+  const key = want ? JSON.stringify(w) : '';
+  document.documentElement.dataset.tdWallpaper = want ? '1' : '';
+  if (key === wallpaperKey && (!want || TDWallpaper.active())) return;
+  wallpaperKey = key;
+  if (want) TDWallpaper.mount(w, { before: document.body.firstElementChild }); else TDWallpaper.unmount();
+}
+/* Every theme colours the docks and windows: a bought theme brings its pack's tokens; each free background has its own
+   small set (Dusk keeps the classic look). css/premium.css reads the --sk-* tokens under html[data-td-skin].
+   The same sets and maths as TeachersDeck's js/app.js (PRESET_SKINS, skinRgb, applySkin). */
+const PRESET_SKINS = {
+  chalk:     { bgs:'#2b2f26', card:'rgba(74,82,62,.55)', line:'rgba(205,215,180,.26)', ink:'#eef1e4', muted:'#c3c9b0', acc:'#d9c27a', bt:'#2a2306', dock:'rgba(36,40,31,.86)', hov:'rgba(255,255,255,.10)' },
+  ocean:     { bgs:'#0e2f3f', card:'rgba(22,74,92,.48)', line:'rgba(140,220,230,.30)', ink:'#e6fbff', muted:'#a6d4dd', acc:'#5fd3d6', bt:'#032a2c', dock:'rgba(10,40,52,.86)', hov:'rgba(255,255,255,.12)' },
+  sunrise:   { bgs:'#3a2140', card:'rgba(122,74,85,.42)', line:'rgba(255,200,160,.30)', ink:'#fff1e8', muted:'#e8c3b4', acc:'#ffb27a', bt:'#3a1600', dock:'rgba(58,33,64,.86)', hov:'rgba(255,255,255,.12)' },
+  slate:     { bgs:'#20242c', card:'rgba(52,58,68,.62)', line:'rgba(200,210,225,.22)', ink:'#eef1f6', muted:'#b4bccb', acc:'#9fb4d6', bt:'#141a26', dock:'rgba(30,34,42,.9)', hov:'rgba(255,255,255,.10)' },
+  plain:     { bgs:'#12161c', card:'rgba(32,38,47,.72)', line:'rgba(255,255,255,.12)', ink:'#eef1f6', muted:'#a7afbd', acc:'#e0a93b', bt:'#231803', dock:'rgba(20,24,31,.92)', hov:'rgba(255,255,255,.08)' },
+  paper:     { bgs:'#25221d', card:'rgba(64,58,48,.6)', line:'rgba(230,215,190,.24)', ink:'#f6efe2', muted:'#cfc2aa', acc:'#e0b46a', bt:'#2b1d05', dock:'rgba(43,39,33,.9)', hov:'rgba(255,255,255,.10)' },
+  chalkboard:{ bgs:'#1f3a2c', card:'rgba(44,78,60,.55)', line:'rgba(200,235,210,.26)', ink:'#f2f7f1', muted:'#c0d6c8', acc:'#f2efe0', bt:'#1d2b22', dock:'rgba(26,48,37,.9)', hov:'rgba(255,255,255,.10)' },
+};
+function skinRgb(c, fallback) {   // '#rrggbb' | '#rgb' | 'rgba(r,g,b,a)' -> 'r,g,b'
+  const s = String(c || '').trim(); let m;
+  if ((m = /^#([0-9a-f]{6})/i.exec(s))) return [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16)).join(',');
+  if ((m = /^#([0-9a-f])([0-9a-f])([0-9a-f])/i.exec(s))) return [m[1], m[2], m[3]].map(h => parseInt(h + h, 16)).join(',');
+  if ((m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(s))) return [m[1], m[2], m[3]].join(',');
+  return fallback || '0,0,0';
+}
+const SKIN_PROPS = ['--sk-ink0', '--sk-ink1', '--sk-ink2', '--sk-ink3', '--sk-card', '--sk-head', '--sk-hov', '--sk-dock', '--sk-dock-soft', '--sk-drawer', '--sk-pill', '--sk-line', '--sk-line-rgb',
+  '--sk-ink', '--sk-muted', '--sk-acc', '--sk-acc-rgb', '--sk-acc-hi', '--sk-acc-hi-rgb', '--sk-on', '--sk-on-rgb', '--sk-radius', '--sk-shadow-rgb', '--sk-card-photo', '--sk-tint', '--sk-idle-a', '--sk-idle-b'];
+function applySkin(item, skinId) {
+  const root = document.documentElement;
+  const tk = item ? item.tokens : PRESET_SKINS[skinId] || null;
+  ensureDeco(); root.dataset.tdDeco = (item && item.deco) || 'none';
+  if (!tk) { delete root.dataset.tdSkin; SKIN_PROPS.forEach(k => root.style.removeProperty(k)); return; }
+  const bgs = tk.bgs, acc = tk.acc, accRgb = skinRgb(acc), mix = (rgb, w) => rgb.split(',').map(v => Math.round(+v + (255 - +v) * w)).join(',');
+  const dark = skinRgb(bgs).split(',').map(v => Math.round(+v * .35)).join(',');
+  const set = (k, v) => root.style.setProperty(k, v);
+  set('--sk-ink0', bgs); set('--sk-ink1', `color-mix(in srgb, ${bgs} 88%, #ffffff)`); set('--sk-ink2', `color-mix(in srgb, ${bgs} 80%, #ffffff)`); set('--sk-ink3', `color-mix(in srgb, ${bgs} 70%, #ffffff)`);
+  set('--sk-card', tk.card); set('--sk-head', `color-mix(in srgb, ${tk.card} 55%, transparent)`); set('--sk-hov', tk.hov);
+  set('--sk-dock', tk.dock); set('--sk-dock-soft', `color-mix(in srgb, ${tk.dock} 76%, transparent)`); set('--sk-drawer', `color-mix(in srgb, ${bgs} 94%, transparent)`);
+  set('--sk-pill', `color-mix(in srgb, ${tk.hov} 65%, transparent)`); set('--sk-line', tk.line); set('--sk-line-rgb', skinRgb(tk.line, '160,210,255'));
+  set('--sk-ink', tk.ink); set('--sk-muted', tk.muted); set('--sk-acc', acc); set('--sk-acc-rgb', accRgb);
+  set('--sk-acc-hi', `rgb(${mix(accRgb, .3)})`); set('--sk-acc-hi-rgb', mix(accRgb, .3)); set('--sk-on', tk.bt); set('--sk-on-rgb', skinRgb(tk.bt));
+  set('--sk-radius', ((item && item.radius) || 16) + 'px'); set('--sk-shadow-rgb', dark);
+  set('--sk-card-photo', `color-mix(in srgb, ${bgs} 34%, transparent)`); set('--sk-tint', `linear-gradient(135deg, rgba(${skinRgb(bgs)},.55), rgba(${accRgb},.30))`);
+  set('--sk-idle-a', `rgba(${skinRgb(bgs)},.72)`); set('--sk-idle-b', `rgba(${dark},.94)`);
+  root.dataset.tdSkin = skinId;
+}
+/* A bought theme's own words in the top bar: its greeting from the pack (Tết: "Chúc Mừng Năm Mới · Đinh Mùi 2027") and a
+   "Premium · name" badge. Plain text (textContent); css/premium.css places and hides it (narrow windows, Light mode). */
+function themeGreeting(item) {
+  const root = document.documentElement, g = item && item.greeting;
+  let el = document.getElementById('td-greet');
+  if (!g) { delete root.dataset.tdGreet; if (el) el.hidden = true; return; }
+  if (!el) {
+    el = document.createElement('div'); el.id = 'td-greet';
+    el.innerHTML = '<span class="tg-text"></span><span class="tg-badge"></span>';
+    const top = document.querySelector('.top'); if (!top) return; top.appendChild(el);
+  }
+  el.hidden = false;
+  const vi = ui.lang === 'vi', nm = item.name || {};
+  el.querySelector('.tg-text').textContent = g[vi ? 'vi' : 'en'] || g.en;
+  el.querySelector('.tg-badge').textContent = (vi ? 'Cao cấp · ' : 'Premium · ') + ((vi && nm.vi) || nm.en || '');
+  root.dataset.tdGreet = '1';
+}
+/* The decoration layer (css/premium.css shows the set the theme names: snow = Noel, lanterns = Tết). Built once. */
+function ensureDeco() {
+  if (document.getElementById('td-deco')) return;
+  const d = document.createElement('div'); d.id = 'td-deco'; d.setAttribute('aria-hidden', 'true');
+  const lantern = cls => `<svg class="dc-lantern ${cls}" viewBox="0 0 84 150"><line x1="42" y1="0" x2="42" y2="22" stroke="#f0c34e" stroke-width="2.5"/><rect x="28" y="20" width="28" height="9" rx="3" fill="#f0c34e"/><ellipse cx="42" cy="66" rx="36" ry="40" fill="#d4202c" stroke="#f0c34e" stroke-width="3"/>` +
+    [-22, -8, 8, 22].map(dx => `<path d="M${42 + dx} 28 Q${42 + dx * 1.5} 66 ${42 + dx} 104" fill="none" stroke="#f0c34e" stroke-width="1.6" opacity=".75"/>`).join('') +
+    `<ellipse cx="30" cy="52" rx="8" ry="14" fill="#fff" opacity=".18"/><rect x="28" y="104" width="28" height="9" rx="3" fill="#f0c34e"/><line x1="42" y1="113" x2="42" y2="140" stroke="#f0c34e" stroke-width="2.5"/><path d="M36 140 L42 150 L48 140 Z" fill="#f0c34e"/></svg>`;
+  let flames = ''; for (let i = 0; i < 26; i++) { const x = i * 40 - 10, h = 70 + ((i * 37) % 60); flames += `<path d="M${x} 150 Q${x + 10} ${150 - h * 0.55} ${x + 22} ${150 - h} Q${x + 30} ${150 - h * 0.5} ${x + 44} 150 Z" fill="${i % 2 ? '#e0581f' : '#b8341a'}" opacity="${i % 3 ? 0.85 : 0.7}"/>`; }
+  for (let i = 0; i < 26; i++) { const x = i * 40 + 6, h = 40 + ((i * 23) % 40); flames += `<path d="M${x} 150 Q${x + 8} ${150 - h * 0.6} ${x + 16} ${150 - h} Q${x + 22} ${150 - h * 0.5} ${x + 32} 150 Z" fill="#f2a33a" opacity=".85"/>`; }
+  let petals = ''; for (let i = 0; i < 14; i++) petals += `<i style="left:${(i * 7.3 + 3) % 100}%;animation-delay:${-(i * 1.9).toFixed(1)}s;animation-duration:${12 + (i % 5) * 2}s"></i>`;
+  d.innerHTML = `<div class="dc-bunting"></div><div class="dc-snow"></div>${lantern('l1')}${lantern('l2')}<svg class="dc-flames" viewBox="0 0 1040 150" preserveAspectRatio="none">${flames}</svg><div class="dc-petals">${petals}</div>`;
+  document.body.prepend(d);
+}
+if ((typeof PD_SHOP !== 'undefined')) PD_SHOP.onChange(() => applyThemePreset(ui.theme));   // a refund falls back to Dusk; a fresh purchase repaints
 if (typeof DeckMode !== 'undefined') DeckMode.onChange(() => applyThemePreset(ui.theme));
 
 /* ---------- XP / level maths — the same formulas as StudentDeck's engine (js/app.js there) ---------- */
@@ -730,7 +873,7 @@ $('#xp').addEventListener('click', () => {
 });
 
 /* ---------- Widgets ---------- */
-function emptyState(msg) { return `<p class="muted" style="margin-top:20px;text-align:center">${esc(msg)}</p>`; }
+function emptyState(msg) { return `<div class="td-empty"><span class="td-empty-ic" aria-hidden="true">🌱</span><span>${esc(msg)}</span></div>`; }   // UI polish: one friendly line (css/polish.css)
 function widgetGate(body, render) {
   if (!PD.getSession()) { body.innerHTML = emptyState(t('empty_signin')); return null; }
   if (!ui.currentChild) { body.innerHTML = emptyState(t('empty_link_child')); return null; }
@@ -1512,23 +1655,77 @@ function renderHomework(body) {
 
 function renderTheme(body) {
   const hasMode = typeof DeckMode !== 'undefined';
-  body.innerHTML = `${hasMode ? `<p class="theme-label">${t('mode_title')}</p><div id="th-mode"></div><p class="theme-label">${t('theme_backgrounds')}</p>` : ''}<p class="muted" style="margin:0 0 8px">${t('settings_theme_hint')}</p><div class="theme-grid" id="th-grid"></div>`;
+  body.innerHTML = `${hasMode ? `<p class="theme-label">${t('mode_title')}</p><div id="th-mode"></div><p class="theme-label">${t('theme_backgrounds')}</p>` : ''}<p class="muted" style="margin:0 0 8px">${t('settings_theme_hint')}</p><div class="theme-grid" id="th-grid"></div><p class="theme-label" hidden>${t('dock_title')}</p><label class="th-switch" id="th-wall" hidden><span>${t('th_wallpaper')}</span><input type="checkbox"></label><div id="th-docks" class="th-docks row" hidden></div><p class="theme-label" id="th-radial-l" hidden>${t('th_radial')}</p><div id="th-radial" class="th-modes" hidden></div><p class="theme-label" id="th-topbar-l" hidden>${t('th_topbar')}</p><div id="th-topbar" class="th-modes" hidden></div><p class="theme-label">${t('th_floating')} <span class="pro-badge">Pro</span></p><div id="th-float" class="th-modes"></div><p class="theme-label">${t('files_title')}</p><div id="th-files" class="th-files"></div>`;
+  body.addEventListener('change', async e => {
+    if (e.target.closest('#th-wall')) { ui.wallpaper = e.target.checked; saveUI(); applyThemePreset(ui.theme); return; }
+    if (e.target.id !== 'th-file') return;
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    const r = await PD_SHOP.addFile(f);
+    if (!r.ok) { toast(t('files_bad')); return; }
+    toast(t('files_added', { n: r.packs.length }) + (r.refused.length ? t(r.refused.some(x => x.why === 'licence') ? 'files_other' : 'files_unchecked') : ''), 4200);
+  });
   function draw() {
+    const prem = (typeof PD_SHOP !== 'undefined') ? PD_SHOP.ownedThemes() : [];
     $('#th-grid', body).innerHTML = THEME_PRESETS.map(p => `
       <button class="theme-swatch${ui.theme === p.id ? ' on' : ''}" data-id="${p.id}">
         <span class="theme-swatch-dot" style="background:${presetBg(p)}"></span>
         <span>${esc(p.name)}</span>
-      </button>`).join('');
+      </button>`).join('') +
+      (prem.length ? `<p class="theme-label" style="grid-column:1/-1">${t('shop_theme_owned')}</p>` + prem.map(x => `
+      <button class="theme-swatch${ui.theme === x.key ? ' on' : ''}" data-id="${esc(x.key)}">
+        <span class="theme-swatch-dot" style="background:${x.item.swatch}"></span>
+        <span>${esc(x.item.name[ui.lang] || x.item.name.en)}</span>
+      </button>`).join('') : '') +
+      (PD.getSession && PD.getSession() && !KINDER && !UNI ? `<button class="btn" data-shop-open="1" style="grid-column:1/-1">${t('shop_theme_get')}</button>` : '');
+    // v0.28.0: store files — what is loaded, Browse… for a .tdpack, Remove, Reset to default, Save my items as a file
+    const dk = $('#th-docks', body);
+    if (dk && typeof PD_SHOP !== 'undefined') {
+      const own = PD_SHOP.ownedDocks(), cur = own.find(x => x.key === ui.dockStyle) ? ui.dockStyle : '';
+      dk.hidden = !own.length; dk.previousElementSibling.hidden = !own.length;
+      dk.innerHTML = `<button class="btn${cur ? '' : ' primary'}" data-dock="">${t('dock_standard')}</button>` + own.map(x => `<button class="btn${cur === x.key ? ' primary' : ''}" data-dock="${esc(x.key)}">${esc(x.item.name[ui.lang] || x.item.name.en)}</button>`).join('');
+    }
+    drawThemeExtras(body);
+    const files = $('#th-files', body); if (!files || typeof PD_SHOP === 'undefined') return;
+    const list = PD_SHOP.loaded();
+    files.innerHTML = (list.length ? list.map(x => `<div class="srow store-item${x.hidden ? ' off' : ''}"><span><i style="background:${x.swatch || 'var(--line)'}"></i>${esc(x.name[ui.lang] || x.name.en)}${x.hidden ? ` <em class="muted">${t('files_hidden')}</em>` : ''}</span>${x.hidden ? '' : `<button class="x" data-rm="${esc(x.id)}" aria-label="${esc(x.name.en)}">×</button>`}</div>`).join('') : `<p class="muted">${t('files_empty')}</p>`) +
+      `<div class="row"><label class="btn"><input type="file" id="th-file" accept=".tdpack,.zip" hidden>${t('files_browse')}</label></div>` +
+      `<p class="theme-label">${t('files_reset')}</p><div class="row"><button class="btn" data-files="reset-theme">${t('w_theme')}</button><button class="btn" data-files="reset-dock">${t('dock_title')}</button><button class="btn" data-files="reset">${t('reset_all')}</button></div>` +
+      (PD.getSession && PD.getSession() && PD.getMyPackFile && !KINDER && !UNI ? `<button class="btn" data-files="save">${t('files_save')}</button>` : '');
   }
+  const offShop = (typeof PD_SHOP !== 'undefined') ? PD_SHOP.onChange(draw) : () => {};
   body.addEventListener('click', e => {
+    if (e.target.closest('[data-shop-open]')) { openWidget('shop'); return; }
+    const dkb = e.target.closest('[data-dock]');
+    if (dkb) {
+      ui.dockStyle = dkb.dataset.dock || null; saveUI(); applyDockStyle(); draw();
+      if (dockStyleName() === 'radial' && !ui.radialHintSeen) { ui.radialHintSeen = true; saveUI(); toast(t('th_radial_hint'), 7000); }   // one time: how to open the rings
+      return;
+    }
+    const ex = e.target.closest('[data-rad], [data-tb], [data-fl]');
+    if (ex) {
+      if (ex.dataset.rad) ui.radialDocks = ex.dataset.rad;
+      else if (ex.dataset.tb) ui.topBarMode = ex.dataset.tb;
+      else {
+        if (!pdPro()) { if (ProGate.cta) ProGate.cta('floating'); return; }
+        ui.dockFrameless = Object.assign({}, ui.dockFrameless, { [ex.dataset.fl]: !(ui.dockFrameless || {})[ex.dataset.fl] });
+      }
+      saveUI(); applyTopBarMode(); applyFloatingIcons(); drawThemeExtras(body); return;
+    }
+    const rm = e.target.closest('[data-rm]');
+    if (rm) { if (String(ui.theme).startsWith(`pk:${rm.dataset.rm}:`)) { ui.theme = 'dusk'; saveUI(); } if (String(ui.dockStyle || '').startsWith(`pk:${rm.dataset.rm}:`)) { ui.dockStyle = null; saveUI(); } PD_SHOP.removePack(rm.dataset.rm); return; }
+    const fa = e.target.closest('[data-files]');
+    if (fa && fa.dataset.files === 'reset-theme') { ui.theme = 'dusk'; saveUI(); applyThemePreset('dusk'); draw(); toast(t('files_reset_done')); return; }
+    if (fa && fa.dataset.files === 'reset-dock') { ui.dockStyle = null; saveUI(); applyDockStyle(); draw(); toast(t('files_reset_done')); return; }
+    if (fa && fa.dataset.files === 'reset') { if (!confirm(t('files_reset_q'))) return; PD_SHOP.resetAll(); ui.theme = 'dusk'; ui.dockStyle = null; saveUI(); applyThemePreset('dusk'); applyDockStyle(); draw(); toast(t('files_reset_done')); return; }
+    if (fa && fa.dataset.files === 'save') { PD_SHOP.saveFile().then(n => toast(t('files_saved', { n })), err => toast(t(/not switched on/.test(err.message || '') ? 'files_off' : 'shop_failed'))); return; }
     const id = e.target.closest('[data-id]')?.dataset.id; if (!id) return;
     ui.theme = id; saveUI(); applyThemePreset(id); draw();
   });
   draw();
-  if (!hasMode) return undefined;
+  if (!hasMode) return offShop;
   const sw = DeckMode.mountSwitch($('#th-mode', body), { label: t('mode_title'), light: t('mode_light'), dark: t('mode_dark') });
   const off = DeckMode.onChange(draw);                                  // the swatches show the backgrounds of the mode in use
-  return () => { sw.destroy(); off(); };
+  return () => { sw.destroy(); off(); offShop(); };
 }
 
 /* ---------- Settings widget ---------- */
@@ -1576,11 +1773,14 @@ const WIDGETS = [
   { id: 'homework', cat: 'homework', titleKey: 'w_homework', icon: I('<path d="M6 3h9l3 3v15H6z"/><path d="M9 8h6M9 12h6M9 16h4"/>'), w: 320, h: 440, render: renderHomework },
   // Theme: its launcher is the palette button in the top bar (#theme-btn, left of Light / Dark and Settings, as in every suite app), never a dock
   { id: 'theme', cat: 'settings', bar: '#theme-btn', titleKey: 'w_theme', icon: I('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18c1.1 0 2-.6 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="8" r="1"/>'), w: 300, h: 500, render: renderTheme },
+  // v0.28.0 (backend v2.32.0): the Item Store — premium themes and watch faces for the whole family (js/shop.js).
+  { id: 'shop', cat: 'rewards', titleKey: 'w_shop', show: () => !!(PD.getSession && PD.getSession()), icon: I('<path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M10 20v-5h4v5"/>'), w: 420, h: 640, render: (b) => PD_SHOP.render(b) },
   { id: 'settings', cat: 'settings', titleKey: 'w_settings', icon: I('<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.96 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.96a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.6a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/>'), w: 360, h: 620, render: renderSettings },
   // ---- Tier 1 widgets (js/tier1.js, v0.9.1). Where each launcher lives is DEFAULT_PLACEMENT + the layout mode; the app tray lists them all. ----
   { id: 'family', cat: 'overview', show: () => PD.getLinkedChildren().length >= 2, titleKey: 'w_family', icon: I('<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2.5 20c0-3.3 2.5-6 5.5-6s5.5 2.7 5.5 6M14.5 14.6c.8-.4 1.6-.6 2.5-.6 2.5 0 4.5 2.4 4.5 6"/>'), w: 380, h: 420, render: renderFamilyOverview },
   { id: 'progress', cat: 'overview', titleKey: 'w_progress', icon: I('<path d="M4 20V10M10 20V4M16 20v-8"/><path d="M3 7l5-4 4 3 5-4"/>'), w: 340, h: 480, render: renderProgressReports },
   { id: 'calendar', cat: 'homework', titleKey: 'w_calendar', icon: I('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 14h3M13 14h3M8 17h3"/>'), w: 340, h: 520, render: renderCalendar },
+  { id: 'clock', cat: 'overview', titleKey: 'w_clock', icon: I('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'), w: 240, h: 290, render: (b) => typeof DeckClock !== 'undefined' ? DeckClock.mount(b, { lang: ui.lang }) : null },   // 15 Nov 2026: the Glass Blue demo's Clock face (js/deckclock.js)
   { id: 'hwc', cat: 'homework', titleKey: 'w_hwc', icon: I('<path d="M9 11l3 3 7-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8"/>'), w: 340, h: 460, render: renderHomeworkCompletion },
   { id: 'wish', cat: 'rewards', titleKey: 'w_wish', icon: I('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8H8.5a2.5 2.5 0 1 1 0-5C11 3 12 8 12 8zM12 8h3.5a2.5 2.5 0 1 0 0-5C13 3 12 8 12 8z"/>'), w: 340, h: 500, render: renderRewardsWishlist },
   { id: 'starters', cat: 'share', titleKey: 'w_starters', icon: I('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14h4"/>'), w: 340, h: 340, render: renderConversationStarters },
@@ -1597,8 +1797,8 @@ const WIDGETS = [
 
 /* UniDeck (UNI): the family view of an adult student. School widgets go (they read a linked child's class data); UniDeck's
    ParentDeck lists its own widgets in window.UNI_WIDGETS ({ id, title, iconPath, w, h, render, cat?, full? }) from its own
-   js/uni-family.js. Theme, Settings and KeepDeck (on this device only) stay. ParentDeck never loads that file. */
-const UNI_KEEP = ['theme', 'settings', 'keepdeck'];
+   js/uni-family.js. Theme, Settings, KeepDeck (on this device only) and the Clock stay. ParentDeck never loads that file. */
+const UNI_KEEP = ['theme', 'settings', 'keepdeck', 'clock'];
 if (UNI) {
   for (let i = WIDGETS.length - 1; i >= 0; i--) if (!UNI_KEEP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
   (window.UNI_WIDGETS || []).slice().reverse().forEach(w => {
@@ -1609,8 +1809,8 @@ if (UNI) {
 /* Kinder edition (TinyParentDeck): children aged 2 to 6 have no StudentDeck, homework, points or badges, so every school widget
    that reads them goes. TinyParentDeck's own js/kinder-widgets.js lists its widgets in window.KINDER_WIDGETS (the UniDeck shape,
    plus titleVi): Today at School, Attendance, Notes from teacher, Absence Notice, Class Notices, Ask Me About Today. Family
-   Overview, Theme, Settings and KeepDeck stay. ParentDeck never loads that file. */
-const KINDER_KEEP = ['family', 'theme', 'settings', 'keepdeck'];
+   Overview, Theme, Settings, KeepDeck and the Clock stay. ParentDeck never loads that file. */
+const KINDER_KEEP = ['family', 'theme', 'settings', 'keepdeck', 'clock'];
 if (KINDER) {
   for (let i = WIDGETS.length - 1; i >= 0; i--) if (!KINDER_KEEP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
   (window.KINDER_WIDGETS || []).slice().reverse().forEach(w => {
@@ -1621,7 +1821,12 @@ if (KINDER) {
 
 /* ---------- Shell: panels, drag, resize, dock (same pattern as TeachersDeck/StudentDeck) ---------- */
 const wall = $('#wall'), panels = {}; let topZ = 10;
-function front(el) { if (el.classList.contains('full')) return; if (+el.style.zIndex !== topZ) el.style.zIndex = ++topZ; }   // full-screen widgets stay underneath
+function front(el) {
+  if (el.classList.contains('full')) return;
+  document.querySelectorAll('.widget.is-front').forEach(w => { if (w !== el) w.classList.remove('is-front'); });   // UI polish: the front widget stands forward (css/polish.css)
+  el.classList.add('is-front');
+  if (+el.style.zIndex !== topZ) el.style.zIndex = ++topZ;
+}   // full-screen widgets stay underneath
 
 function gesture(handle, el, mode, id) {
   handle.addEventListener('pointerdown', e => {
@@ -1656,6 +1861,7 @@ function openWidget(id) {
   }
   const el = document.createElement('section'); el.className = 'widget' + (def.full ? ' full' : '') + (L.min ? ' min' : '');
   el.dataset.wid = id;   // which widget this is (js/bento.js: tile sizes and order on phones and tablets)
+  el.classList.add('td-opening'); el.addEventListener('animationend', () => el.classList.remove('td-opening'), { once: true });   // UI polish: a short opening
   const top = clamp(L.y, 0, Math.max(0, wall.clientHeight - 44));
   if (def.full) el.style.zIndex = 1;   // raiseFull() below orders the full-screen widgets among themselves
   else el.style.cssText = `left:${clamp(L.x, 0, Math.max(0, wall.clientWidth - 150))}px;top:${top}px;width:${L.w}px;height:${Math.max(140, Math.min(L.h, wall.clientHeight - top - 8))}px`;
@@ -1702,6 +1908,7 @@ function setLang(code) {
   rebuildAllDocks(); relabelPanels(); renderLangPill(); refreshAll();
   if (modeToggle) modeToggle.relabel({ label: t('mode_title'), light: t('mode_light'), dark: t('mode_dark') });
   labelThemeBtn();
+  applyThemePreset(ui.theme);   // the theme's greeting in the new language
 }
 function labelThemeBtn() { const b = $('#theme-btn'); b.title = t('w_theme'); b.setAttribute('aria-label', t('w_theme')); }
 // Light / Dark in the top bar, just left of Settings as in every suite app (js/mode.js, css/mode.css)
@@ -1724,7 +1931,7 @@ let modeToggle = null;
 const LAYOUT_MODES = ['compact', 'cozy', 'custom'];
 const PLACES = ['bottom', 'left', 'right', 'hidden'];
 const DOCK_CAPS = { bottom: 10, left: 5, right: 5 };
-const DEFAULT_PLACEMENT = { summary: 'bottom', badges: 'bottom', notes: 'bottom', homework: 'bottom', progress: 'bottom', calendar: 'bottom', hwc: 'bottom', attend: 'bottom', pulse: 'left', wish: 'left', starters: 'left', digest: 'left', family: 'right', settings: 'right' };   // theme: top bar since v0.25.0
+const DEFAULT_PLACEMENT = { summary: 'bottom', badges: 'bottom', notes: 'bottom', homework: 'bottom', progress: 'bottom', calendar: 'bottom', hwc: 'bottom', attend: 'bottom', pulse: 'left', wish: 'left', starters: 'left', digest: 'left', family: 'right', settings: 'right', clock: 'right' };   // theme: top bar since v0.25.0
 if (UNI) (window.UNI_WIDGETS || []).forEach(w => { DEFAULT_PLACEMENT[w.id] = 'bottom'; });   // UniDeck's family view widgets
 if (KINDER) (window.KINDER_WIDGETS || []).forEach(w => { DEFAULT_PLACEMENT[w.id] = 'bottom'; });   // TinyParentDeck's widgets
 const TRAY_CATS = ['overview', 'homework', 'rewards', 'share', 'settings'];
@@ -1755,6 +1962,7 @@ const toggleWidget = id => {
 
 function syncDock() {
   document.querySelectorAll('.dock-item[data-id], .app-tray-item[data-id]').forEach(b => b.classList.toggle('active', !!panels[b.dataset.id]));
+  if (typeof DockStyle !== 'undefined') DockStyle.refresh();
   updateNotesBadge();
 }
 // Unread Notes Home count on every launcher that opens the notes: Student Summary (it has the notes section) and Teacher Notes.
@@ -1857,7 +2065,7 @@ ensureDockPlacement(); rebuildAllDocks();
 if (window.DockDrag) DockDrag.init({
   zones: { bottom: '#dock', left: '#dock-left-items', right: '#dock-right-items' },
   item: '.dock-item[data-id]', caps: DOCK_CAPS,
-  tray: { grid: '#app-tray-grid', item: '.app-tray-item[data-id]', tab: '#app-tray-tab' },
+  tray: { grid: '#app-tray-grid', item: '.app-tray-item[data-id]', tab: '#app-tray-tab, #dock .dk-tray-btn' },   // the floating and magnifying docks hide the tab and carry a tray button
   move(id, loc, ids) {
     const from = ui.dockPlacement[id], order = ui.dockOrder = ui.dockOrder || {};
     ui.dockPlacement[id] = loc;
@@ -1871,6 +2079,142 @@ if (window.DockDrag) DockDrag.init({
   onStart: () => ['left', 'right'].forEach(sd => { if (effectiveSideVisible(sd)) $('#dock-' + sd).hidden = false; }),
   onEnd: () => { buildSideDock('left'); buildSideDock('right'); },
 });
+/* v0.28.0: dock styles bought in the Shop (js/dockstyle.js draws them; js/shop.js knows which the family owns) */
+if (typeof DockStyle !== 'undefined') {
+  DockStyle.configure({
+    widgets: () => WIDGETS.filter(isVisible).map(w => ({ id: w.id, label: t(w.titleKey), icon: w.icon, cat: w.cat })),
+    categories: () => TRAY_CATS.map(c => [c, t('cat_' + c)]), favourites: () => widgetsFor('bottom').map(w => w.id),
+    isOpen: id => !!panels[id], toggle: id => toggleWidget(id), openTray: () => openAppTray(),
+    labels: { get tray() { return t('dock_tray'); }, get widgets() { return t('dock_widgets'); }, get favourites() { return t('dock_favourites'); }, get pin() { return t('dock_pin'); }, get unpin() { return t('dock_unpin'); },
+      // UI polish (from TeachersDeck): the two-level sidebar and the rings
+      get classes() { return t('dk_classes'); }, get theme() { return t('dk_theme'); }, get language() { return t('dk_language'); }, get light() { return t('dk_light'); }, get dark() { return t('dk_dark'); },
+      get settings() { return t('dk_settings'); }, get search() { return t('dk_search'); }, get searchClass() { return t('dk_search_kid'); }, get searchLang() { return t('dk_search_lang'); },
+      get noMatch() { return t('dk_no_match'); }, get noFavs() { return t('dk_no_favs'); }, get more() { return t('dk_more'); }, get dragHint() { return t('dk_drag_hint'); } },
+    ringDefaults: { overview: ['summary', 'notes', 'calendar', 'family'] },   // a fresh install's ring order, before usage counts
+    nav: {   // what the top bar does, inside the sidebar: the children (in place of TeachersDeck's classes), language, Light / Dark, Theme, Settings
+      get classes() { return (!UNI && PD.getSession && PD.getSession() && PD.getLinkedChildren().length) ? () => PD.getLinkedChildren().map(k => ({ id: k.studentId, label: k.displayName, active: k.studentId === ui.currentChild })) : undefined; },
+      classLabel: () => { const k = PD.getLinkedChildren().find(x => x.studentId === ui.currentChild); return k ? k.displayName : t('dk_classes'); },
+      switchClass: id => switchChild(id),
+      languages: () => LANGS.map(l => ({ code: l.code, label: l.name, active: l.code === ui.lang })),
+      langLabel: () => (LANGS.find(l => l.code === ui.lang) || LANGS[0]).name,
+      setLanguage: code => setLang(code),
+      isLight: () => isLightMode(),
+      toggleMode: () => { if (typeof DeckMode !== 'undefined') DeckMode.set(isLightMode() ? 'dark' : 'light'); },
+      openTheme: () => { panels.theme ? front(panels.theme.el) : openWidget('theme'); },
+      openSettings: () => { panels.settings ? front(panels.settings.el) : openWidget('settings'); },
+    },
+  });
+}
+const dockStyleName = () => { const d = ui.dockStyle && typeof PD_SHOP !== 'undefined' ? PD_SHOP.dockByKey(ui.dockStyle) : null; return d ? d.item.style : 'standard'; };
+function applyDockStyle() {
+  if (typeof DockStyle === 'undefined' || typeof PD_SHOP === 'undefined') return;
+  const d = ui.dockStyle ? PD_SHOP.dockByKey(ui.dockStyle) : null;
+  DockStyle.apply(d ? d.item.style : 'standard', d && d.item);
+  applyTopBarMode();
+}
+/* UI polish (from TeachersDeck), menus scope step 1: Floating, Magnifying and Circle (and Radial without its docks) tuck the
+   top bar away; it drops down when the pointer rests on the top 6 px for 120 ms, closes 600 ms after the pointer leaves
+   (or with Esc), stays down while focus is inside it. Touchscreens get a pull handle at the top centre; Tab opens it.
+   Theme → Top bar: "Always shown" keeps it. Radial: Docks off (default) / Compact dock / Keep docks. */
+const TOPBAR_DROP_STYLES = ['float', 'magnify', 'circle'];
+const radialDocks = () => ['off', 'compact', 'keep'].includes(ui.radialDocks) ? ui.radialDocks : 'off';
+const tbDropStyle = () => { const s = dockStyleName(); return TOPBAR_DROP_STYLES.includes(s) || (s === 'radial' && radialDocks() !== 'keep'); };
+const topBar = (function () {
+  let edge = null, handle = null, openT = 0, closeT = 0;
+  const bar = () => document.querySelector('.top');
+  const isDrop = () => document.body.classList.contains('tb-drop');
+  function open() { clearTimeout(closeT); document.body.classList.add('tb-open'); }
+  function close(force) {
+    clearTimeout(openT);
+    const b = bar();
+    if (!force && b && b.contains(document.activeElement)) return;
+    document.body.classList.remove('tb-open');
+  }
+  function laterClose() { clearTimeout(closeT); closeT = setTimeout(() => close(false), 600); }
+  function build() {
+    if (edge) return;
+    edge = document.createElement('div'); edge.id = 'tb-edge'; edge.setAttribute('aria-hidden', 'true');
+    edge.addEventListener('mouseenter', () => { if (!isDrop()) return; clearTimeout(openT); openT = setTimeout(open, 120); });
+    edge.addEventListener('mouseleave', () => { clearTimeout(openT); if (document.body.classList.contains('tb-open')) laterClose(); });
+    handle = document.createElement('button'); handle.id = 'tb-handle'; handle.type = 'button';
+    handle.setAttribute('aria-label', t('th_tb_handle'));
+    handle.addEventListener('click', () => { document.body.classList.contains('tb-open') ? close(true) : open(); });
+    let y0 = null;
+    handle.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, { passive: true });
+    handle.addEventListener('touchmove', e => { if (y0 !== null && e.touches[0].clientY - y0 > 16) { open(); y0 = null; } }, { passive: true });
+    document.body.appendChild(edge); document.body.appendChild(handle);
+    const b = bar();
+    if (b) {
+      b.addEventListener('mouseenter', () => { if (isDrop()) clearTimeout(closeT); });
+      b.addEventListener('mouseleave', () => { if (isDrop()) laterClose(); });
+      b.addEventListener('focusin', () => { if (isDrop()) open(); });
+      b.addEventListener('focusout', () => { if (isDrop()) laterClose(); });
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && isDrop() && document.body.classList.contains('tb-open')) close(true); });
+    document.addEventListener('pointerdown', e => {   // a tap elsewhere folds it (touch has no "pointer leaves")
+      if (!isDrop() || !document.body.classList.contains('tb-open')) return;
+      const b = bar(); if ((b && b.contains(e.target)) || e.target === handle) return;
+      close(true);
+    });
+  }
+  return { build, close };
+})();
+function applyTopBarMode() {
+  const s = dockStyleName();
+  document.body.classList.toggle('rad-off', s === 'radial' && radialDocks() === 'off');
+  document.body.classList.toggle('rad-compact', s === 'radial' && radialDocks() === 'compact');
+  const dropStyle = tbDropStyle(), drop = dropStyle && ui.topBarMode !== 'shown';
+  document.body.classList.toggle('tb-drop', drop);
+  document.body.classList.toggle('tb-keep', dropStyle && !drop);
+  if (drop) topBar.build(); else topBar.close(true);
+}
+/* Floating icons (Pro; ParentDeck's own gate, js/progate.js): take the panel away behind a dock so its icons float on the
+   background by themselves, chosen per dock. ParentDeck's top bar has no panel, so it is not offered. */
+const FLOAT_PARTS = ['bottom', 'sides', 'rings'];
+const pdPro = () => !ProGate.enabled || !!ProGate.pro;   // while the gate is off nothing is locked (PRO-TIERS.md)
+function applyFloatingIcons() {
+  const f = (pdPro() && ui.dockFrameless) || {};
+  FLOAT_PARTS.forEach(k => document.body.classList.toggle('df-' + k, !!f[k]));
+}
+/* The Theme widget's polish rows: Moving wallpaper, Radial docks, Top bar, Floating icons */
+function drawThemeExtras(body) {
+  const $b = s => body.querySelector(s); if (!$b('#th-float')) return;
+  const prem = String(ui.theme || '').startsWith('pk:') && typeof PD_SHOP !== 'undefined' ? PD_SHOP.themeByKey(ui.theme) : null;
+  const wall = $b('#th-wall');
+  wall.hidden = !(prem && prem.item.wallpaper && !isLightMode());
+  wall.querySelector('input').checked = ui.wallpaper !== false;
+  const row = (sel, show, key, opts, cur) => {
+    const el = $b(sel), lab = $b(sel + '-l'); el.hidden = !show; if (lab) lab.hidden = !show;
+    el.innerHTML = opts.map(([k, lk]) => `<button type="button" class="btn${cur === k ? ' primary' : ''}" data-${key}="${k}" aria-pressed="${cur === k}">${esc(t(lk))}</button>`).join('');
+  };
+  row('#th-radial', dockStyleName() === 'radial', 'rad', [['off', 'th_rad_off'], ['compact', 'th_rad_compact'], ['keep', 'th_rad_keep']], radialDocks());
+  row('#th-topbar', tbDropStyle(), 'tb', [['drop', 'th_tb_drop'], ['shown', 'th_tb_shown']], ui.topBarMode === 'shown' ? 'shown' : 'drop');
+  const pro = pdPro(), f = ui.dockFrameless || {};
+  $b('#th-float').innerHTML = FLOAT_PARTS.map(k => `<button type="button" class="btn${pro && f[k] ? ' primary' : ''}${pro ? '' : ' locked'}" data-fl="${k}" aria-pressed="${!!(pro && f[k])}">${esc(t('th_fl_' + k))}</button>`).join('');
+}
+applyDockStyle(); applyFloatingIcons();
+if (typeof PD_SHOP !== 'undefined') PD_SHOP.onChange(applyDockStyle);
+/* v0.28.0: a purchase (or a file) brought something new: a small card with Try it and Later. Nothing changes on its own. */
+function tryStoreItem(p) {
+  const key = `pk:${p.id}:${p.items[0].id}`;
+  if (p.kind === 'theme') { ui.theme = key; saveUI(); applyThemePreset(key); }
+  else if (p.kind === 'dock') { ui.dockStyle = key; saveUI(); applyDockStyle(); }
+  else if (p.kind === 'sticker') openWidget('keepdeck');
+  else openWidget('theme');
+}
+function showNewItems() {
+  if (typeof PD_SHOP === 'undefined' || !PD_SHOP.newPacks) return;
+  const list = PD_SHOP.newPacks();
+  let card = document.getElementById('store-new');
+  if (!list.length) { if (card) card.remove(); return; }
+  if (!card) { card = document.createElement('div'); card.id = 'store-new'; card.className = 'store-new'; card.setAttribute('role', 'status'); document.body.appendChild(card); }
+  const p = list[0], nm = p.name[ui.lang] || p.name.en;
+  card.innerHTML = `<span class="sn-gift" aria-hidden="true">🎁</span><div><b>${t('new_title')}</b><span>${esc(nm)}${list.length > 1 ? ` <em>+${list.length - 1}</em>` : ''}</span></div>` +
+    `<button class="btn primary" data-sn="try">${t('new_try')}</button><button class="btn" data-sn="later">${t('new_later')}</button>`;
+  card.onclick = e => { const b = e.target.closest('[data-sn]'); if (!b) return; if (b.dataset.sn === 'try') tryStoreItem(p); PD_SHOP.markSeen([p.id]); };
+}
+if (typeof PD_SHOP !== 'undefined') PD_SHOP.onChange(showNewItems);
+showNewItems();
 $('#app-tray-tab').addEventListener('click', () => $('#app-tray-backdrop').hidden ? openAppTray() : closeAppTray());
 $('#app-tray-handle').addEventListener('click', closeAppTray);
 $('#app-tray-backdrop').addEventListener('click', e => { if (e.target.id === 'app-tray-backdrop') closeAppTray(); });

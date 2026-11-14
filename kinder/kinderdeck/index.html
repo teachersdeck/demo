@@ -7,6 +7,10 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/kinderdeck.css">
 <link rel="stylesheet" href="css/dockdrag.css">   <!-- dragging launchers: the suite's, a copy of TinyTeachersDeck's (tools/sync_shared.py) -->
+<link rel="stylesheet" href="css/dockstyle.css">   <!-- dock styles: the suite's (teachersdeck/css/dockstyle.css), unchanged -->
+<link rel="stylesheet" href="css/premium.css">   <!-- UI polish: each background colours the windows and docks; Theme > Dock (adapted from AdminDeck's) -->
+<link rel="stylesheet" href="css/polish.css">   <!-- UI polish: corners, title bars, depth, motion, backgrounds (the suite's teachersdeck/css/polish.css, unchanged) -->
+<link rel="stylesheet" href="css/deckclock.css">   <!-- the Clock widget (js/deckclock.js) -->
 </head>
 <body>
   <div id="bg-layer" class="bg-layer"></div>
@@ -47,6 +51,10 @@
     <div class="drawer-body">
       <p class="drawer-label" data-i18n="backgrounds">Backgrounds</p>
       <div class="swatch-grid" id="theme-presets"></div>
+      <p class="drawer-label" data-i18n="dock_title">Dock</p>   <!-- UI polish: dock styles (js/dockstyle.js) -->
+      <div class="dock-style-grid" id="dock-styles"></div>
+      <div class="topbar-mode" id="radial-mode" role="group" aria-label="With Radial" hidden></div>
+      <div class="topbar-mode" id="topbar-mode" role="group" aria-label="Top bar" hidden></div>
       <p class="drawer-label" data-i18n="your_image">Your image or logo</p>
       <label class="upload-row" for="bg-upload"><span data-i18n="upload_bg">Upload a background image</span><input type="file" id="bg-upload" accept="image/*" hidden></label>
       <button class="ghost-btn" id="bg-remove" data-i18n="bg_remove" hidden>Remove my image</button>
@@ -118,6 +126,10 @@
   <script src="js/growthpickup.js"></script>
   <script src="js/drivepick.js"></script>   <!-- Google Drive in Files: the suite's, a copy of TinyTeachersDeck's (tools/sync_shared.py) -->
   <script src="js/files.js"></script>   <!-- Files widget (v0.10.0): before app.js -->
+  <script src="js/store-core.js"></script>   <!-- checks the dock packs: the suite's (teachersdeck/js/store-core.js), unchanged -->
+  <script src="js/deckclock.js"></script>   <!-- after store-core.js: the Clock widget, the Glass Blue demo's Blue Chronograph face -->
+  <script src="js/dock-packs.js"></script>   <!-- the five dock styles: the suite's admindeck/js/dock-packs.js, unchanged -->
+  <script src="js/dockstyle.js"></script>   <!-- draws the dock styles: the suite's (teachersdeck/js/dockstyle.js), unchanged -->
   <script src="js/dockdrag.js"></script>   <!-- dragging launchers: the suite's, a copy of TinyTeachersDeck's (tools/sync_shared.py); before app.js -->
   <script src="js/app.js"></script>
 </body>

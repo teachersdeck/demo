@@ -144,6 +144,9 @@ function kdMountHome(pane, id, db) {
     idb: db,
     lang: ui.lang,
     watermark: (typeof Watermark !== 'undefined') ? Watermark : null,
+    // v0.28.0: sticker packs bought in the Shop, offered in the board's picture menu (js/shop.js)
+    stickers: () => (typeof PD_SHOP !== 'undefined' && PD_SHOP.scrapPacks ? PD_SHOP.scrapPacks() : []).filter(p => p.kind === 'sticker' && p.items.some(i => i.svg))
+      .map(p => ({ name: p.name[ui.lang] || p.name.en, items: p.items.filter(i => i.svg).map(i => ({ id: i.id, name: i.name[ui.lang] || i.name.en, svg: i.svg })) })),
     download: (blob, name) => {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob); a.download = name;

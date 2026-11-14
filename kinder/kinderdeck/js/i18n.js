@@ -25,7 +25,15 @@ const STR = {
   layout_label:['Layout','Bố cục'], reset_layout:['Reset widget positions','Đặt lại vị trí widget'], reset_all:['Reset everything on this device','Đặt lại mọi thứ trên thiết bị này'],
   reset_all_confirm:['Reset KinderDeck on this device? This clears your theme, language, layout and local data.','Đặt lại KinderDeck trên thiết bị này? Thao tác này xóa giao diện, ngôn ngữ, bố cục và dữ liệu cục bộ.'],
   move_action:['Move','Di chuyển'], minimize_action:['Minimize','Thu nhỏ'], restore_action:['Restore','Khôi phục'],
-  sheet_ok:['Done.','Xong.'], copied:['Copied.','Đã sao chép.']
+  sheet_ok:['Done.','Xong.'], copied:['Copied.','Đã sao chép.'],
+  // UI polish (14 Nov 2026): Theme → Dock, the dock styles' own labels and the menus' categories
+  dock_title:['Dock','Dock'], dock_standard:['Standard','Tiêu chuẩn'],
+  dock_radial_hint:['Right-click an empty part of the screen (or long-press on a touchscreen) to open your widgets.','Nhấp chuột phải vào chỗ trống (hoặc nhấn giữ trên màn hình cảm ứng) để mở widget.'],
+  dock_rad_off:['Docks off','Tắt dock'], dock_rad_compact:['Compact dock','Dock gọn'], dock_rad_keep:['Keep docks','Giữ dock'],
+  dock_tb_drop:['Drop down at the top edge','Thả xuống ở mép trên'], dock_tb_shown:['Always shown','Luôn hiện'],
+  cat_overview:['Overview','Tổng quan'], cat_children:['Children and families','Trẻ và gia đình'], cat_money:['Money and kitchen','Tài chính và bếp'],
+  cat_staff:['Staff and suppliers','Nhân sự và nhà cung cấp'], cat_tools:['Calendar and tools','Lịch và công cụ'],
+  bg_paper:['Paper','Giấy'], bg_chalkboard:['Chalkboard','Bảng đen']
 };
 const t = (k, v) => { const s = STR[k]; let r = s ? s[state.lang === 'vi' ? 1 : 0] : k; if (v) Object.keys(v).forEach(x => r = r.replace('{' + x + '}', v[x])); return r; };
 function localizeNode(root) {
