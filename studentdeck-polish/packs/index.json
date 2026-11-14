@@ -1,0 +1,7 @@
+{
+ "packs": [
+  "starter-frames.json",
+  "starter-stamps.json"
+ ],
+ "note": "Free packs bundled with StudentDeck. Each file is a pack (ScrapCore.validatePack): data only, never code. Installed into the StudentDeckScrap 'packs' store on first run; a higher version replaces an older one."
+}

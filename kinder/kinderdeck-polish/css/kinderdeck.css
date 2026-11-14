@@ -1,0 +1,121 @@
+/* KinderDeck additions on top of the AdminDeck shell stylesheet (style.css). */
+.loc-select{height:38px;border-radius:11px;border:1px solid var(--line);background:rgba(20,26,34,.55);backdrop-filter:blur(6px);color:var(--text-hi);font-family:'Quicksand';font-weight:700;font-size:12px;padding:0 10px;cursor:pointer;max-width:190px}
+.kd-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.kd-table th{text-align:left;font-family:'Quicksand';font-size:10.5px;letter-spacing:.4px;color:var(--text-lo);font-weight:700;padding:6px}
+.kd-table th,.kd-table td{border-bottom:1px solid var(--line)}
+.kd-table td{padding:7px 6px}
+.kd-table tr:last-child td{border-bottom:none}
+.kd-search{margin-bottom:10px}
+.kd-drop{display:flex;align-items:center;justify-content:center;text-align:center;min-height:96px;border:2px dashed var(--line);border-radius:12px;color:var(--text-lo);cursor:pointer;padding:12px;margin-bottom:10px;transition:border-color .15s,background .15s}
+.kd-drop:hover,.kd-drop.over{border-color:var(--amber);background:rgba(var(--amber-rgb),.08);color:var(--text-hi)}
+.kd-att{cursor:pointer}
+.kd-att:hover{background:rgba(255,255,255,.04)}
+.badge.good{background:rgba(111,207,151,.16);color:var(--good)}
+.bar .fill.good{background:var(--good)}.bar .fill.bad{background:var(--danger)}
+textarea{resize:vertical;min-height:60px}
+
+/* Settings sections hidden for now; remove class="later" in index.html to show them again. */
+.later{display:none!important}
+
+/* Document Library */
+.kd-click tr[data-id]{cursor:pointer}
+.kd-click tr[data-id]:hover td{background:rgba(255,255,255,.04)}
+.kd-drop-sm{min-height:52px;padding:8px 12px}
+.kd-form label{display:block;font-size:11.5px;color:var(--text-lo);margin:10px 0 3px}
+.kd-form input[type=date],.kd-form input[type=number]{background:var(--ink-1);border:1px solid var(--line);border-radius:8px;color:var(--text-hi);padding:8px 10px;font-family:'Inter';font-size:13px;width:100%;color-scheme:dark}
+.kd-form select{width:100%}
+.kd-prev{display:block;max-width:100%;max-height:140px;border-radius:8px;margin:10px 0 0}
+
+/* Kitchen Cost Book */
+.kx-head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.kx-date{display:flex;gap:6px;align-items:center}
+.kx input[type=date],.kx input[type=number],.kx input[type=text]{background:var(--ink-1);border:1px solid var(--line);border-radius:8px;color:var(--text-hi);padding:6px 8px;font-family:'Inter';font-size:12.5px;color-scheme:dark}
+.kx-big{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text-lo)}
+.kx-big input{width:120px;font-size:20px!important;font-weight:700;padding:6px 10px!important}
+.kx-all{font-size:12px;color:var(--text-lo);padding-bottom:8px}.kx-all b{font-size:18px;color:var(--text-hi)}
+.kx-scroll{overflow-x:auto}
+.kx-neg{color:var(--danger)}.kx-pos{color:var(--good)}
+.kx-click tr[data-d]{cursor:pointer}.kx-click tr[data-d]:hover td,.kx-cur td{background:rgba(255,255,255,.05)}
+.kx-add input,.kx-add select{min-width:0}
+.kx-rate{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text-lo)}
+.kx input.kx-flag{border-color:var(--amber)!important;box-shadow:0 0 0 1px var(--amber)}
+.kx-warnline{color:var(--amber)}
+.kx-chip{display:inline-flex;align-items:center;gap:3px;margin:2px 4px 2px 0;padding:2px 4px 2px 8px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid var(--line);font-size:11.5px;white-space:nowrap}
+.kx-chip button{background:none;border:0;color:var(--text-lo);cursor:pointer;font-size:13px;line-height:1;padding:0 3px}.kx-chip button:hover{color:var(--danger)}
+.kx select.kx-pick{font-size:11.5px;padding:2px 4px;max-width:150px}
+.kx-sheet{display:block;width:100%;min-height:360px;border:0;border-radius:8px;background:transparent}
+.kx-note{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--text-lo);margin-bottom:8px}
+.kx-note textarea{background:var(--ink-1);border:1px solid var(--line);border-radius:8px;color:var(--text-hi);padding:7px 9px;font-family:'Inter';font-size:12.5px;min-height:44px}
+.kx-start{border:1px solid var(--amber);background:rgba(var(--amber-rgb),.08);border-radius:12px;padding:12px;margin:8px 0}
+.kx-dish{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}
+.kx-dish-h{display:flex;gap:10px;align-items:center;margin-bottom:4px}
+.widget.full .kx{max-width:1500px;margin:0 auto}
+.kx-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.kx-right{position:sticky;top:0}
+.kx-side{display:block;width:100%;height:calc(100vh - 240px);min-height:420px;border:0;border-radius:8px;background:transparent}
+@media (max-width:1100px){.kx-split{grid-template-columns:1fr}.kx-right{position:static}}
+@media (min-width:900px){.widget.full .widget-body{padding-left:84px;padding-right:84px}} /* clear of the left/right side drawers */
+.kf-fam{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0}
+.kf-fam-h{display:flex;gap:10px;align-items:baseline;margin-bottom:4px}
+.kf-list{margin:4px 0 0 18px;font-size:12px;color:var(--text-lo)}
+.kf-tel{color:var(--text-hi)}
+.kf-fam input[type=tel],.kf-fam select{background:var(--ink-1);border:1px solid var(--line);border-radius:8px;color:var(--text-hi);padding:5px 8px;font-family:'Inter';font-size:12.5px}
+.kf-h{font-family:'Quicksand';font-size:14px;margin:0 0 8px;color:var(--text-hi)}
+.kf-name{background:none;border:0;padding:0;color:var(--text-hi);font:inherit;font-weight:700;cursor:pointer;text-align:left}.kf-name:hover{text-decoration:underline}
+.kf-card-back{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.kf-card{position:relative;width:min(520px,100%);max-height:86vh;overflow:auto;background:var(--ink-1);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--text-hi)}
+.kf-card-h{font-family:'Quicksand';font-size:18px;margin:0 28px 2px 0}
+.kf-card-x{position:absolute;top:8px;right:10px;background:none;border:0;color:var(--text-lo);font-size:22px;line-height:1;cursor:pointer}.kf-card-x:hover{color:var(--text-hi)}
+.kx-week th,.kx-week td{vertical-align:top;font-size:12.5px;min-width:96px}.kx-week tr>th:first-child{white-space:nowrap}.kx-week th .kf-name{text-align:center;width:100%}
+.kf-chip{cursor:pointer;color:var(--text-hi);font-family:inherit;padding:2px 9px}.kf-chip:hover{background:rgba(255,255,255,.16);border-color:var(--text-lo)}
+.kf-sel{text-decoration:underline}.kf-sel::before{content:'\25B8  '}
+.kf-card-back~.kf-card-back{background:rgba(0,0,0,.25)}
+.kf-new input[type=tel],.kf-new input[type=date],.kf-new input[type=text],.kf-new select{background:var(--ink-1);border:1px solid var(--line);border-radius:8px;color:var(--text-hi);padding:6px 8px;font-family:'Inter';font-size:12.5px;color-scheme:dark;width:100%}
+.kf-card:has(.kf-new){width:min(680px,100%)}
+.att-chk{--c:#34c77b;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--c);background:transparent;color:var(--c);opacity:.45;display:inline-grid;place-items:center;cursor:pointer;font-size:16px;font-weight:800;line-height:1;padding:0;flex-shrink:0}
+.att-chk.l{--c:#f0b429}.att-chk.a{--c:#ef5350}
+.att-chk:hover{opacity:.85;background:rgba(255,255,255,.06)}
+.att-chk.on{opacity:1;background:var(--c);color:#0b0f14}
+.att-head{border-bottom:none;padding-bottom:0}.att-lab{width:28px;text-align:center;font-size:9.5px;font-weight:700;color:#34c77b;overflow:visible;white-space:nowrap}.att-lab.l{color:#f0b429}.att-lab.a{color:#ef5350}
+.att-name{cursor:pointer}.att-name:hover{text-decoration:underline}.att-row{align-items:flex-start}.att-row .att-chk{margin-top:2px}
+
+/* v0.4.27 Owner Dashboard: three columns (school | money this month | cash flow year to date); one column on narrow screens */
+.ss-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.ss-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:1000px){.ss-cols{grid-template-columns:1fr}}
+
+/* v0.4.29 Owner Dashboard: cards that open another widget */
+.od-go{cursor:pointer}
+.od-go:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+/* v0.5.0 Classes for teachers (js/teachers.js) */
+.tc-card { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; margin-top: 8px; }
+.tc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .tc-head b { flex: 0 1 auto; } .tc-head .muted { flex: 1; font-size: 12px; }
+.tc-edit { display: grid; gap: 8px; margin-top: 8px; }
+.tc-kids { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px; max-height: 260px; overflow: auto; }
+.tc-kid { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 4px; border-radius: 6px; } .tc-kid.other { opacity: .55; }
+.tc-key summary { cursor: pointer; margin: 6px 0; }
+/* v0.7.0: children's photos in Classes for teachers (a school switch, off by default) */
+.tc-photos { display: flex; align-items: center; gap: 8px; font-weight: 600; margin: 10px 0 2px; }
+.tc-ph-wrap { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }
+.tc-ph { width: 30px; height: 30px; border-radius: 50%; border: 1px dashed rgba(127, 127, 127, .6); background: none; padding: 0; overflow: hidden; cursor: pointer; font-size: 14px; }
+.tc-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tc-ph-x { border: 0; background: none; color: inherit; opacity: .6; cursor: pointer; font-size: 14px; padding: 0 4px; }
+/* Files (v0.10.0, js/files.js): the same look as AdminDeck's */
+.fl-add{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.fl-link{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.fl-link input{flex:1 1 140px;min-width:0;background:var(--ink-1);border:1px solid var(--line);color:var(--text-hi);border-radius:8px;padding:7px 9px;font-size:12.5px}
+.fl-err{color:#ff9a8a;font-size:12px;margin:0 0 8px}
+.fl-err[hidden]{display:none}
+.fl-list{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.fl-list li:not(.empty){display:flex;align-items:center;gap:8px;background:var(--ink-2);border:1px solid var(--line);border-radius:9px;padding:6px 8px}
+.fl-type{flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.4px;color:var(--amber);min-width:44px}
+.fl-name-btn{flex:1;min-width:0;text-align:left;background:none;border:0;color:var(--text-hi);font:inherit;font-size:13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 0}
+.fl-name-btn:hover{color:var(--amber)}
+.fl-ico{flex-shrink:0;background:none;border:1px solid var(--line);color:var(--text-lo);border-radius:7px;width:26px;height:26px;cursor:pointer}
+.fl-ico:hover{color:var(--text-hi);border-color:var(--amber)}
+.fl-stage{position:fixed;inset:0;z-index:9000;background:var(--ink-0);display:flex;flex-direction:column}
+.fl-stage[hidden]{display:none}
+.fl-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.fl-title{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-hi)}
+.fl-frame{flex:1;width:100%;border:0;background:#fff}
