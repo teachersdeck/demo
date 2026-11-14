@@ -14,6 +14,7 @@ const GAMES = [
   KIT('Parts of Speech Blaster', 'Parts-of-Speech-Blaster', 'parts_of_speech_blaster.html', 'en'),
   KIT('Word Match-Up', 'Word-Match-Up', 'word_match_up.html', 'en'),
   KIT('Punctuation Rescue', 'Punctuation-Rescue', 'punctuation_rescue.html', 'en'),
+  KIT('Telling Time', 'Telling-Time', 'telling_time.html', 'en'),
   KIT('Number Ninja', 'Number-Ninja', 'number_ninja.html', 'maths', true),
   KIT('Tug of War', 'Tug-of-War', 'tug_of_war.html', 'maths', true),
   KIT('Fraction Pizza', 'Fraction-Pizza', 'fraction_pizza.html', 'maths', true),
