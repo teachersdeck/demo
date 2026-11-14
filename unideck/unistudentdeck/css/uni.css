@@ -21,7 +21,7 @@ html.uni .dock-item>span:last-child{letter-spacing:-.3px;hyphens:auto;-webkit-hy
 .ud-pick select{flex:1;min-width:0}
 .ud-list{list-style:none;margin:6px 0;padding:0}
 .ud-list li{display:flex;align-items:center;gap:8px}
-.ud-list li.on{background:rgba(224,169,59,.12);border-radius:8px}
+.ud-list li.on{background:rgba(var(--gold-rgb,224,169,59),.12);border-radius:8px}
 .ud-linkbtn{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;padding:2px 4px;border-radius:6px}
 .ud-linkbtn:focus-visible{outline:2px solid var(--gold)}
 .ud-back{flex-direction:row;color:var(--gold-hi);font-size:12px}

@@ -129,7 +129,7 @@ function dirPaintAttn(){
 function dirPaintList(){
   const el = DIRUI.body.querySelector('#dir-list'); if(!el) return;
   const all = DIRUI.data.people, list = dirFiltered();
-  if(!all.length){ el.innerHTML = emptyState(t('dir_empty_all')); return; }
+  if(!all.length){ el.innerHTML = emptyState(t('dir_empty_all'), '📇'); return; }
   if(!list.length){ el.innerHTML = emptyState(t('dir_empty')); return; }
   const shown = list.slice(0, DIR_ROW_CAP);
   el.innerHTML = `<p class="hint dir-count">${esc(t('dir_count_showing', { n: list.length }))}</p>` + shown.map(p => dirRowHtml(p)).join('')

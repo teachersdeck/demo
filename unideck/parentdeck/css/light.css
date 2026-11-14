@@ -347,7 +347,7 @@
   background:linear-gradient(110deg,transparent 0,rgba(15,23,42,0.77) 48%,transparent 62%);
 }
 :where(html[data-mode="light"]) .bc-hero{
-  background:radial-gradient(520px 200px at 12% 0%,rgba(224,169,59,.22),transparent 70%),linear-gradient(180deg,rgba(15,23,42,0.055),rgba(15,23,42,0.022));
+  background:radial-gradient(520px 200px at 12% 0%,rgba(var(--amber-rgb),.22),transparent 70%),linear-gradient(180deg,rgba(15,23,42,0.055),rgba(15,23,42,0.022));
 }
 :where(html[data-mode="light"]) .bc-count{
   color:#bc8406;
@@ -392,7 +392,7 @@
   background:rgba(10,13,24,0.432);
 }
 :where(html[data-mode="light"]) .bc-card{
-  box-shadow:0 20px 60px rgba(0,0,0,0.27),0 0 40px rgba(224,169,59,.25);
+  box-shadow:0 20px 60px rgba(0,0,0,0.27),0 0 40px rgba(var(--amber-rgb),.25);
 }
 :where(html[data-mode="light"]) .bc-x:hover{
   background:rgba(15,23,42,0.11);
@@ -441,10 +441,10 @@
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .sgrid .subwidget:not(#sm-stats):hover{
-  box-shadow:0 10px 28px rgba(0,0,0,0.171),0 0 0 1px rgba(224,169,59,.22),0 0 24px rgba(224,169,59,.14);
+  box-shadow:0 10px 28px rgba(0,0,0,0.171),0 0 0 1px rgba(var(--amber-rgb),.22),0 0 24px rgba(var(--amber-rgb),.14);
 }
 :where(html[data-mode="light"]) .subwidget .tile:hover{
-  box-shadow:0 8px 18px rgba(0,0,0,0.158),0 0 16px rgba(224,169,59,.3);
+  box-shadow:0 8px 18px rgba(0,0,0,0.158),0 0 16px rgba(var(--amber-rgb),.3);
 }
 :where(html[data-mode="light"]) .subwidget .srow:hover b{
   color:#bc8406;
@@ -459,7 +459,7 @@
   background:linear-gradient(100deg,transparent 0,rgba(15,23,42,0.88) 50%,transparent 100%);
 }
 :where(html[data-mode="light"]) .note-card:hover{
-  box-shadow:0 8px 20px rgba(0,0,0,0.158),0 0 18px rgba(224,169,59,.16);
+  box-shadow:0 8px 20px rgba(0,0,0,0.158),0 0 18px rgba(var(--amber-rgb),.16);
 }
 :where(html[data-mode="light"]) .note-card::after{
   color:#bc8406;
@@ -490,6 +490,41 @@
 }
 :where(html[data-mode="light"]) .pay-box{
   border:1px solid rgba(236,236,236,0.3);
+}
+:where(html[data-mode="light"]) .shop-card{
+  background:rgba(0,0,0,0.072);
+}
+:where(html[data-mode="light"]) .shop-stage{
+  background:rgba(0,0,0,0.108);
+}
+:where(html[data-mode="light"]) .shop-stage.shop-dark{
+  background:radial-gradient(120% 120% at 50% 0,#fefefe,#eff1f3);
+}
+:where(html[data-mode="light"]) .shop-more{
+  color:#2c303b;
+  background:rgba(0,0,0,0.27);
+}
+:where(html[data-mode="light"]) .shop-bundle b{
+  color:#af7b13;
+}
+:where(html[data-mode="light"]) .shop-dock{
+  box-shadow:0 6px 16px rgba(0,0,0,0.18);
+}
+:where(html[data-mode="light"]) .shop-dock i{
+  background:rgba(15,23,42,0.605);
+}
+:where(html[data-mode="light"]) .th-files .store-item i{
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+:where(html[data-mode="light"]) .shop-layouts span{
+  background:rgba(15,23,42,0.9);
+}
+:where(html[data-mode="light"]) .store-new{
+  background:var(--panel,#f7f8fa);
+  box-shadow:0 12px 30px rgba(0,0,0,0.18);
+}
+:where(html[data-mode="light"]) .store-new b{
+  color:#af7b13;
 }
 
 /* ---- from css/drawdeck-engine.css ---- */
@@ -537,6 +572,10 @@
 }
 :where(html[data-mode="light"]) .dd-modal{
   background:rgba(0,0,0,0.3);
+}
+:where(html[data-mode="light"]) .dd-stk-b:hover,
+:where(html[data-mode="light"]) .dd-stk-b:focus-visible{
+  background:rgba(15,23,42,0.066);
 }
 
 /* ---- css/light.extra.css (hand-written) ---- */

@@ -453,23 +453,84 @@ SDCloud.onStatusChanged(status => { if (status === 'joined') syncPractice(); });
    readout and today's date. Left out on purpose: TeachersDeck's lunar-calendar line and its language setting (StudentDeck has
    neither a calendar-system option nor a language switch). Display only: no state, nothing saved, no XP. */
 function renderClock(b) {
-  b.innerHTML = `<div class="clock-face" aria-hidden="true">
-      <div class="clock-hand hr"></div><div class="clock-hand min"></div><div class="clock-hand sec"></div><div class="clock-dot"></div>
-    </div>
+  // v0.25.0: watch faces the family bought in ParentDeck's Shop (js/store.js) replace the face; the digital line stays.
+  b.innerHTML = `${classicClockSvg()}
+    <div class="clock-skin" aria-hidden="true" hidden></div>
     <div class="clock-digital">--:--</div>
-    <div class="clock-date">--</div>`;
-  const hr = $('.hr', b), min = $('.min', b), sec = $('.sec', b), digital = $('.clock-digital', b), dateEl = $('.clock-date', b);
+    <div class="clock-date">--</div>
+    <div class="clock-faces" role="group" aria-label="${V('Watch faces', 'Mặt đồng hồ')}" hidden></div>
+    <p class="clock-note muted" hidden></p>`;
+  const hr = $('.ck-h', b), min = $('.ck-m', b), sec = $('.ck-s', b), digital = $('.clock-digital', b), dateEl = $('.clock-date', b);
+  let skin = null;
+  function drawFaces() {
+    const owned = typeof SD_STORE !== 'undefined' ? SD_STORE.faces() : [], lockedF = typeof SD_STORE !== 'undefined' ? SD_STORE.lockedFaces() : [];
+    const cur = owned.find(f => f.key === state.clockFace) || null;
+    if (skin) { skin.stop(); skin = null; }
+    $('.clock-svg', b).style.display = cur ? 'none' : ''; $('.clock-skin', b).hidden = !cur;   // an SVG ignores [hidden] in some browsers
+    if (cur) skin = StoreCore.mountFace($('.clock-skin', b), cur.item, { lang: V('en', 'vi'), reduceMotion: matchMedia('(prefers-reduced-motion: reduce)').matches });
+    // 13 Nov: one button (the face in use) opens js/facepicker.js, a carousel grouped by kind, so a family that owns
+    // every face doesn't fill the widget with swatches. Locked faces sit in their own group and show the "ask a grown-up" note.
+    const row = $('.clock-faces', b), L = V('en', 'vi');
+    row.hidden = !owned.length && !lockedF.length;
+    row.innerHTML = '';
+    if (row.hidden || typeof FacePicker === 'undefined') return;
+    const nameOf = n => (n && (n[L] || n.en)) || '';
+    const btn = FacePicker.trigger({ lang: L, current: cur ? { name: nameOf(cur.item.name), swatch: cur.item.swatch } : null });
+    FacePicker.attach(btn, () => {
+      const FORMS = [['watch', V('Wrist watches', 'Đồng hồ đeo tay')], ['pocket', V('Pocket', 'Bỏ túi')], ['wall', V('Wall', 'Treo tường')], ['alarm', V('Alarm', 'Báo thức')], ['desk', V('Desk', 'Để bàn')]];
+      const options = [{ key: '', name: V('Classic', 'Cổ điển'), swatch: '#F4F1EA', svg: classicClockSvg().replace(/ class="[^"]*"/g, ''), group: V('Classic', 'Cổ điển') }];
+      FORMS.forEach(([form, label]) => owned.forEach(f => { if ((f.item.form || 'watch') === form) options.push({ key: f.key, name: nameOf(f.item.name), swatch: f.item.swatch, svg: f.item.svg, group: label }); }));
+      lockedF.forEach(f => options.push({ key: 'lock:' + f.sku, sku: f.sku, name: nameOf(f.name), swatch: f.swatch, group: V('Ask at home', 'Hỏi ở nhà'), locked: true }));
+      return { lang: L, options, current: cur ? cur.key : '', title: V('Choose a clock face', 'Chọn mặt đồng hồ'), refocus: () => $('.fp-trigger', b),
+        onPick: k => { state.clockFace = k || null; save(); $('.clock-note', b).hidden = true; drawFaces(); },
+        onLocked: o => storeLockedNote($('.clock-note', b), o.sku, o.name) };
+    });
+    row.appendChild(btn);
+  }
+  const offStore = typeof SD_STORE !== 'undefined' ? SD_STORE.onChange(drawFaces) : () => {};
+  drawFaces();
   function tick() {
     const d = new Date(), H = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
-    hr.style.transform = `rotate(${(H % 12) * 30 + m * 0.5}deg)`;
-    min.style.transform = `rotate(${m * 6}deg)`;
-    sec.style.transform = `rotate(${s * 6}deg)`;
+    hr.setAttribute('transform', `rotate(${(H % 12) * 30 + m * 0.5} 100 100)`);
+    min.setAttribute('transform', `rotate(${m * 6 + s * 0.1} 100 100)`);
+    sec.setAttribute('transform', `rotate(${s * 6} 100 100)`);
     digital.textContent = `${H % 12 || 12}:${pad(m)} ${H >= 12 ? V('PM', 'CH') : V('AM', 'SA')}`;
     dateEl.textContent = d.toLocaleDateString(V('en-US', 'vi-VN'), { weekday: 'short', month: 'short', day: 'numeric' });
   }
   tick();
   const iv = setInterval(tick, 1000);
-  return () => clearInterval(iv);
+  return () => { clearInterval(iv); offStore(); if (skin) skin.stop(); };
+}
+// Polish (from TeachersDeck phase 1): the built-in face is an SVG, so it stays sharp at any window size (css/polish.css sizes it).
+function classicClockSvg() {
+  let ticks = '';
+  for (let i = 0; i < 60; i++) {
+    const a = i * 6 * Math.PI / 180, major = i % 5 === 0, r1 = major ? 80 : 85, r2 = 89;
+    const x1 = (100 + r1 * Math.sin(a)).toFixed(2), y1 = (100 - r1 * Math.cos(a)).toFixed(2), x2 = (100 + r2 * Math.sin(a)).toFixed(2), y2 = (100 - r2 * Math.cos(a)).toFixed(2);
+    ticks += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${major ? '#8f8a7c' : '#c9c3b3'}" stroke-width="${major ? 3.2 : 1.4}" stroke-linecap="round"/>`;
+  }
+  return `<svg class="clock-svg" viewBox="0 0 200 200" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+    <defs><radialGradient id="ck-face" cx="50%" cy="42%" r="60%"><stop offset="0" stop-color="#fbf9f4"/><stop offset="1" stop-color="#ede8dc"/></radialGradient></defs>
+    <circle cx="100" cy="100" r="99" fill="url(#ck-face)"/><circle cx="100" cy="100" r="95.5" fill="none" stroke="#dcd7c9" stroke-width="7"/>${ticks}
+    <line class="ck-h" x1="100" y1="108" x2="100" y2="48" stroke="#20242b" stroke-width="7" stroke-linecap="round"/>
+    <line class="ck-m" x1="100" y1="110" x2="100" y2="26" stroke="#20242b" stroke-width="4.6" stroke-linecap="round"/>
+    <line class="ck-s" x1="100" y1="118" x2="100" y2="20" stroke="#E06565" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="100" cy="100" r="6.5" fill="#20242b"/><circle cx="100" cy="100" r="2.4" fill="#E06565"/>
+  </svg>`;
+}
+/** The note under a locked store item: no price, no link, just "ask a grown-up" and, where allowed, "I'd like this". */
+function storeLockedNote(el, sku, name) {
+  const wished = SD_STORE.wishes().includes(sku), can = SD_STORE.wishesOn();
+  el.hidden = false;
+  el.innerHTML = `<b>${esc(name)}</b> · ${V('Ask a grown-up at home!', 'Hãy hỏi người lớn ở nhà nhé!')}` +
+    (can ? ` <button class="chip sd-wish${wished ? ' on' : ''}" data-wish="${esc(sku)}">${wished ? V('♥ Wished', '♥ Đã mong') : V("♡ I'd like this", '♡ Con muốn có')}</button>` : '');
+  const w = el.querySelector('[data-wish]'); if (!w) return;
+  w.addEventListener('click', async ev => {
+    ev.stopPropagation();
+    if (!wished && SD_STORE.wishes().length >= SD_STORE.maxWishes()) { toast(V(`You can wish for ${SD_STORE.maxWishes()} things at a time.`, `Bạn có thể mong tối đa ${SD_STORE.maxWishes()} thứ một lúc.`)); return; }
+    try { await SD_STORE.toggleWish(sku); storeLockedNote(el, sku, name); toast(wished ? V('Wish removed', 'Đã bỏ mong muốn') : V('Your grown-up will see this wish in ParentDeck', 'Người lớn sẽ thấy mong muốn này trong ParentDeck')); }
+    catch (e) { toast(V('That did not work — try again later.', 'Chưa được — hãy thử lại sau.')); }
+  });
 }
 
 /* Telling Time (Nov 2026): TeachersDeck's tile, the same files (js/tellingtime.js, js/tellingtime-tile.js, css/tellingtime.css,
@@ -502,7 +563,7 @@ function renderTimer(b) {
     if (T.endsAt && Date.now() >= T.endsAt) finish();
     const s = left(), run = !!T.endsAt;
     $('#tt', b).textContent = `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
-    $('#tt', b).classList.toggle('run', run);
+    $('#tt', b).classList.toggle('run', run); sdBusy('timer', run);
     b.querySelector('[data-a=go]').textContent = run ? V('Pause', 'Tạm dừng') : (s < T.dur ? V('Resume', 'Tiếp tục') : V('Start', 'Bắt đầu'));
     b.querySelectorAll('[data-m]').forEach(c => { c.classList.toggle('on', +c.dataset.m * 60 === T.dur); c.disabled = run; });
     $('#tn', b).textContent = `${V('Sessions today', 'Số phiên hôm nay')}: ${T.doneDate === dayKey(Date.now()) ? T.doneCount : 0}`;
@@ -516,7 +577,7 @@ function renderTimer(b) {
     save(); draw();
   });
   draw(); const iv = setInterval(draw, 500);
-  return () => clearInterval(iv);
+  return () => { clearInterval(iv); sdBusy('timer', false); };
 }
 
 /* Read-only port of TeachersDeck's canonical month-grid calendar (its own js/app.js
@@ -633,7 +694,7 @@ function renderTodo(b) {
   }
   function draw() {
     const L = state.todo;
-    $('#tl', b).innerHTML = L.map(t => `<li class="${t.done ? 'done' : ''}${(state.hwLinks['t:' + t.id] || { docs: [] }).docs.length ? ' hasdocs' : ''}"><label><input type="checkbox" data-id="${t.id}" ${t.done ? 'checked' : ''}><span>${esc(t.text)}</span></label><button class="x" data-del="${t.id}" aria-label="${V('Delete task', 'Xóa việc')}">×</button>${hwDocsHtml('t:' + t.id)}</li>`).join('') || `<li class="muted">${V('No tasks yet — add one above.', 'Chưa có việc nào — hãy thêm ở trên.')}</li>`;
+    $('#tl', b).innerHTML = L.map(t => `<li class="${t.done ? 'done' : ''}${(state.hwLinks['t:' + t.id] || { docs: [] }).docs.length ? ' hasdocs' : ''}"><label><input type="checkbox" data-id="${t.id}" ${t.done ? 'checked' : ''}><span>${esc(t.text)}</span></label><button class="x" data-del="${t.id}" aria-label="${V('Delete task', 'Xóa việc')}">×</button>${hwDocsHtml('t:' + t.id)}</li>`).join('') || `<li class="td-empty"><span class="td-empty-ic" aria-hidden="true">📝</span><span><strong>${V('No tasks yet', 'Chưa có việc nào')}</strong><br>${V('Type one above and press Add.', 'Gõ một việc ở trên rồi nhấn Thêm.')}</span></li>`;
     $('#tc', b).textContent = L.length ? V(`${L.filter(t => t.done).length} of ${L.length} done`, `Xong ${L.filter(t => t.done).length}/${L.length}`) : '';
   }
   function add() {
@@ -700,8 +761,8 @@ function renderReading(b) {
     const E = R().entries, today = dayKey(Date.now()), wk = Date.now() - 7 * 864e5;
     $('#rt', b).textContent = E.filter(e => e.date === today).reduce((s, e) => s + e.min, 0);
     $('#rw', b).textContent = E.filter(e => new Date(e.date + 'T12:00').getTime() > wk).reduce((s, e) => s + e.min, 0);
-    $('#rl', b).innerHTML = E.slice(-8).reverse().map(e => `<li><span>${e.doc ? '📄 ' : ''}${esc(e.book || V('Reading', 'Đọc sách'))} <span class="muted">· ${e.date}</span></span><span>${e.min} ${V('min', 'phút')} <button class="x" data-del="${e.id}" aria-label="${V('Delete entry', 'Xóa mục')}">×</button></span></li>`).join('') || `<li class="muted">${V('No entries yet.', 'Chưa có mục nào.')}</li>`;
-    const run = !!R().startedAt;
+    $('#rl', b).innerHTML = E.slice(-8).reverse().map(e => `<li><span>${e.doc ? '📄 ' : ''}${esc(e.book || V('Reading', 'Đọc sách'))} <span class="muted">· ${e.date}</span></span><span>${e.min} ${V('min', 'phút')} <button class="x" data-del="${e.id}" aria-label="${V('Delete entry', 'Xóa mục')}">×</button></span></li>`).join('') || `<li class="td-empty"><span class="td-empty-ic" aria-hidden="true">📚</span><span><strong>${V('No reading logged yet', 'Chưa ghi lại lần đọc nào')}</strong><br>${V('Start the reading timer when you open a book.', 'Bật hẹn giờ đọc khi bạn mở sách.')}</span></li>`;
+    const run = !!R().startedAt; sdBusy('reading', run);
     b.querySelector('[data-a=sw]').textContent = run ? V('Stop reading', 'Dừng đọc') : V('Start reading timer', 'Bắt đầu hẹn giờ đọc');
     $('#rs', b).textContent = run ? V(`Reading… ${Math.max(0, Math.floor((Date.now() - R().startedAt) / 60000))} min so far`, `Đang đọc… đã được ${Math.max(0, Math.floor((Date.now() - R().startedAt) / 60000))} phút`) : '';
   }
@@ -719,7 +780,7 @@ function renderReading(b) {
     } else if (del) { R().entries = R().entries.filter(x => x.id !== del); save(); draw(); }
   });
   readingRedraw = draw; draw(); const iv = setInterval(draw, 20000);
-  return () => { clearInterval(iv); if (readingRedraw === draw) readingRedraw = null; };
+  return () => { clearInterval(iv); sdBusy('reading', false); if (readingRedraw === draw) readingRedraw = null; };
 }
 
 function bestOf(g) { const S = state.games.scores[g.folder]; return S && S.best !== null ? ` · ${V('Best', 'Cao nhất')}: ${S.best} ${g.scoreLabel || ''}` : ''; }
@@ -1841,11 +1902,59 @@ if (UNI) {
   (window.UNI_WIDGETS || []).forEach(w => { if (!WIDGETS.some(x => x.id === w.id)) WIDGETS.push({ ...w, icon: I(w.iconPath || '<circle cx="12" cy="12" r="8"/>') }); });
 }
 
+/* ---------- Polish (ported from TeachersDeck, 14 Nov 2026): busy pause and widgets that grow with their window ---------- */
+/* While the Focus Timer or the reading timer runs, nothing moves behind it (wallpaper still, background drift paused)
+   and the idle watch face stays away. */
+const sdBusySet = new Set();
+function sdBusy(key, on) {
+  if (sdBusySet.has(key) === !!on) return;
+  if (on) sdBusySet.add(key); else sdBusySet.delete(key);
+  document.body.classList.toggle('td-busy', sdBusySet.size > 0);
+  if (typeof TDWallpaper !== 'undefined') TDWallpaper.pause(sdBusySet.size > 0);
+}
+/* Display widgets grow with their window, like TeachersDeck's Instructions: the content is zoomed to the largest size at
+   which it still fits (never smaller than today's 100%, at most 400%); more content than fits scrolls as before. */
+const AUTO_FIT = new Set(['timer', 'idiom']);
+function attachAutoFit(id, body) {
+  if (!AUTO_FIT.has(id) || !body || body._autoFit) return;
+  let raf = 0, busy = false;
+  function wrap() {
+    const kids = [...body.childNodes];
+    if (kids.length === 1 && kids[0].classList && kids[0].classList.contains('fit-wrap')) return kids[0];
+    const w = document.createElement('div'); w.className = 'fit-wrap';
+    kids.forEach(k => w.appendChild(k));
+    body.appendChild(w);
+    return w;
+  }
+  function fit() {
+    busy = true;
+    const w = wrap(), cs = getComputedStyle(body);
+    const availH = body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const availW = body.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    if (availH <= 0 || availW <= 0 || body.closest('.min') || document.documentElement.classList.contains('bento')) { w.style.zoom = ''; w.style.width = ''; busy = false; return; }
+    const fits = z => { w.style.zoom = z; w.style.width = (availW / z) + 'px'; return w.scrollHeight * z <= availH + 1 && w.scrollWidth <= availW / z + 1; };
+    let lo = 1, hi = 4;
+    if (!fits(1)) { fits(1); busy = false; return; }   // too much content: 100% and scroll, as before
+    if (fits(hi)) lo = hi;
+    else for (let i = 0; i < 9; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+    fits(Math.floor(lo * 100) / 100);
+    busy = false;
+  }
+  const schedule = () => { if (busy) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(fit); };
+  if ('ResizeObserver' in window) new ResizeObserver(schedule).observe(body);
+  new MutationObserver(schedule).observe(body, { childList: true, subtree: true, characterData: true });
+  body.addEventListener('input', schedule);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+  body._autoFit = { schedule };
+  schedule();
+}
+
 /* ---------- Shell: panels, drag, resize, dock ---------- */
 const wall = $("#wall"), panels = {}; let topZ = 10, pinZ = 1000;
 /* z-index counter: never re-append (breaks pointer capture). Ordinary widgets live in 11..979, below the document stage (1000);
    a pinned widget (Files viewer → Widgets menu) counts up from 1001, above it. */
 function front(el) {
+  if (!el.classList.contains('is-front')) { document.querySelectorAll('.widget.is-front').forEach(w => w.classList.remove('is-front')); el.classList.add('is-front'); }   // polish: css/polish.css
   if (el.dataset.onTop === '1') { if (+el.style.zIndex !== pinZ) el.style.zIndex = ++pinZ; return; }
   if (+el.style.zIndex === topZ) return;
   if (topZ >= 979) {                                                            // out of room: renumber the ordinary widgets 11, 12, …
@@ -1927,7 +2036,8 @@ function openWidget(id) {
   el.innerHTML = `<div class="head">${full ? `<button class="btn" data-w="close" aria-label="${V('Back to', 'Quay lại')} ${APP}">\u2190 ${V('Back to', 'Quay lại')} ${APP}</button>` : ''}<span class="title" data-wl="${def.id}">${esc(widgetLabel(def.title))}</span>
     ${full ? `<button class="hbtn wide" data-w="bar" aria-label="${V('Show or hide the top bar', 'Hiện hoặc ẩn thanh trên cùng')}" title="${V('Show the top bar', 'Hiện thanh trên cùng')}">${V('Toolbar', 'Thanh công cụ')}</button>` : ''}<button class="hbtn" data-w="min" aria-label="${V('Minimise', 'Thu nhỏ')} ${esc(def.title)}">–</button><button class="hbtn" data-w="close" aria-label="${V('Close', 'Đóng')} ${esc(def.title)}">×</button></div>
     <div class="body"></div>${full ? '' : '<div class="grip" aria-hidden="true"></div>'}`;
-  el.dataset.wid = id; wall.appendChild(el); front(el);
+  el.dataset.wid = id; el.classList.add('td-opening'); el.addEventListener('animationend', () => el.classList.remove('td-opening'), { once: true });   // polish: the open animation
+  wall.appendChild(el); front(el);
   if (!full) { gesture($('.head', el), el, 'move', id); gesture($('.grip', el), el, 'resize', id); }
   el.addEventListener('pointerdown', () => front(el));
   el.addEventListener('click', e => {
@@ -1937,6 +2047,7 @@ function openWidget(id) {
     else if (w === 'bar') { state.fsBar = !state.fsBar; save(); syncFullscreen(); }
   });
   panels[id] = { el, cleanup: ProGate.render(def, $('.body', el)) };
+  attachAutoFit(id, $('.body', el));
   state.active[id] = true; save(); syncDock(); syncFullscreen();
   if (full) { raiseFull(id); closeAppTray(); }                                   // v0.9.5: picked from the app tray? the tray must not stay open over the page it just opened
   if (docStageOpen()) setPinned(id, true);                                                    // opened from the dock while reading: keep it visible
@@ -1985,7 +2096,7 @@ const widgetLabel = title => emojisVisible() ? title : stripLeadingEmoji(title);
 /* -- layout core above (pure logic) · DOM below -- */
 
 const toggleWidget = id => panels[id] ? requestClose(id) : openWidget(id);
-function syncDock() { document.querySelectorAll('.dock-item[data-id],.app-tray-item[data-id]').forEach(b => b.classList.toggle('active', !!panels[b.dataset.id])); }
+function syncDock() { document.querySelectorAll('.dock-item[data-id],.app-tray-item[data-id]').forEach(b => b.classList.toggle('active', !!panels[b.dataset.id])); if (typeof DockStyle !== 'undefined') DockStyle.refresh(); }
 function makeDockButton(w, cls) {
   const btn = document.createElement('button'); btn.type = 'button'; btn.className = cls + (panels[w.id] ? ' active' : ''); btn.dataset.id = w.id;
   btn.setAttribute('aria-label', V('Toggle ', 'Bật/tắt ') + stripLeadingEmoji(w.title)); btn.title = w.title;
@@ -2078,7 +2189,7 @@ ensureDockPlacement(); rebuildAllDocks(); buildLayoutModeSelector(); buildLocked
 if (window.DockDrag) DockDrag.init({
   zones: { bottom: '#dock', left: '#dock-left-items', right: '#dock-right-items' },
   item: '.dock-item[data-id]', caps: DOCK_CAPS,
-  tray: { grid: '#app-tray-grid', item: '.app-tray-item[data-id]', tab: '#app-tray-tab' },
+  tray: { grid: '#app-tray-grid', item: '.app-tray-item[data-id]', tab: '#app-tray-tab, #dock .dk-tray-btn' },   // the floating and magnifying docks hide the tab and carry a tray button
   move(id, loc, ids) {
     const from = state.dockPlacement[id], order = state.dockOrder = state.dockOrder || {};
     state.dockPlacement[id] = loc;
@@ -2091,6 +2202,38 @@ if (window.DockDrag) DockDrag.init({
   onStart: () => ['left', 'right'].forEach(sd => { if (effectiveSideVisible(sd)) $('#dock-' + sd).hidden = false; }),
   onEnd: () => { buildSideDock('left'); buildSideDock('right'); },
 });
+/* v0.26.0: dock styles bought in ParentDeck's Shop (js/dockstyle.js draws them; js/store.js knows which the family owns) */
+if (typeof DockStyle !== 'undefined') {
+  DockStyle.configure({
+    widgets: () => WIDGETS.map(w => ({ id: w.id, label: stripLeadingEmoji(w.title), icon: w.icon, cat: WIDGET_CAT[w.id] || 'me' })),
+    categories: () => CATEGORIES, favourites: () => widgetsFor('bottom').map(w => w.id),
+    isOpen: id => !!panels[id], toggle: id => toggleWidget(id), openTray: () => openAppTray(),
+    labels: { tray: V('All widgets', 'Tất cả tiện ích'), widgets: V('Widgets', 'Tiện ích'), favourites: V('Favourites', 'Yêu thích'), pin: V('Keep open', 'Giữ mở'), unpin: V('Let it fold', 'Thu gọn'),
+      theme: V('Theme', 'Giao diện'), language: V('Language', 'Ngôn ngữ'), light: V('Light', 'Sáng'), dark: V('Dark', 'Tối'), settings: V('Settings', 'Cài đặt'),
+      search: V('Search widgets', 'Tìm tiện ích'), searchLang: V('Search languages', 'Tìm ngôn ngữ'), noMatch: V('Nothing found', 'Không tìm thấy'),
+      noFavs: V('Right-click a widget to add it to Favourites', 'Nhấp chuột phải vào tiện ích để thêm vào Yêu thích'), more: V('More', 'Thêm'), dragHint: V('Drag an icon onto the ring to swap it in', 'Kéo một biểu tượng lên vòng để đổi chỗ') },
+    ringDefaults: { study: ['timer', 'todo', 'reading', 'notes', 'files'], language: ['translate', 'dict', 'cards', 'idiom'] },   // a fresh install's outer ring, before usage counts
+    nav: {   // polish (from TeachersDeck): what the top bar does, inside the sidebar too
+      languages: typeof SD_LANG !== 'undefined' ? () => SD_LANG.LANGS.map(([code, label]) => ({ code, label, active: code === SD_LANG.get() })) : undefined,
+      langLabel: () => { const l = typeof SD_LANG !== 'undefined' && SD_LANG.LANGS.find(([c]) => c === SD_LANG.get()); return l ? l[1] : 'English'; },
+      setLanguage: code => { if (typeof SD_LANG !== 'undefined') SD_LANG.set(code); },   // reloads in that language
+      isLight: () => typeof DeckMode !== 'undefined' && DeckMode.get() === 'light',
+      toggleMode: typeof DeckMode !== 'undefined' ? () => DeckMode.set(DeckMode.get() === 'light' ? 'dark' : 'light') : undefined,
+      openTheme: () => { const p = $('#theme-pill'); if (p && $('#theme-pop').hidden) p.click(); },
+      openSettings: () => openSettings(),
+      catIcon: id => I({ study: '<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z M12 6v13"/>', language: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+        me: '<circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c1.2 1.2 2.8 1.2 4 0"/>', cloud: '<path d="M7 18a4.5 4.5 0 0 1-.6-8.96 5.5 5.5 0 0 1 10.7-1.6A4 4 0 0 1 17.5 18H7Z"/>' }[id] || '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+    },
+  });
+}
+function applyDockStyle() {
+  if (typeof DockStyle === 'undefined') return;
+  const d = state.dockStyle && typeof SD_STORE !== 'undefined' ? SD_STORE.dockByKey(state.dockStyle) : null;
+  if (DockStyle.current() !== (d ? d.item.style : 'standard') || d) DockStyle.apply(d ? d.item.style : 'standard', d && d.item);
+  applyTopBarMode();   // polish: Radial layout and the top bar follow the dock style
+}
+applyDockStyle();
+if (typeof SD_STORE !== 'undefined') SD_STORE.onChange(applyDockStyle);   // a dock arrives, or a refund goes back to the standard docks
 $('#ver').textContent = 'v' + VERSION;
 
 /* New-tab pages: several can be open at once and every save writes the whole state, so
@@ -2101,7 +2244,7 @@ window.addEventListener('storage', e => {
   ['todo', 'timer', 'reading', 'games', 'idiom', 'journal', 'notes', 'badges', 'xp', 'stats', 'hwDone', 'hwPending', 'theme'].forEach(k => { state[k] = n[k]; });
   drawXP(0, false); refreshStats();
   if (changed) Object.keys(panels).forEach(id => { if (id === 'stats' || id === 'badges') return; const o = panels[id], def = WIDGETS.find(w => w.id === id);
-    if (o.cleanup) o.cleanup(); const body = $('.body', o.el), c = body.cloneNode(false); body.replaceWith(c); o.cleanup = ProGate.render(def, c); });
+    if (o.cleanup) o.cleanup(); const body = $('.body', o.el), c = body.cloneNode(false); body.replaceWith(c); o.cleanup = ProGate.render(def, c); attachAutoFit(id, c); });
 });
 
 $('#xp').addEventListener('click', () => { if (panels.stats) { front(panels.stats.el); raiseFull('stats'); } else openWidget('stats'); });
@@ -2113,20 +2256,141 @@ const PRESETS = [
   { id: 'ocean', css: 'linear-gradient(180deg,#0e2f3f 0%, #164a5c 55%, #0c2733 100%)' },
   { id: 'sunrise', css: 'linear-gradient(180deg,#3a2140 0%, #7a4a55 45%, #c98a5e 100%)' },
   { id: 'slate', css: 'linear-gradient(180deg,#20242c 0%, #2b3038 100%)' },
-  { id: 'plain', css: '#12161C' }
+  { id: 'plain', css: '#12161C' },
+  // Polish (from TeachersDeck phase 4): two free classroom backgrounds; css/polish.css adds their texture
+  { id: 'paper', css: 'linear-gradient(180deg,#2b2721 0%, #25221d 55%, #1f1c18 100%)', light: 'linear-gradient(180deg,#f8f4ea 0%, #f3ede0 60%, #efe8d9 100%)' },
+  { id: 'chalkboard', css: 'linear-gradient(180deg,#1f3a2c 0%, #284836 55%, #1b3326 100%)', light: 'linear-gradient(180deg,#e7f0ea 0%, #dce9e1 60%, #e3eee7 100%)' }
 ];
 // v0.23.0: your own background photo, as in TeachersDeck's Theme drawer (free here: it isn't on StudentDeck's Pro list).
 // One slot, id 'background' in IndexedDB 'images'. bgUrl is its object URL; when storage is blocked it shows for this session only.
 let bgUrl = null;
 const BG_DIM = 'linear-gradient(rgba(6,9,14,.28),rgba(6,9,14,.28)),';   // the same dim as TeachersDeck's overlay
 function applyTheme() {
-  const dim = state.dim ? BG_DIM : '';
-  if (bgUrl) { document.body.style.background = `${dim}center/cover no-repeat url(${bgUrl})`; return; }
-  const p = PRESETS.find(p => p.id === state.theme) || PRESETS[0];
-  document.body.style.background = dim + presetBg(p);
-  document.body.style.backgroundSize = 'cover';
+  const dim = state.dim ? BG_DIM : '', root = document.documentElement, body = document.body;
+  const prem = currentPremium(), item = prem ? prem.item : null, photo = !!bgUrl;
+  // Polish (from TeachersDeck): what is on screen, for css/polish.css and css/premium.css
+  root.dataset.tdBg = photo ? 'image' : (item ? 'theme' : 'preset');
+  root.dataset.tdBgid = photo ? '' : (item ? item.id : (PRESETS.some(p => p.id === state.theme) ? state.theme : 'dusk'));
+  if (item) root.dataset.tdTheme = item.id; else delete root.dataset.tdTheme;
+  if (item && window.StoreCore && StoreCore.THEME_FONTS[item.font]) root.style.setProperty('--theme-font', StoreCore.THEME_FONTS[item.font]);
+  else root.style.removeProperty('--theme-font');
+  applySkin(item);
+  const tint = item && photo && state.photoTint ? root.style.getPropertyValue('--sk-tint') + ',' : '';   // "Tint my image": the theme's colour over your photo
+  if (photo) { body.style.background = `${tint}${dim}center/cover no-repeat url(${bgUrl})`; }
+  else if (item) {
+    body.style.background = dim + StoreCore.themeBackground(item, typeof DeckMode !== 'undefined' && DeckMode.get() === 'light');
+    body.style.backgroundSize = 'cover';
+  } else {
+    const p = PRESETS.find(p => p.id === state.theme) || PRESETS[0];
+    body.style.background = dim + presetBg(p);
+    body.style.backgroundSize = 'cover';
+  }
+  body.style.backgroundBlendMode = tint ? 'multiply, normal' : '';
+  applyWallpaper(item, photo);
+  themeArrival(item);
 }
-const presetBg = p => (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
+const presetBg = p => (p.light && typeof DeckMode !== 'undefined' && DeckMode.get() === 'light') ? p.light
+  : (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
+/** The premium theme in use: only one the family owns (js/store.js), never one it hasn't bought. */
+const currentPremium = () => String(state.theme || '').startsWith('pk:') && typeof SD_STORE !== 'undefined' ? SD_STORE.themeByKey(state.theme) : null;
+
+/* ---------- Polish (ported from TeachersDeck, 14 Nov 2026): every theme colours the docks and windows ----------
+   An owned premium theme brings its pack's tokens; each free background has its own small set (Dusk keeps the classic
+   look). css/premium.css reads the --sk-* tokens under html[data-td-skin] (dark mode only). */
+const PRESET_SKINS = {
+  chalk:     { bgs:'#2b2f26', card:'rgba(74,82,62,.55)', line:'rgba(205,215,180,.26)', ink:'#eef1e4', muted:'#c3c9b0', acc:'#d9c27a', bt:'#2a2306', dock:'rgba(36,40,31,.86)', hov:'rgba(255,255,255,.10)' },
+  ocean:     { bgs:'#0e2f3f', card:'rgba(22,74,92,.48)', line:'rgba(140,220,230,.30)', ink:'#e6fbff', muted:'#a6d4dd', acc:'#5fd3d6', bt:'#032a2c', dock:'rgba(10,40,52,.86)', hov:'rgba(255,255,255,.12)' },
+  sunrise:   { bgs:'#3a2140', card:'rgba(122,74,85,.42)', line:'rgba(255,200,160,.30)', ink:'#fff1e8', muted:'#e8c3b4', acc:'#ffb27a', bt:'#3a1600', dock:'rgba(58,33,64,.86)', hov:'rgba(255,255,255,.12)' },
+  slate:     { bgs:'#20242c', card:'rgba(52,58,68,.62)', line:'rgba(200,210,225,.22)', ink:'#eef1f6', muted:'#b4bccb', acc:'#9fb4d6', bt:'#141a26', dock:'rgba(30,34,42,.9)', hov:'rgba(255,255,255,.10)' },
+  plain:     { bgs:'#12161c', card:'rgba(32,38,47,.72)', line:'rgba(255,255,255,.12)', ink:'#eef1f6', muted:'#a7afbd', acc:'#e0a93b', bt:'#231803', dock:'rgba(20,24,31,.92)', hov:'rgba(255,255,255,.08)' },
+  paper:     { bgs:'#25221d', card:'rgba(64,58,48,.6)', line:'rgba(230,215,190,.24)', ink:'#f6efe2', muted:'#cfc2aa', acc:'#e0b46a', bt:'#2b1d05', dock:'rgba(43,39,33,.9)', hov:'rgba(255,255,255,.10)' },
+  chalkboard:{ bgs:'#1f3a2c', card:'rgba(44,78,60,.55)', line:'rgba(200,235,210,.26)', ink:'#f2f7f1', muted:'#c0d6c8', acc:'#f2efe0', bt:'#1d2b22', dock:'rgba(26,48,37,.9)', hov:'rgba(255,255,255,.10)' },
+};
+function skinRgb(c, fallback) {   // '#rrggbb' | '#rgb' | 'rgba(r,g,b,a)' -> 'r,g,b'
+  const s = String(c || '').trim(); let m;
+  if ((m = /^#([0-9a-f]{6})/i.exec(s))) return [0, 2, 4].map(i => parseInt(m[1].substr(i, 2), 16)).join(',');
+  if ((m = /^#([0-9a-f])([0-9a-f])([0-9a-f])/i.exec(s))) return [m[1], m[2], m[3]].map(h => parseInt(h + h, 16)).join(',');
+  if ((m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(s))) return [m[1], m[2], m[3]].join(',');
+  return fallback || '0,0,0';
+}
+const SKIN_PROPS = ['--sk-ink0', '--sk-ink1', '--sk-ink2', '--sk-ink3', '--sk-card', '--sk-head', '--sk-hov', '--sk-dock', '--sk-dock-soft', '--sk-drawer', '--sk-pill', '--sk-line', '--sk-line-rgb',
+  '--sk-ink', '--sk-muted', '--sk-acc', '--sk-acc-rgb', '--sk-acc-hi', '--sk-acc-hi-rgb', '--sk-on', '--sk-on-rgb', '--sk-radius', '--sk-shadow-rgb', '--sk-card-photo', '--sk-tint', '--sk-idle-a', '--sk-idle-b'];
+function applySkin(item) {
+  const root = document.documentElement;
+  const tk = item ? item.tokens : PRESET_SKINS[state.theme] || null;
+  ensureDeco(); root.dataset.tdDeco = (item && item.deco) || 'none';
+  themeGreeting(item);
+  if (!tk) { delete root.dataset.tdSkin; SKIN_PROPS.forEach(k => root.style.removeProperty(k)); return; }
+  const bgs = tk.bgs, acc = tk.acc, accRgb = skinRgb(acc), mix = (rgb, w) => rgb.split(',').map(v => Math.round(+v + (255 - +v) * w)).join(',');
+  const dark = skinRgb(bgs).split(',').map(v => Math.round(+v * .35)).join(',');
+  const set = (k, v) => root.style.setProperty(k, v);
+  set('--sk-ink0', bgs); set('--sk-ink1', `color-mix(in srgb, ${bgs} 88%, #ffffff)`); set('--sk-ink2', `color-mix(in srgb, ${bgs} 80%, #ffffff)`); set('--sk-ink3', `color-mix(in srgb, ${bgs} 70%, #ffffff)`);
+  set('--sk-card', tk.card); set('--sk-head', `color-mix(in srgb, ${tk.card} 55%, transparent)`); set('--sk-hov', tk.hov);
+  set('--sk-dock', tk.dock); set('--sk-dock-soft', `color-mix(in srgb, ${tk.dock} 76%, transparent)`); set('--sk-drawer', `color-mix(in srgb, ${bgs} 94%, transparent)`);
+  set('--sk-pill', `color-mix(in srgb, ${tk.hov} 65%, transparent)`); set('--sk-line', tk.line); set('--sk-line-rgb', skinRgb(tk.line, '160,210,255'));
+  set('--sk-ink', tk.ink); set('--sk-muted', tk.muted); set('--sk-acc', acc); set('--sk-acc-rgb', accRgb);
+  set('--sk-acc-hi', `rgb(${mix(accRgb, .3)})`); set('--sk-acc-hi-rgb', mix(accRgb, .3)); set('--sk-on', tk.bt); set('--sk-on-rgb', skinRgb(tk.bt));
+  set('--sk-radius', ((item && item.radius) || 16) + 'px'); set('--sk-shadow-rgb', dark);
+  set('--sk-card-photo', `color-mix(in srgb, ${bgs} 34%, transparent)`); set('--sk-tint', `linear-gradient(135deg, rgba(${skinRgb(bgs)},.55), rgba(${accRgb},.30))`);
+  set('--sk-idle-a', `rgba(${skinRgb(bgs)},.72)`); set('--sk-idle-b', `rgba(${dark},.94)`);
+  root.dataset.tdSkin = item ? item.id : state.theme;
+}
+/* A theme's own words in the top bar: its greeting from the pack (Tết: "Chúc Mừng Năm Mới") and a "Premium · name" badge.
+   Plain text (textContent); css/premium.css places it and hides it on narrow screens and in Light mode. */
+function themeGreeting(item) {
+  const root = document.documentElement, g = item && item.greeting;
+  let el = document.getElementById('td-greet');
+  if (!g) { delete root.dataset.tdGreet; if (el) el.hidden = true; return; }
+  if (!el) {
+    const top = document.querySelector('header.top'); if (!top) return;
+    el = document.createElement('div'); el.id = 'td-greet'; el.innerHTML = '<span class="tg-text"></span><span class="tg-badge"></span>';
+    top.appendChild(el);
+  }
+  el.hidden = false;
+  const L = V('en', 'vi');
+  el.querySelector('.tg-text').textContent = g[L] || g.en;
+  el.querySelector('.tg-badge').textContent = V('Premium · ', 'Cao cấp · ') + (item.name[L] || item.name.en);
+  root.dataset.tdGreet = '1';
+}
+/* The decoration layer (css/premium.css shows the set the theme names: snow = Noel, lanterns = Tết). Built once, under the widgets. */
+function ensureDeco() {
+  if (document.getElementById('td-deco')) return;
+  const d = document.createElement('div'); d.id = 'td-deco'; d.setAttribute('aria-hidden', 'true');
+  const lantern = cls => `<svg class="dc-lantern ${cls}" viewBox="0 0 84 150"><line x1="42" y1="0" x2="42" y2="22" stroke="#f0c34e" stroke-width="2.5"/><rect x="28" y="20" width="28" height="9" rx="3" fill="#f0c34e"/><ellipse cx="42" cy="66" rx="36" ry="40" fill="#d4202c" stroke="#f0c34e" stroke-width="3"/>` +
+    [-22, -8, 8, 22].map(dx => `<path d="M${42 + dx} 28 Q${42 + dx * 1.5} 66 ${42 + dx} 104" fill="none" stroke="#f0c34e" stroke-width="1.6" opacity=".75"/>`).join('') +
+    `<ellipse cx="30" cy="52" rx="8" ry="14" fill="#fff" opacity=".18"/><rect x="28" y="104" width="28" height="9" rx="3" fill="#f0c34e"/><line x1="42" y1="113" x2="42" y2="140" stroke="#f0c34e" stroke-width="2.5"/><path d="M36 140 L42 150 L48 140 Z" fill="#f0c34e"/></svg>`;
+  let flames = ''; for (let i = 0; i < 26; i++) { const x = i * 40 - 10, h = 70 + ((i * 37) % 60); flames += `<path d="M${x} 150 Q${x + 10} ${150 - h * 0.55} ${x + 22} ${150 - h} Q${x + 30} ${150 - h * 0.5} ${x + 44} 150 Z" fill="${i % 2 ? '#e0581f' : '#b8341a'}" opacity="${i % 3 ? 0.85 : 0.7}"/>`; }
+  for (let i = 0; i < 26; i++) { const x = i * 40 + 6, h = 40 + ((i * 23) % 40); flames += `<path d="M${x} 150 Q${x + 8} ${150 - h * 0.6} ${x + 16} ${150 - h} Q${x + 22} ${150 - h * 0.5} ${x + 32} 150 Z" fill="#f2a33a" opacity=".85"/>`; }
+  let petals = ''; for (let i = 0; i < 14; i++) petals += `<i style="left:${(i * 7.3 + 3) % 100}%;animation-delay:${-(i * 1.9).toFixed(1)}s;animation-duration:${12 + (i % 5) * 2}s"></i>`;
+  d.innerHTML = `<div class="dc-bunting"></div><div class="dc-snow"></div>${lantern('l1')}${lantern('l2')}<svg class="dc-flames" viewBox="0 0 1040 150" preserveAspectRatio="none">${flames}</svg><div class="dc-petals">${petals}</div>`;
+  const wallEl = document.getElementById('wall');
+  if (wallEl && wallEl.parentNode) wallEl.parentNode.insertBefore(d, wallEl); else document.body.prepend(d);
+}
+/* A premium theme's animated wallpaper (js/wallpaper.js) over its CSS gradient, which stays underneath as the fallback.
+   Only with the theme's own background (no photo), in dark mode, while "Moving wallpaper" is on; still while a timer runs. */
+let wallpaperKey = '';
+function applyWallpaper(item, photo) {
+  if (typeof TDWallpaper === 'undefined') return;
+  const w = item && item.wallpaper;
+  const want = !!(w && !photo && state.wallpaper !== false && !(typeof DeckMode !== 'undefined' && DeckMode.get() === 'light'));
+  const key = want ? JSON.stringify(w) : '';
+  if (key !== wallpaperKey || (want && !TDWallpaper.active())) {
+    wallpaperKey = key;
+    if (want) TDWallpaper.mount(w, { before: document.getElementById('td-deco') || document.getElementById('wall') }); else TDWallpaper.unmount();
+  }
+  document.body.classList.toggle('wp-dim', want && !!state.dim);   // the dim sits on the canvas (css/premium.css)
+  TDWallpaper.pause(sdBusySet.size > 0);
+}
+/* Putting on a premium theme: its background fades in and the widgets settle (1 s), once per change. */
+let arrivedKey = null;
+function themeArrival(item) {
+  const key = item ? item.id : '';
+  if (arrivedKey !== null && key && key !== arrivedKey && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const r = document.documentElement; r.classList.remove('td-arrive'); void r.offsetWidth; r.classList.add('td-arrive');
+    setTimeout(() => r.classList.remove('td-arrive'), 1100);
+  }
+  arrivedKey = key;
+}
 async function loadCustomBg() {
   if (!state.customBg) return;
   try {
@@ -2153,6 +2417,12 @@ function buildThemePop() {                                          // Light / D
   const pop = $('#theme-pop');
   if (!pop.querySelector('.swatch-grid')) {
     pop.innerHTML = `${typeof DeckMode !== 'undefined' ? `<p class="pop-label">${V('Mode', 'Chế độ')}</p><div class="mode-switch"></div><p class="pop-label">${V('Background', 'Hình nền')}</p>` : ''}<div class="swatch-grid"></div>
+      <div class="store-themes" hidden><p class="pop-label">${V('Premium', 'Cao cấp')}</p><div class="swatch-grid prem"></div><p class="store-note muted" hidden></p><div class="theme-extras" hidden></div></div>
+      <div class="store-docks" hidden><p class="pop-label">${V('Dock', 'Dock')}</p><div class="dock-pick"></div><p class="store-note dock-note muted" hidden></p><div class="dock-extras"></div></div>
+      <p class="pop-label">${V('Your items', 'Mục của bạn')}</p><div class="store-files"></div>
+      <div class="store-file-row"><label class="upload-row store-browse"><span>${V('Browse… (.tdpack)', 'Chọn tệp… (.tdpack)')}</span><input type="file" id="store-file" accept=".tdpack,.zip" hidden></label></div>
+      <p class="pop-label">${V('Reset to default', 'Về mặc định')}</p>
+      <div class="store-reset-row" role="group" aria-label="${V('Reset to default', 'Về mặc định')}"><button class="chip" data-reset="theme">${V('Theme', 'Giao diện')}</button><button class="chip" data-reset="clock">${V('Clock', 'Đồng hồ')}</button><button class="chip" data-reset="dock">${V('Dock', 'Dock')}</button><button class="chip" id="store-reset">${V('Everything', 'Tất cả')}</button></div>
       <p class="pop-label bg-own">${V('Your image', 'Ảnh của bạn')}</p>
       <label class="upload-row"><span>${V('Upload a background image', 'Tải lên hình nền')}</span><input type="file" id="bg-upload" accept="image/*" hidden></label>
       <label class="switch-row"><span>${V('Dim background (better contrast)', 'Làm tối nền (tăng độ tương phản)')}</span><input type="checkbox" id="dim-toggle"></label>`;
@@ -2162,22 +2432,237 @@ function buildThemePop() {                                          // Light / D
     }
     $('#bg-upload', pop).addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; pickBg(f); });   // value cleared: the same file can be picked again
     $('#dim-toggle', pop).addEventListener('change', e => { state.dim = e.target.checked; save(); applyTheme(); });
+    // v0.26.0: store files — load a .tdpack, remove an item, or reset everything back to the defaults
+    $('#store-file', pop).addEventListener('change', async e => {
+      const f = e.target.files[0]; e.target.value = ''; if (!f || typeof SD_STORE === 'undefined') return;
+      const r = await SD_STORE.addFile(f);
+      if (!r.ok) { toast(V('That file is not a TeachersDeck store file.', 'Tệp này không phải tệp cửa hàng TeachersDeck.')); return; }
+      const why = r.refused.length ? (r.refused.some(x => x.why === 'licence') ? V(' Some items belong to another family.', ' Một số mục thuộc gia đình khác.') : V(' Some items could not be checked.', ' Một số mục không kiểm tra được.')) : '';
+      toast(V(`Added ${r.packs.length} item(s).`, `Đã thêm ${r.packs.length} mục.`) + why, 4200);
+    });
+    pop.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', e => {   // one part back to its default; nothing removed
+      e.stopPropagation(); const part = b.dataset.reset;
+      if (part === 'theme') { state.theme = 'dusk'; state.customBg = false; if (bgUrl) { URL.revokeObjectURL(bgUrl); bgUrl = null; } save(); applyTheme(); }
+      if (part === 'clock') { state.clockFace = null; save(); if (panels.clock) { requestClose('clock'); openWidget('clock'); } }
+      if (part === 'dock') { state.dockStyle = null; save(); applyDockStyle(); }
+      buildThemePop(); toast(V('Back to the default', 'Đã về mặc định'));
+    }));
+    $('#store-reset', pop).addEventListener('click', e => {
+      e.stopPropagation();
+      if (!confirm(V('Go back to the default theme, clock and dock, remove every file you loaded and show hidden items again? Items your family bought stay yours.', 'Quay về giao diện, đồng hồ và dock mặc định, gỡ mọi tệp đã tải và hiện lại các mục đã ẩn? Các mục gia đình đã mua vẫn là của bạn.'))) return;
+      if (typeof SD_STORE !== 'undefined') SD_STORE.resetAll();
+      state.theme = 'dusk'; state.clockFace = null; state.dockStyle = null; save(); applyTheme(); applyDockStyle(); buildThemePop();
+      toast(V('Back to the defaults', 'Đã về mặc định'));
+    });
   }
   $('#dim-toggle', pop).checked = !!state.dim;
   const grid = pop.querySelector('.swatch-grid');
   grid.innerHTML = PRESETS.map(p => `<button class="swatch ${!bgUrl && state.theme === p.id ? 'active' : ''}" data-theme="${p.id}" style="background:${presetBg(p)}" aria-label="${V('Theme', 'Giao diện')} ${p.id}"></button>`).join('');
-  grid.querySelectorAll('[data-theme]').forEach(sw => sw.addEventListener('click', () => {
+  const owned = typeof SD_STORE !== 'undefined' ? SD_STORE.themes() : [], lockedT = typeof SD_STORE !== 'undefined' ? SD_STORE.lockedThemes() : [];
+  const box = pop.querySelector('.store-themes'), pgrid = pop.querySelector('.swatch-grid.prem');
+  box.hidden = !owned.length && !lockedT.length;
+  pgrid.innerHTML = owned.map(x => `<button class="swatch ${!bgUrl && state.theme === x.key ? 'active' : ''}" data-theme="${esc(x.key)}" style="background:${x.item.swatch}" title="${esc(x.item.name[V('en', 'vi')] || x.item.name.en)}" aria-label="${V('Theme', 'Giao diện')} ${esc(x.item.name.en)}"></button>`).join('') +
+    lockedT.map(x => `<button class="swatch locked" data-lock="${esc(x.sku)}" data-name="${esc(x.name[V('en', 'vi')] || x.name.en)}" style="background:${x.swatch || '#333'}" title="${V('Ask a grown-up at home', 'Hãy hỏi người lớn ở nhà')}" aria-label="${esc(x.name.en)} (${V('locked', 'chưa mở')})"></button>`).join('');
+  pop.querySelectorAll('[data-theme]').forEach(sw => sw.addEventListener('click', () => {
     state.theme = sw.dataset.theme; state.customBg = false;          // a preset replaces the photo (it stays stored until the next upload)
     if (bgUrl) { URL.revokeObjectURL(bgUrl); bgUrl = null; }
     save(); applyTheme(); buildThemePop();
   }));
+  pgrid.querySelectorAll('[data-lock]').forEach(sw => sw.addEventListener('click', e => { e.stopPropagation(); storeLockedNote(pop.querySelector('.store-note'), sw.dataset.lock, sw.dataset.name); }));
+  const ownedD = typeof SD_STORE !== 'undefined' ? SD_STORE.docks() : [], lockedD = typeof SD_STORE !== 'undefined' ? SD_STORE.lockedDocks() : [];
+  const dbox = pop.querySelector('.store-docks'), dpick = pop.querySelector('.dock-pick');
+  dbox.hidden = !ownedD.length && !lockedD.length;
+  const curD = ownedD.find(x => x.key === state.dockStyle) ? state.dockStyle : '';
+  dpick.innerHTML = `<button class="chip${curD ? '' : ' on'}" data-dock="">${V('Standard', 'Chuẩn')}</button>` +
+    ownedD.map(x => `<button class="chip${curD === x.key ? ' on' : ''}" data-dock="${esc(x.key)}">${esc(x.item.name[V('en', 'vi')] || x.item.name.en)}</button>`).join('') +
+    lockedD.map(x => `<button class="chip locked" data-dlock="${esc(x.sku)}" data-name="${esc(x.name[V('en', 'vi')] || x.name.en)}" title="${V('Ask a grown-up at home', 'Hãy hỏi người lớn ở nhà')}">${esc(x.name[V('en', 'vi')] || x.name.en)}</button>`).join('');
+  dpick.querySelectorAll('[data-dock]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); state.dockStyle = b.dataset.dock || null; save(); applyDockStyle(); buildThemePop(); }));
+  dpick.querySelectorAll('[data-dlock]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); storeLockedNote(pop.querySelector('.dock-note'), b.dataset.dlock, b.dataset.name); }));
+  const files = pop.querySelector('.store-files'), list = typeof SD_STORE !== 'undefined' ? SD_STORE.loaded() : [];
+  files.innerHTML = list.length ? list.map(x => `<div class="store-item${x.hidden ? ' off' : ''}"><i style="background:${x.swatch || 'var(--line)'}"></i><span>${esc(x.name[V('en', 'vi')] || x.name.en)}${x.hidden ? ` <em>${V('hidden', 'đã ẩn')}</em>` : ''}</span>${x.hidden ? '' : `<button class="x" data-rm="${esc(x.id)}" aria-label="${V('Remove', 'Gỡ')} ${esc(x.name.en)}">×</button>`}</div>`).join('')
+    : `<p class="muted store-empty">${V('Items your family buys, or a .tdpack file, appear here.', 'Mục gia đình mua, hoặc tệp .tdpack, sẽ hiện ở đây.')}</p>`;
+  files.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation(); const id = b.dataset.rm;
+    if (String(state.theme).startsWith(`pk:${id}:`)) { state.theme = 'dusk'; save(); }
+    if (String(state.clockFace || '').startsWith(`pk:${id}:`)) { state.clockFace = null; save(); }
+    if (String(state.dockStyle || '').startsWith(`pk:${id}:`)) { state.dockStyle = null; save(); }
+    SD_STORE.removePack(id);
+  }));
+  buildThemeExtras(pop);
 }
+/* ---------- Polish (ported from TeachersDeck, 14 Nov 2026): dock extras, the idle watch face, the Theme pop's switches ---------- */
+/* Radial menu layouts (owner 11 Nov 2026): Docks off clears the wall (the rings hold everything), Compact keeps a small
+   icon-only bottom dock, Keep docks leaves them as they are. Top bar: with Floating, Magnifying, Circle (and Radial
+   without docks) StudentDeck's top bar can tuck away and drop down when the pointer rests on the top edge. It stays
+   shown by default here, because the XP bar and badges live in it. Floating icons (Pro, per dock): no panel behind a dock. */
+function radialDocks() { return ['off', 'compact', 'keep'].includes(state.radialDocks) ? state.radialDocks : 'off'; }
+function curDockStyle() { return typeof DockStyle !== 'undefined' ? DockStyle.current() : 'standard'; }
+function tbDropStyle() { const s = curDockStyle(); return ['float', 'magnify', 'circle'].includes(s) || (s === 'radial' && radialDocks() !== 'keep'); }
+function applyTopBarMode() {
+  const s = curDockStyle(), drop = tbDropStyle() && state.topBarMode === 'drop';
+  document.body.classList.toggle('rad-off', s === 'radial' && radialDocks() === 'off');
+  document.body.classList.toggle('rad-compact', s === 'radial' && radialDocks() === 'compact');
+  document.body.classList.toggle('tb-drop', drop);
+  if (drop) sdTopBar().build(); else sdTopBar().close(true);
+}
+var sdTopBarApi = null;
+function sdTopBar() {
+  if (sdTopBarApi) return sdTopBarApi;
+  let edge = null, handle = null, openT = 0, closeT = 0;
+  const bar = () => document.querySelector('header.top');
+  const isDrop = () => document.body.classList.contains('tb-drop');
+  const popOpen = () => { const p = document.getElementById('theme-pop'); return !!(p && !p.hidden); };
+  function open() { clearTimeout(closeT); document.body.classList.add('tb-open'); }
+  function close(force) {
+    clearTimeout(openT);
+    const b = bar();
+    if (!force && (popOpen() || (b && b.contains(document.activeElement)))) return;
+    document.body.classList.remove('tb-open');
+  }
+  function laterClose() { clearTimeout(closeT); closeT = setTimeout(() => close(false), 600); }
+  function build() {
+    if (edge) return;
+    edge = document.createElement('div'); edge.id = 'tb-edge'; edge.setAttribute('aria-hidden', 'true');
+    edge.addEventListener('mouseenter', () => { if (!isDrop()) return; clearTimeout(openT); openT = setTimeout(open, 120); });
+    edge.addEventListener('mouseleave', () => { clearTimeout(openT); if (document.body.classList.contains('tb-open')) laterClose(); });
+    handle = document.createElement('button'); handle.id = 'tb-handle'; handle.type = 'button';
+    handle.setAttribute('aria-label', V('Show the top bar', 'Mở thanh trên cùng'));
+    handle.addEventListener('click', () => { document.body.classList.contains('tb-open') ? close(true) : open(); });
+    let y0 = null;
+    handle.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, { passive: true });
+    handle.addEventListener('touchmove', e => { if (y0 !== null && e.touches[0].clientY - y0 > 16) { open(); y0 = null; } }, { passive: true });
+    document.body.appendChild(edge); document.body.appendChild(handle);
+    const b = bar();
+    if (b) {
+      b.addEventListener('mouseenter', () => { if (isDrop()) clearTimeout(closeT); });
+      b.addEventListener('mouseleave', () => { if (isDrop()) laterClose(); });
+      b.addEventListener('focusin', () => { if (isDrop()) open(); });
+      b.addEventListener('focusout', () => { if (isDrop()) laterClose(); });
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && isDrop() && document.body.classList.contains('tb-open') && !popOpen()) close(true); });
+    document.addEventListener('pointerdown', e => {   // a tap elsewhere folds it (touch has no "pointer leaves")
+      if (!isDrop() || !document.body.classList.contains('tb-open')) return;
+      const b2 = bar(); if ((b2 && b2.contains(e.target)) || e.target === handle || popOpen()) return;
+      close(true);
+    });
+  }
+  sdTopBarApi = { build, close: f => { if (edge || f) close(f); } };
+  return sdTopBarApi;
+}
+const sdIsPro = () => !PRO_GATE_ENABLED || (() => { try { return localStorage.getItem('sd_pro') === '1'; } catch (e) { return false; } })();
+var FLOAT_PARTS = [['bottom', V('Bottom dock', 'Dock dưới')], ['sides', V('Side docks', 'Dock bên')], ['rings', V('Rings', 'Vòng tròn')]];
+function applyFloatingIcons() {
+  const f = (sdIsPro() && state.dockFrameless) || {};
+  FLOAT_PARTS.forEach(([k]) => document.body.classList.toggle('df-' + k, !!f[k]));
+}
+
+/* The idle watch face: with an owned premium theme and an owned watch face, after a few minutes with no pointer, key or
+   touch (and no timer running) the face fills the screen with the time and date under it; any move brings the wall
+   back. Theme → "Watch face when idle" turns it off. ?idle=10 shortens the wait to 10 seconds for testing. */
+function idleFace() {
+  const prem = currentPremium(); if (!prem || state.idleClock === false || typeof SD_STORE === 'undefined') return null;
+  const owned = SD_STORE.faces(); if (!owned.length) return null;
+  const own = owned.filter(f => f.pack && String(f.pack.id).indexOf('face-' + prem.pack.id + '-') === 0);
+  return (owned.find(f => f.key === state.clockFace) || own[0] || owned[0]).item;
+}
+var sdIdle = (function () {
+  const q = Number(new URLSearchParams(location.search).get('idle'));
+  const WAIT = (q > 0 && q < 3600 ? q : 180) * 1000;
+  let timer = 0, overlay = null, face = null, tick = 0;
+  function arm() { clearTimeout(timer); if (idleFace()) timer = setTimeout(show, WAIT); }
+  function show() {
+    const f = idleFace();
+    if (overlay || !f) return;
+    if (document.body.classList.contains('td-busy') || stageGame || docStageOpen() || document.hidden) { arm(); return; }
+    overlay = document.createElement('div'); overlay.className = 'td-idle';
+    overlay.innerHTML = '<div class="td-idle-face"></div><div class="td-idle-time"></div><div class="td-idle-date"></div>';
+    document.body.appendChild(overlay);
+    face = StoreCore.mountFace(overlay.querySelector('.td-idle-face'), f, { lang: V('en', 'vi'), reduceMotion: matchMedia('(prefers-reduced-motion: reduce)').matches });
+    const tEl = overlay.querySelector('.td-idle-time'), dEl = overlay.querySelector('.td-idle-date');
+    const paint = () => { const d = new Date(), H = d.getHours(); tEl.textContent = `${H % 12 || 12}:${pad(d.getMinutes())} ${H >= 12 ? V('PM', 'CH') : V('AM', 'SA')}`; dEl.textContent = d.toLocaleDateString(V('en-US', 'vi-VN'), { weekday: 'long', month: 'long', day: 'numeric' }); };
+    paint(); tick = setInterval(paint, 15000);
+    requestAnimationFrame(() => overlay && overlay.classList.add('on'));
+  }
+  function hide() {
+    if (!overlay) return;
+    clearInterval(tick); if (face) face.stop(); face = null;
+    const o = overlay; overlay = null; o.classList.remove('on'); setTimeout(() => o.remove(), 300);
+  }
+  function wake() { if (overlay) hide(); arm(); }
+  ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => document.addEventListener(ev, wake, { passive: true, capture: true }));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) arm(); });
+  arm();
+  return { arm, hide };
+})();
+
+/* The Theme pop's new rows: Moving wallpaper, Watch face when idle, Tint my image (under the premium themes), and with a
+   dock from the store: Radial layout, Top bar, Floating icons. Rebuilt with the pop. */
+function buildThemeExtras(pop) {
+  const prem = currentPremium(), item = prem && prem.item, photo = !!bgUrl;
+  const sw = (key, on, label) => `<label class="switch-row"><span>${label}</span><input type="checkbox" data-x="${key}"${on ? ' checked' : ''}></label>`;
+  const tx = pop.querySelector('.theme-extras');
+  if (tx) {
+    tx.innerHTML = (item && item.wallpaper && !photo ? sw('wallpaper', state.wallpaper !== false, V('Moving wallpaper', 'Hình nền chuyển động')) : '') +
+      (item && typeof SD_STORE !== 'undefined' && SD_STORE.faces().length ? sw('idleClock', state.idleClock !== false, V('Watch face when idle', 'Hiện mặt đồng hồ khi không dùng')) : '') +
+      (item && photo ? sw('photoTint', !!state.photoTint, V('Tint my image', 'Phủ màu giao diện lên ảnh')) : '');
+    tx.hidden = !tx.innerHTML;
+    tx.querySelectorAll('[data-x]').forEach(c => c.addEventListener('change', e => {
+      e.stopPropagation(); state[c.dataset.x] = c.checked; save(); applyTheme(); sdIdle.arm();
+    }));
+  }
+  const dx = pop.querySelector('.dock-extras'); if (!dx) return;
+  const seg = (key, cur, opts) => `<div class="topbar-mode" role="group">${opts.map(([k, label]) => `<button type="button" class="topbar-mode-opt${cur === k ? ' active' : ''}" aria-pressed="${cur === k}" data-seg="${key}" data-v="${k}">${label}</button>`).join('')}</div>`;
+  const s = curDockStyle(), pro = sdIsPro(), f = state.dockFrameless || {};
+  dx.innerHTML = (s === 'radial' ? `<p class="pop-sub">${V('With the rings', 'Khi dùng vòng tròn')}</p>` + seg('radialDocks', radialDocks(), [['off', V('Docks off', 'Tắt dock')], ['compact', V('Compact dock', 'Dock gọn')], ['keep', V('Keep docks', 'Giữ dock')]]) : '') +
+    (tbDropStyle() ? `<p class="pop-sub">${V('Top bar', 'Thanh trên cùng')}</p>` + seg('topBarMode', state.topBarMode === 'drop' ? 'drop' : 'shown', [['shown', V('Always shown', 'Luôn hiện')], ['drop', V('Drop down at the top edge', 'Thả xuống ở mép trên')]]) : '') +
+    `<p class="pop-sub floating-head"><span>${V('Floating icons (no dock frame)', 'Biểu tượng nổi (bỏ viền dock)')}</span>${PRO_GATE_ENABLED ? '<span class="pro-badge">Pro</span>' : ''}</p>` +
+    `<div class="topbar-mode floating-opts">${FLOAT_PARTS.map(([k, label]) => { const on = pro && !!f[k]; return `<button type="button" class="topbar-mode-opt${on ? ' active' : ''}${pro ? '' : ' locked'}" aria-pressed="${on}" data-float="${k}">${label}</button>`; }).join('')}</div>`;
+  dx.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation(); state[b.dataset.seg] = b.dataset.v; save(); applyTopBarMode(); buildThemeExtras(pop);
+  }));
+  dx.querySelectorAll('[data-float]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!sdIsPro()) { toast(V('Floating icons come with ParentDeck Pro. Ask a grown-up at home!', 'Biểu tượng nổi có trong ParentDeck Pro. Hãy hỏi người lớn ở nhà nhé!')); return; }
+    const k = b.dataset.float; state.dockFrameless = Object.assign({}, state.dockFrameless, { [k]: !(state.dockFrameless || {})[k] });
+    save(); applyFloatingIcons(); buildThemeExtras(pop);
+  }));
+}
+applyFloatingIcons(); applyTopBarMode();
+
+if (typeof SD_STORE !== 'undefined') SD_STORE.onChange(() => { applyTheme(); buildThemePop(); showNewItems(); });
+/* v0.26.0: something new from the family's purchases (or a file): a dot on the theme pill and a small card with
+   "Try it" (applies it once, where it belongs) and "Later". Nothing changes on its own. */
+function tryStoreItem(p) {
+  const key = `pk:${p.id}:${p.items[0].id}`;
+  if (p.kind === 'theme') { state.theme = key; state.customBg = false; if (bgUrl) { URL.revokeObjectURL(bgUrl); bgUrl = null; } save(); applyTheme(); buildThemePop(); }
+  else if (p.kind === 'face') { state.clockFace = key; save(); if (panels.clock) { requestClose('clock'); } openWidget('clock'); }
+  else if (p.kind === 'dock') { state.dockStyle = key; save(); applyDockStyle(); buildThemePop(); }
+  else if (['sticker', 'layout', 'stamp', 'mask'].indexOf(p.kind) >= 0) openWidget('scrap');
+}
+function showNewItems() {
+  if (typeof SD_STORE === 'undefined' || !SD_STORE.newPacks) return;
+  const list = SD_STORE.newPacks();
+  $('#theme-pill').classList.toggle('has-new', list.length > 0);
+  let card = document.getElementById('store-new');
+  if (!list.length) { if (card) card.remove(); return; }
+  if (!card) { card = document.createElement('div'); card.id = 'store-new'; card.className = 'store-new'; card.setAttribute('role', 'status'); document.body.appendChild(card); }
+  const p = list[0], nm = p.name[V('en', 'vi')] || p.name.en;
+  card.innerHTML = `<span class="sn-gift" aria-hidden="true">🎁</span><div><b>${V('New for you', 'Mới cho bạn')}</b><span>${esc(nm)}${list.length > 1 ? ` <em>+${list.length - 1}</em>` : ''}</span></div>` +
+    `<button class="btn primary" data-sn="try">${V('Try it', 'Dùng thử')}</button><button class="btn" data-sn="later">${V('Later', 'Để sau')}</button>`;
+  card.onclick = e => {
+    const b = e.target.closest('[data-sn]'); if (!b) return;
+    if (b.dataset.sn === 'try') tryStoreItem(p);
+    SD_STORE.markSeen([p.id]);
+  };
+}
+showNewItems();   // a purchase arrives, or a refund falls back to Dusk
 buildThemePop();
 loadCustomBg();
 // Light / Dark in the top bar, just left of Settings as in every suite app (js/mode.js, css/mode.css). UniStudentDeck gets it once its page has #mode-toggle.
 if (typeof DeckMode !== 'undefined') DeckMode.mountSwitch(document.getElementById('mode-toggle'), { label: V('Mode', 'Chế độ'), light: V('Light', 'Sáng'), dark: V('Dark', 'Tối') }, { compact: true });
 $('#theme-pill').addEventListener('click', e => {
   e.stopPropagation();
+  if (typeof SD_STORE !== 'undefined' && SD_STORE.newPacks && SD_STORE.newPacks().length) $('#theme-pill').classList.remove('has-new');
   const open = $('#theme-pop').hidden;
   $('#theme-pop').hidden = !open;
   $('#theme-pill').setAttribute('aria-expanded', String(open));

@@ -109,7 +109,7 @@
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .widget.is-pinned{
-  box-shadow:0 10px 30px rgba(0,0,0,0.158),0 0 0 1px rgba(224,169,59,.55);
+  box-shadow:0 10px 30px rgba(0,0,0,0.158),0 0 0 1px rgba(var(--gold-rgb),.55);
 }
 :where(html[data-mode="light"]) .doc-stage{
   background:#fdfdfd;
@@ -328,10 +328,10 @@
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .sx-card:hover{
-  box-shadow:0 10px 28px rgba(0,0,0,0.171),0 0 0 1px rgba(224,169,59,.22),0 0 24px rgba(224,169,59,.14);
+  box-shadow:0 10px 28px rgba(0,0,0,0.171),0 0 0 1px rgba(var(--gold-rgb),.22),0 0 24px rgba(var(--gold-rgb),.14);
 }
 :where(html[data-mode="light"]) .tile:hover{
-  box-shadow:0 8px 18px rgba(0,0,0,0.158),0 0 16px rgba(224,169,59,.3);
+  box-shadow:0 8px 18px rgba(0,0,0,0.158),0 0 16px rgba(var(--gold-rgb),.3);
 }
 :where(html[data-mode="light"]) .bar i::after{
   background:linear-gradient(100deg,transparent 0,rgba(15,23,42,0.88) 50%,transparent 100%);
@@ -364,7 +364,7 @@
 }
 :where(html[data-mode="light"]) .badge-pop{
   background:rgba(249,249,251,0.97);
-  box-shadow:0 16px 44px rgba(0,0,0,0.248),0 0 30px rgba(224,169,59,.3);
+  box-shadow:0 16px 44px rgba(0,0,0,0.248),0 0 30px rgba(var(--gold-rgb),.3);
 }
 :where(html[data-mode="light"]) .bp-t small{
   color:#bc8406;
@@ -382,7 +382,7 @@
   background:rgba(0,0,0,0.072);
 }
 :where(html[data-mode="light"]) .bc-ledge{
-  background:linear-gradient(180deg,rgba(224,169,59,.35),rgba(224,169,59,.08) 55%,rgba(0,0,0,0.15));
+  background:linear-gradient(180deg,rgba(var(--gold-rgb),.35),rgba(var(--gold-rgb),.08) 55%,rgba(0,0,0,0.15));
   box-shadow:0 5px 10px rgba(0,0,0,0.158),inset 0 1px 0 rgba(0,0,0,0.1);
 }
 :where(html[data-mode="light"]) .bd-nx{
@@ -427,7 +427,7 @@
 }
 :where(html[data-mode="light"]) .bv-card{
   background:rgba(249,249,251,0.98);
-  box-shadow:0 24px 60px rgba(0,0,0,0.27),0 0 44px rgba(224,169,59,.25);
+  box-shadow:0 24px 60px rgba(0,0,0,0.27),0 0 44px rgba(var(--gold-rgb),.25);
 }
 :where(html[data-mode="light"]) .bv-x{
   background:rgba(15,23,42,0.066);
@@ -514,6 +514,27 @@
 }
 :where(html[data-mode="light"]) .ba-canwrap{
   box-shadow:0 4px 16px rgba(0,0,0,0.135);
+}
+:where(html[data-mode="light"]) .sd-wish.on{
+  color:#a91839;
+}
+:where(html[data-mode="light"]) .cf-classic{
+  background:radial-gradient(circle,#f4f1e8 55%,#fdfefe 58%);
+}
+:where(html[data-mode="light"]) .store-item i{
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+:where(html[data-mode="light"]) .dock-pick .chip.on{
+  color:#bc8406;
+}
+:where(html[data-mode="light"]) #theme-pill.has-new::after{
+  box-shadow:0 0 0 2px var(--panel,rgba(26,34,52,0.45));
+}
+:where(html[data-mode="light"]) .store-new{
+  box-shadow:0 12px 30px rgba(0,0,0,0.18);
+}
+:where(html[data-mode="light"]) .store-new b{
+  color:#bc8406;
 }
 
 /* ---- css/light.extra.css (hand-written) ---- */
