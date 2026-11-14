@@ -1030,6 +1030,9 @@ function buildInactiveList(){
 
 function widgetsFor(loc){
   const list = WIDGETS.filter(w => widgetOn(w.id) && state.dockPlacement[w.id] === loc);
+  // the order the admin dragged the icons into comes first (js/dockdrag.js), before the cap; the rest keep the usual order
+  const order = (state.dockOrder || {})[loc] || [], at = id => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+  list.sort((a, b) => at(a.id) - at(b.id));
   return DOCK_CAPS[loc] ? list.slice(0, DOCK_CAPS[loc]) : list;     // past the cap a widget simply isn't drawn there (the tray still has it)
 }
 function placementCount(loc){ return widgetsFor(loc).length; }
@@ -1161,14 +1164,13 @@ function buildDockPlacementList(){
   const box = document.getElementById('dock-vis-list');
   if(!box) return;
   box.innerHTML = '';
-  const locked = state.layoutMode !== 'custom';
-  const hint = document.getElementById('dock-buttons-lock-hint'); if(hint) hint.hidden = !locked;
+  // placing launchers works in every layout mode (v0.17.0), as dragging them does: the mode only decides which drawers are shown
+  const hint = document.getElementById('dock-buttons-lock-hint'); if(hint) hint.hidden = true;
   WIDGETS.filter(w => widgetOn(w.id)).forEach(w=>{
     const row = document.createElement('div');
-    row.className = 'dock-vis-row placement-row' + (locked ? ' locked' : '');
+    row.className = 'dock-vis-row placement-row';
     row.innerHTML = `<span>${esc(widgetLabel(w.labelKey))}</span>`;
     const sel = document.createElement('select');
-    sel.disabled = locked;
     PLACEMENT_OPTIONS.forEach(opt=>{
       const o = document.createElement('option'); o.value = opt; o.textContent = t('placement_' + opt); sel.appendChild(o);
     });
@@ -1217,6 +1219,28 @@ function openAppTray(){
 function closeAppTray(){
   const backdrop = document.getElementById('app-tray-backdrop'), tab = document.getElementById('app-tray-tab');
   backdrop.hidden = true; tab.classList.remove('open'); tab.setAttribute('aria-expanded','false');
+}
+/* Dragging launchers (js/dockdrag.js, the same file in every suite app): a dock icon to another place or dock, a tray icon onto a
+   dock, a dock icon onto the tray tab (off the docks). Saved once, on drop. An empty drawer is hidden, so while dragging, the
+   drawers the layout mode shows come back as drop targets. */
+function wireDockDrag(){
+  if(!window.DockDrag) return;
+  DockDrag.init({
+    zones: { bottom:'#dock', left:'#dock-left-items', right:'#dock-right-items', top:'#dock-top-widgets' },
+    item: '.dock-item[data-id], .dock-top-item[data-id]', caps: DOCK_CAPS,
+    tray: { grid:'#app-tray-grid', item:'.app-tray-item[data-id]', tab:'#app-tray-tab' },
+    move(id, loc, ids){
+      const from = state.dockPlacement[id], order = state.dockOrder = state.dockOrder || {};
+      state.dockPlacement[id] = loc;
+      if(from && from !== loc && order[from]) order[from] = order[from].filter(x => x !== id);
+      if(ids) order[loc] = ids;
+      saveState(); rebuildAllDocks(); buildDockPlacementList();
+    },
+    full(loc){ toast(t('drawer_full_toast', { side: t('placement_' + loc), max: DOCK_CAPS[loc] })); },
+    closeTray: closeAppTray, openTray: openAppTray,
+    onStart(){ ['left', 'right'].forEach(sd => { if(effectiveSideVisible(sd)) document.getElementById('dock-' + sd).hidden = false; }); },
+    onEnd(){ buildSideDock('left'); buildSideDock('right'); }
+  });
 }
 function wireAppTray(){
   const tab = document.getElementById('app-tray-tab'), backdrop = document.getElementById('app-tray-backdrop'), handle = document.getElementById('app-tray-handle');
@@ -2084,6 +2108,7 @@ function init(){
   rebuildAllDocks();
   applyPills(); applyDockAutoHide(); applyToolbarAutoHide();
   wireAppTray();
+  wireDockDrag();
   wireSettingsDrawer();
   wireThemeDrawer();
   localizeNode(document);

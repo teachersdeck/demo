@@ -189,6 +189,7 @@ if(state.hoverOpen === undefined) state.hoverOpen = false;
 if(state.dockAutoHide === undefined) state.dockAutoHide = false;
 if(!state.docViewer) state.docViewer = { removeCopyOnClose:false };   // Office-to-Google: delete the Google copy when the document is closed   // bottom dock slides away, leaving only its tab; hover the tab to bring it back
 if(!state.dockPlacement) state.dockPlacement = {}; // widgetId -> 'bottom' | 'left' | 'right' | 'hidden'
+if(!state.dockOrder) state.dockOrder = {};         // dock -> [widgetId, …] in the order the teacher dragged them (js/dockdrag.js); widgets not listed follow in the usual order
 if(!state.attendance) state.attendance = {};
 if(!state.groupMaker) state.groupMaker = { mode:'groups', count:4, size:4, lastKey:'' };
 if(!state.exitTicket) state.exitTicket = { question:'', tallies:{ got_it:0, almost:0, need_help:0 } };
@@ -560,6 +561,7 @@ const LOCALE_MAP = { en:'en-US', vi:'vi-VN', es:'es-ES', fr:'fr-FR', zh:'zh-CN',
 const STRINGS = {
   clock:        { en:'⏰ Clock', vi:'Đồng hồ', es:'Reloj', fr:'Horloge', zh:'时钟', ja:'時計', ko:'시계', tl:'Orasan' },
   timer:        { en:'⏱️ Timer', vi:'Hẹn giờ', es:'Temporizador', fr:'Minuteur', zh:'计时器', ja:'タイマー', ko:'타이머', tl:'Timer' },
+  tellingtime:  { en:'🕒 Telling Time', vi:'Xem giờ tiếng Anh' },
   stopwatch:    { en:'⏲️ Stopwatch', vi:'Bấm giờ', es:'Cronómetro', fr:'Chronomètre', zh:'秒表', ja:'ストップウォッチ', ko:'스톱워치', tl:'Stopwatch' },
   traffic:      { en:'🚦 Traffic Light', vi:'Đèn giao thông', es:'Semáforo', fr:'Feu tricolore', zh:'交通灯', ja:'信号機', ko:'신호등', tl:'Ilaw-trapiko' },
   dice:         { en:'🎲 Dice', vi:'Xúc xắc', es:'Dados', fr:'Dés', zh:'骰子', ja:'サイコロ', ko:'주사위', tl:'Dice' },
@@ -630,7 +632,7 @@ const STRINGS = {
   settings_title:  { en:'Settings', vi:'Cài đặt', es:'Configuración', fr:'Paramètres', zh:'设置', ja:'設定', ko:'설정', tl:'Mga Setting' },
   language_section:{ en:'Language', vi:'Ngôn ngữ', es:'Idioma', fr:'Langue', zh:'语言', ja:'言語', ko:'언어', tl:'Wika' },
   dock_buttons: { en:'Dock buttons', vi:'Nút trên thanh dock', es:'Botones del dock', fr:'Boutons du dock', zh:'底部工具栏按钮', ja:'ドックのボタン', ko:'독 버튼', tl:'Mga Button sa Dock' },
-  dock_buttons_hint: { en:'Choose where each widget\u2019s launcher lives — bottom dock, a side drawer, or hidden', vi:'Chọn nơi hiển thị nút mở từng widget — thanh dock dưới, ngăn hai bên, hoặc ẩn' },
+  dock_buttons_hint: { en:'Choose where each widget\u2019s launcher lives — bottom dock, a side drawer, or hidden. You can also drag the buttons themselves.', vi:'Chọn nơi hiển thị nút mở từng widget — thanh dock dưới, ngăn hai bên, hoặc ẩn. Bạn cũng có thể kéo thả trực tiếp các nút.' },
   placement_bottom: { en:'Bottom dock', vi:'Thanh dock dưới' },
   placement_left:   { en:'Left drawer', vi:'Ngăn bên trái' },
   placement_right:  { en:'Right drawer', vi:'Ngăn bên phải' },
@@ -1425,6 +1427,7 @@ const ICONS = {
   draw:`<path d="M4 20l1.2-4.3L16 5l3 3L8.3 18.8 4 20Z"/><path d="M14 7l3 3"/><path d="M3 4h6M3 8h3" opacity=".55"/>`,
   stats:`<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>`,
   clock:`<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>`,
+  tellingtime:`<circle cx="12" cy="12" r="9"/><path d="M12 6.5V12l-3.8 2.2"/><path d="M12 3v1.6M21 12h-1.6M12 21v-1.6M3 12h1.6"/>`,
   timer:`<path d="M10 2h4"/><path d="M12 6v0"/><circle cx="12" cy="14" r="8"/><path d="M12 14V9"/><path d="M18 6l1.5-1.5"/>`,
   stopwatch:`<circle cx="12" cy="13" r="8"/><path d="M12 13V9"/><path d="M9 3h6"/>`,
   traffic:`<rect x="8" y="2" width="8" height="20" rx="4"/><circle cx="12" cy="6.5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="17.5" r="1.4"/>`,
@@ -1500,6 +1503,7 @@ const WIDGETS = [
   { id:'clock', cat:'time', labelKey:'clock', icon:'clock', w:200, h:222, render:renderClock },
   { id:'timer', cat:'time', labelKey:'timer', icon:'timer', w:220, h:210, render:renderTimer },
   { id:'stopwatch', cat:'time', labelKey:'stopwatch', icon:'stopwatch', w:220, h:280, render:renderStopwatch },
+  { id:'tellingtime', cat:'time', labelKey:'tellingtime', icon:'tellingtime', w:340, h:500, render:renderTellingTime },   // Telling Time (Nov 2026): free; its premium faces are Pro
   { id:'traffic', cat:'tools', labelKey:'traffic', icon:'traffic', w:180, h:250, render:renderTraffic },
   { id:'dice', cat:'tools', labelKey:'dice', icon:'dice', w:200, h:200, render:renderDice },
   { id:'checklist', cat:'tools', labelKey:'checklist', icon:'checklist', w:260, h:270, render:renderChecklist },
@@ -1600,7 +1604,7 @@ const saveWprefs = () => { try{ localStorage.setItem(WPREF_KEY, JSON.stringify(w
 const isOff = id => !KINDER && (!!wprefs.off[id] || !!(PF && PF.hides(id)));   // Kinder: the school decides, so nothing is switched off here   // platform: the widgets this platform leaves out
 const WIDGET_TIERS = {
   core:   ['classbuilder', 'clock', 'timer', 'namepicker', 'groupmaker', 'scoreboard', 'poll', 'attendance', 'traffic', 'noise', 'agenda', 'files', 'calendar', 'assignments', 'progressreports', 'lessonplanner', 'cloudclass', 'rewardpoints', 'noteshome'],
-  keep:   ['checklist', 'games', 'music', 'hallpass', 'qrcode', 'ttsreader', 'convocards', 'idiomday', 'grammarref', 'instructions', 'classactivity', 'stats', 'badgecase', 'drawdeck', 'scrapreview', 'boardreview'],
+  keep:   ['tellingtime', 'checklist', 'games', 'music', 'hallpass', 'qrcode', 'ttsreader', 'convocards', 'idiomday', 'grammarref', 'instructions', 'classactivity', 'stats', 'badgecase', 'drawdeck', 'scrapreview', 'boardreview'],
   shelve: ['stopwatch', 'dice', 'videoplayer', 'soundboard', 'exitticket', 'meet', 'countdown', 'unitconverter', 'announcements', 'readinglog']
 };
 const tierOf = id => Object.keys(WIDGET_TIERS).find(k => WIDGET_TIERS[k].includes(id)) || 'keep';
@@ -1697,6 +1701,10 @@ const DOCK_CAPS = { bottom:KINDER ? 5 : 10, left:5, right:5, top:5 };   // Kinde
 
 function widgetsFor(loc){
   const list = WIDGETS.filter(w => state.dockPlacement[w.id] === loc && !isOff(w.id));
+  // The order the teacher dragged the icons into comes first (before the cap below, so a dragged icon is never the one
+  // capped out); widgets never dragged keep the registry order after them.
+  const order = state.dockOrder[loc] || [], at = id => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+  list.sort((a, b) => at(a.id) - at(b.id));
   // Defensive cap at render time too, not just when a widget is newly
   // assigned — a widget added to the registry before caps existed, or a
   // state migrated before this fix, could otherwise carry more than
@@ -2030,15 +2038,14 @@ const PLACEMENT_OPTIONS = ['bottom','left','right','top','hidden'];
 function buildDockPlacementList(){
   const box = document.getElementById('dock-vis-list');
   box.innerHTML = '';
-  const locked = state.layoutMode !== 'custom';
+  // Placing icons works in every layout mode (v0.42.0), as dragging them does: the mode only decides which docks are shown
   const lockHint = document.getElementById('dock-buttons-lock-hint');
-  if(lockHint) lockHint.hidden = !locked;
+  if(lockHint) lockHint.hidden = true;
   WIDGETS.filter(w=> !isOff(w.id)).forEach(w=>{
     const row = document.createElement('div');
-    row.className = 'dock-vis-row placement-row' + (locked ? ' locked' : '');
+    row.className = 'dock-vis-row placement-row';
     row.innerHTML = `<span data-i18n="${w.labelKey}">${t(w.labelKey)}</span>`;
     const sel = document.createElement('select');
-    sel.disabled = locked;
     PLACEMENT_OPTIONS.forEach(opt=>{
       const o = document.createElement('option');
       o.value = opt;
@@ -2060,6 +2067,30 @@ function buildDockPlacementList(){
     });
     row.appendChild(sel);
     box.appendChild(row);
+  });
+}
+
+/* Dragging launchers (js/dockdrag.js): a dock icon to another place or dock, a tray icon onto a dock, a dock icon onto
+   the tray tab (off the docks). The drag file checks the caps; this saves the move once, on drop, and rebuilds. */
+function wireDockDrag(){
+  if(!window.DockDrag) return;
+  DockDrag.init({
+    zones: { bottom:'#dock', left:'#dock-left-items', right:'#dock-right-items', top:'#dock-top-widgets' },
+    item: '.dock-item[data-id], .dock-top-item[data-id]',
+    caps: DOCK_CAPS,
+    tray: { grid:'#app-tray-grid', item:'.app-tray-item[data-id]', tab:'#app-tray-tab' },
+    move(id, loc, ids){
+      const from = state.dockPlacement[id];
+      state.dockPlacement[id] = loc;
+      if(from && from !== loc && state.dockOrder[from]) state.dockOrder[from] = state.dockOrder[from].filter(x => x !== id);
+      if(ids) state.dockOrder[loc] = ids;
+      saveState();
+      rebuildAllDocks();
+      buildDockPlacementList();
+    },
+    full(loc){ toast(t('drawer_full_toast', { side: t('placement_'+loc), max: DOCK_CAPS[loc] })); },
+    closeTray: closeAppTray,
+    openTray: openAppTray
   });
 }
 
@@ -2456,6 +2487,19 @@ function renderClock(body){
   tick();
   const iv = setInterval(tick, 1000);
   return ()=>clearInterval(iv);
+}
+
+/* Telling Time (Nov 2026): the tile is js/tellingtime-tile.js on the engine js/tellingtime.js (the same files in StudentDeck).
+   Free; the premium clock faces follow the Pro gate. Kinder (when it syncs this): o'clock and half past, the basic face. */
+function renderTellingTime(body){
+  if(!window.TellingTimeTile || !window.TellingTime){ body.textContent = 'Telling Time is not in this build.'; return null; }
+  return TellingTimeTile.mount(body, {
+    lang: () => document.documentElement.lang || state.lang,
+    isPro,
+    openPro: () => openProModal('tellingtime'),
+    maxStep: KINDER ? 2 : 6,
+    faces: KINDER ? ['basic'] : null
+  });
 }
 
 function renderTimer(body, ctx){
@@ -3051,6 +3095,7 @@ Object.assign(STRINGS, {
   wc_instructions:    { en:'Step-by-step directions, with a Vietnamese line.', vi:'Hướng dẫn từng bước, kèm dòng tiếng Việt.' },
   wc_stats:           { en:'Your XP, streaks and activity history.', vi:'XP, chuỗi ngày và lịch sử hoạt động của bạn.' },
   wc_badgecase:       { en:'Your own badge display case — every badge you’ve earned, on shelves.', vi:'Tủ huy hiệu của riêng bạn — mọi huy hiệu bạn đã đạt, trưng bày trên kệ.' },
+  wc_tellingtime:     { en:'Teach telling the time in English: drag the hands, hide and reveal, British or American.', vi:'Dạy xem giờ bằng tiếng Anh: kéo kim, ẩn rồi hiện đáp án, Anh-Anh hoặc Anh-Mỹ.' },
   wc_stopwatch:       { en:'Rarely needed — Timer covers almost every case.', vi:'Ít khi cần — Hẹn giờ đã đáp ứng gần như mọi trường hợp.' },
   wc_dice:            { en:'A novelty; Name Picker and Group Maker cover classroom randomising.', vi:'Chủ yếu để vui; Chọn tên và Chia nhóm đã lo phần ngẫu nhiên.' },
   wc_videoplayer:     { en:'Overlaps Files (open a link) and the browser; local clips are heavy.', vi:'Trùng với Tệp (mở liên kết) và trình duyệt; video cục bộ khá nặng.' },
@@ -10362,6 +10407,7 @@ function init(){
   rebuildAllDocks();
   wireClasses();
   wireAppTray();
+  wireDockDrag();
   buildLangSelects();
   buildLayoutModeSelector();
   buildDockPlacementList();

@@ -472,6 +472,18 @@ function renderClock(b) {
   return () => clearInterval(iv);
 }
 
+/* Telling Time (Nov 2026): TeachersDeck's tile, the same files (js/tellingtime.js, js/tellingtime-tile.js, css/tellingtime.css,
+   kept identical by tools/check_shared.py). Free; the premium clock faces follow ProGate. Practice only: no XP here (the
+   Telling Time game in the Games Hub gives the XP). */
+function renderTellingTime(b) {
+  if (!window.TellingTimeTile || !window.TellingTime) { b.textContent = 'Telling Time is not in this build.'; return null; }
+  return TellingTimeTile.mount(b, {
+    lang: () => document.documentElement.lang,
+    isPro: () => !(ProGate.enabled && !ProGate.pro),
+    openPro: () => { if (typeof ProGate.cta === 'function') ProGate.cta('tellingtime'); }
+  });
+}
+
 function renderTimer(b) {
   b.innerHTML = `<div class="tm-time" id="tt"></div>
     <div class="row center" role="group" aria-label="${V('Session length', 'Thời lượng phiên')}">${[15, 25, 45].map(m => `<button class="chip" data-m="${m}">${m} ${V('min', 'phút')}</button>`).join('')}</div>
@@ -1797,6 +1809,7 @@ function renderCards(b) {
 const WIDGETS = [
   { id: 'clock', title: V('⏰ Clock', '⏰ Đồng hồ'), icon: I('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'), w: 220, h: 270, render: renderClock },
   { id: 'timer', title: V('⏱️ Focus Timer', '⏱️ Hẹn giờ tập trung'), icon: I('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/>'), w: 280, h: 300, render: renderTimer },
+  { id: 'tellingtime', title: V('🕒 Telling Time', '🕒 Xem giờ tiếng Anh'), icon: I('<circle cx="12" cy="12" r="9"/><path d="M12 6.5V12l-3.8 2.2"/><path d="M12 3v1.6M21 12h-1.6M12 21v-1.6M3 12h1.6"/>'), w: 340, h: 500, render: renderTellingTime },
   { id: 'todo', title: V('📝 Homework Assignments', '📝 Bài tập về nhà'), icon: I('<path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>'), w: 320, h: 440, render: renderTodo },
   { id: 'reading', title: V('📚 Reading Log', '📚 Nhật ký đọc'), icon: I('<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z M12 6v13"/>'), w: 340, h: 430, render: renderReading },
   { id: 'notes', title: V('🗒️ Notepad', '🗒️ Sổ tay'), icon: I('<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h3M6 7H4M6 11H4M6 15H4"/>'), w: 360, h: 520, render: renderNotes },
@@ -1820,7 +1833,7 @@ const WIDGETS = [
    UniDeck phase 1: the school-class widgets (Cloud Class, Shared Board, Board Assignments) give way to UniDeck's own
    course widgets, which UniStudentDeck's js/uni-courses-ui.js lists in window.UNI_WIDGETS ({ id, title, iconPath, w, h,
    render, cat? }); the to-do list is "To-do" again now that real course Assignments exist. */
-const UNI_DROP = ['games', 'idiom', 'scrap', 'badges', 'class', 'sharedboard', 'boardassign'];
+const UNI_DROP = ['games', 'idiom', 'scrap', 'badges', 'class', 'sharedboard', 'boardassign', 'tellingtime'];   // Telling Time: not for university students (scope, section 7)
 const UNI_TITLES = { todo: V('📝 To-do', '📝 Việc cần làm'), reading: V('📚 Reading List', '📚 Danh sách đọc'), notes: V('🗒️ Notes', '🗒️ Ghi chú'), stats: V('📈 Study Stats', '📈 Thống kê học tập'), journey: V('📓 Journal', '📓 Nhật ký') };
 if (UNI) {
   for (let i = WIDGETS.length - 1; i >= 0; i--) if (UNI_DROP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
@@ -1945,12 +1958,16 @@ const LAYOUT_MODES = ['compact', 'cozy', 'custom'];
 const LAYOUT_TEXT = { compact: [V('Compact', 'Gọn'), V('Just the bottom dock \u2014 tap the arrow above it for an app tray with every widget', 'Chỉ có thanh dock dưới \u2014 bấm mũi tên phía trên để mở khay ứng dụng với mọi tiện ích')], cozy: [V('Cozy', 'Thoải mái'), V('Bottom, left and right docks all shown', 'Hiện cả thanh dock dưới, trái và phải')], custom: [V('Custom', 'Tùy chỉnh'), V('Pick each widget\u2019s dock and toggle drawers yourself', 'Tự chọn thanh dock cho từng tiện ích và bật/tắt ngăn bên')] };
 const DOCK_CAPS = { bottom: 10, left: 5, right: 5 };
 const PLACE_LABEL = { bottom: V('Bottom dock', 'Thanh dock dưới'), left: V('Left drawer', 'Ngăn trái'), right: V('Right drawer', 'Ngăn phải'), hidden: V('Hidden', 'Ẩn') };
-const DEFAULT_PLACEMENT = { clock: 'bottom', timer: 'bottom', todo: 'bottom', reading: 'bottom', notes: 'bottom', files: 'bottom', translate: 'bottom', dict: 'bottom', cards: 'bottom', games: 'left', idiom: 'left', journey: 'left', scrap: 'left', stats: 'right', badges: 'right', class: 'right' };
-const WIDGET_CAT = { timer: 'study', todo: 'study', reading: 'study', notes: 'study', files: 'study', translate: 'language', dict: 'language', cards: 'language', idiom: 'language', games: 'me', journey: 'me', scrap: 'me', stats: 'me', badges: 'me', class: 'cloud' };
+const DEFAULT_PLACEMENT = { clock: 'bottom', timer: 'bottom', todo: 'bottom', reading: 'bottom', notes: 'bottom', files: 'bottom', translate: 'bottom', dict: 'bottom', cards: 'bottom', games: 'left', idiom: 'left', journey: 'left', scrap: 'left', tellingtime: 'left', stats: 'right', badges: 'right', class: 'right' };
+const WIDGET_CAT = { timer: 'study', todo: 'study', reading: 'study', notes: 'study', files: 'study', translate: 'language', dict: 'language', cards: 'language', idiom: 'language', tellingtime: 'language', games: 'me', journey: 'me', scrap: 'me', stats: 'me', badges: 'me', class: 'cloud' };
 if (UNI) (window.UNI_WIDGETS || []).forEach(w => { WIDGET_CAT[w.id] = w.cat || 'cloud'; });   // UniDeck's course widgets
 const CATEGORIES = [['study', V('Study', 'Học tập')], ['language', V('Language', 'Ngôn ngữ')], ['me', U(V('Me & fun', 'Tôi & giải trí'), V('Me', 'Tôi'))], ['cloud', U(V('Class', 'Lớp'), V('Courses', 'Khóa học'))]];
 
-const widgetsFor = loc => WIDGETS.filter(w => state.dockPlacement[w.id] === loc).slice(0, DOCK_CAPS[loc] || 99);   // a dock never shows more than its cap; the rest stay reachable in the tray
+function widgetsFor(loc) {                            // a dock never shows more than its cap; the rest stay reachable in the tray
+  // the order the student dragged the icons into comes first (js/dockdrag.js), before the cap; the rest keep the usual order
+  const order = (state.dockOrder || {})[loc] || [], at = id => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+  return WIDGETS.filter(w => state.dockPlacement[w.id] === loc).sort((a, b) => at(a.id) - at(b.id)).slice(0, DOCK_CAPS[loc] || 99);
+}
 const placementCount = loc => widgetsFor(loc).length;
 function ensureDockPlacement() {                       // first run, and any widget added in a later version: default launcher (or hidden if that dock is full)
   let changed = false;
@@ -2019,7 +2036,7 @@ function buildLockedControls() {                       // everything the mode lo
   left.onchange = e => { state.edgeDock.left.visible = e.target.checked; save(); rebuildAllDocks(); };
   right.onchange = e => { state.edgeDock.right.visible = e.target.checked; save(); rebuildAllDocks(); };
   const auto = $('#dock-autohide-toggle'); auto.checked = !!state.dockAutoHide; auto.onchange = e => { state.dockAutoHide = e.target.checked; save(); buildDock(); };
-  buildDockPlacementList(locked);
+  buildDockPlacementList(false);   // placing launchers works in every mode (v0.26.0), as dragging them does
 }
 function buildDockPlacementList(locked) {
   const box = $('#dock-vis-list'); box.innerHTML = ''; $('#dock-buttons-lock-hint').hidden = !locked;
@@ -2055,6 +2072,25 @@ $('#app-tray-handle').addEventListener('click', closeAppTray);
 $('#app-tray-backdrop').addEventListener('click', e => { if (e.target.id === 'app-tray-backdrop') closeAppTray(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#app-tray-backdrop').hidden) closeAppTray(); else if (!settingsDrawer.hidden) closeSettings(); } });
 ensureDockPlacement(); rebuildAllDocks(); buildLayoutModeSelector(); buildLockedControls();
+/* Dragging launchers (js/dockdrag.js, the same file in every suite app): a dock icon to another place or dock, a tray icon onto a
+   dock, a dock icon onto the tray tab (off the docks). Saved once, on drop. An empty drawer is hidden, so while dragging, the
+   drawers the layout mode shows come back as drop targets. */
+if (window.DockDrag) DockDrag.init({
+  zones: { bottom: '#dock', left: '#dock-left-items', right: '#dock-right-items' },
+  item: '.dock-item[data-id]', caps: DOCK_CAPS,
+  tray: { grid: '#app-tray-grid', item: '.app-tray-item[data-id]', tab: '#app-tray-tab' },
+  move(id, loc, ids) {
+    const from = state.dockPlacement[id], order = state.dockOrder = state.dockOrder || {};
+    state.dockPlacement[id] = loc;
+    if (from && from !== loc && order[from]) order[from] = order[from].filter(x => x !== id);
+    if (ids) order[loc] = ids;
+    save(); rebuildAllDocks(); buildDockPlacementList(false);
+  },
+  full: loc => toast(V(PLACE_LABEL[loc] + ' is full (' + DOCK_CAPS[loc] + ' max)', PLACE_LABEL[loc] + ' đã đầy (tối đa ' + DOCK_CAPS[loc] + ')')),
+  closeTray: closeAppTray, openTray: openAppTray,
+  onStart: () => ['left', 'right'].forEach(sd => { if (effectiveSideVisible(sd)) $('#dock-' + sd).hidden = false; }),
+  onEnd: () => { buildSideDock('left'); buildSideDock('right'); },
+});
 $('#ver').textContent = 'v' + VERSION;
 
 /* New-tab pages: several can be open at once and every save writes the whole state, so
