@@ -151,6 +151,7 @@ const STRINGS = {
   inactive_section: { en:'Inactive widgets', vi:'Widget đã tắt' },
   inactive_hint: { en:'Switched off and hidden from the docks and the tray, but kept — turn one on to bring it back.', vi:'Đã tắt và ẩn khỏi dock và khay nhưng vẫn được giữ lại — bật để dùng lại.' },
   w_calendar: { en:'📅 Calendar Master View', vi:'📅 Lịch toàn trường' },
+  w_clock: { en:'🕒 Clock', vi:'🕒 Đồng hồ' },
   w_joincodes: { en:'🔑 Join Code Manager', vi:'🔑 Quản lý mã tham gia' },
   w_rosterhealth: { en:'🩺 Roster Health Checker', vi:'🩺 Kiểm tra danh sách lớp' },
   w_teachers: { en:'🧑‍🏫 Teacher Directory', vi:'🧑‍🏫 Danh bạ giáo viên' },
@@ -478,6 +479,7 @@ const ICONS = {
   trophy:`<path d="M7 3h10v4a5 5 0 0 1-10 0V3Z"/><path d="M7 4H4.5A2.5 2.5 0 0 0 4 8.9L7 11"/><path d="M17 4h2.5A2.5 2.5 0 0 1 20 8.9L17 11"/><path d="M12 12v3.5"/><path d="M9 20h6"/><path d="M9.6 16.5h4.8l.5 3.5H9.1l.5-3.5Z"/>`,
   poll:`<rect x="4" y="11" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="16" y="14" width="4" height="6" rx="1"/>`,
   clipboard:`<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="8.5" y="2" width="7" height="3.5" rx="1"/><path d="M8.5 11h7M8.5 15h7M8.5 19h4"/>`,
+  clock:`<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,   // the Clock widget (js/deckclock.js)
   calendar:`<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/><circle cx="8" cy="14" r="1"/><circle cx="12" cy="14" r="1"/><circle cx="16" cy="14" r="1"/>`,
   qrcode:`<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM19 14v3M14 19h2M19 19h2"/>`,
   pulse:`<path d="M3 12h4l2-7 4 14 2-7h6"/>`,
@@ -612,7 +614,7 @@ async function renderSchoolSettings(){
 const POLICY_FLAGS = [
   ['studentPhotos', 'Students may add photos to Scrapdeck', 'Off: Add photo is disabled in every class. Photos already on a student\u2019s computer stay there and can\u2019t be shared.'],
   ['studentSharing', 'Students may share Scrapdeck pages', 'Off: nothing a student makes leaves their computer (sharing arrives in a later StudentDeck update).'],
-  ['studentStore', 'Students may see the Scrapdeck Shop', 'For a later update; nothing uses it yet. Students never pay — a parent approves every purchase.'],
+  ['studentStore', 'Students may see items their family can add', 'On: StudentDeck shows themes and watch faces the family doesn\u2019t have yet, greyed with \u201cask a grown-up at home\u201d, and children may mark up to 3 wishes. Off: children see only what their family already has. Students never pay — a parent approves every purchase.'],
 ];
 function renderPolicyBox(who){
   const box = document.getElementById('policy-box'); if(!box) return;
@@ -674,7 +676,9 @@ function toast(msg, ms){
   clearTimeout(toast._h);
   toast._h = setTimeout(()=> el.hidden = true, ms || 2200);
 }
-function emptyState(msg){ return `<p class="empty">${esc(msg)}</p>`; }
+// UI polish phase 4: an empty list says so in one friendly line (css/polish.css .td-empty); ic adds an icon above it
+// (left out for "Loading…" and "Not configured", which aren't empty lists).
+function emptyState(msg, ic){ return `<div class="empty td-empty">${ic ? `<span class="td-empty-ic" aria-hidden="true">${ic}</span>` : ''}<span>${esc(msg)}</span></div>`; }
 function errBox(msg){ return `<p class="err-box">${esc(msg)}</p>`; }
 
 /* ---------------- Theme ---------------- */
@@ -684,9 +688,50 @@ const PRESETS = [
   { id:'ocean', css:'linear-gradient(180deg,#0e2f3f 0%, #164a5c 55%, #0c2733 100%)' },
   { id:'sunrise', css:'linear-gradient(180deg,#3a2140 0%, #7a4a55 45%, #c98a5e 100%)' },
   { id:'slate', css:'linear-gradient(180deg,#20242c 0%, #2b3038 100%)' },
-  { id:'plain', css:'#12161C' }
+  { id:'plain', css:'#12161C' },
+  // UI polish phase 4: two more classroom backgrounds, as in TeachersDeck; css/polish.css adds their texture
+  { id:'paper', name:'Paper', css:'linear-gradient(180deg,#2b2721 0%, #25221d 55%, #1f1c18 100%)', light:'linear-gradient(180deg,#f8f4ea 0%, #f3ede0 60%, #efe8d9 100%)' },
+  { id:'chalkboard', name:'Chalkboard', css:'linear-gradient(180deg,#1f3a2c 0%, #284836 55%, #1b3326 100%)', light:'linear-gradient(180deg,#e7f0ea 0%, #dce9e1 60%, #e3eee7 100%)' }
 ];
-const presetBg = p => (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
+const presetBg = p => (p.light && document.documentElement.dataset.mode === 'light') ? p.light
+  : (typeof DeckMode !== 'undefined') ? DeckMode.background(p.id, p.css) : p.css;   // Light mode: the same preset, pale (js/mode.js)
+
+/* UI polish (from TeachersDeck): every background but Dusk colours the docks, windows and drawers with a small set of
+   its own. css/premium.css reads the --sk-* tokens under html[data-td-skin] (dark mode only). */
+const PRESET_SKINS = {
+  chalk:     { bgs:'#2b2f26', card:'rgba(74,82,62,.55)', line:'rgba(205,215,180,.26)', ink:'#eef1e4', muted:'#c3c9b0', acc:'#d9c27a', bt:'#2a2306', dock:'rgba(36,40,31,.86)', hov:'rgba(255,255,255,.10)' },
+  ocean:     { bgs:'#0e2f3f', card:'rgba(22,74,92,.48)', line:'rgba(140,220,230,.30)', ink:'#e6fbff', muted:'#a6d4dd', acc:'#5fd3d6', bt:'#032a2c', dock:'rgba(10,40,52,.86)', hov:'rgba(255,255,255,.12)' },
+  sunrise:   { bgs:'#3a2140', card:'rgba(122,74,85,.42)', line:'rgba(255,200,160,.30)', ink:'#fff1e8', muted:'#e8c3b4', acc:'#ffb27a', bt:'#3a1600', dock:'rgba(58,33,64,.86)', hov:'rgba(255,255,255,.12)' },
+  slate:     { bgs:'#20242c', card:'rgba(52,58,68,.62)', line:'rgba(200,210,225,.22)', ink:'#eef1f6', muted:'#b4bccb', acc:'#9fb4d6', bt:'#141a26', dock:'rgba(30,34,42,.9)', hov:'rgba(255,255,255,.10)' },
+  plain:     { bgs:'#12161c', card:'rgba(32,38,47,.72)', line:'rgba(255,255,255,.12)', ink:'#eef1f6', muted:'#a7afbd', acc:'#e0a93b', bt:'#231803', dock:'rgba(20,24,31,.92)', hov:'rgba(255,255,255,.08)' },
+  paper:     { bgs:'#25221d', card:'rgba(64,58,48,.6)', line:'rgba(230,215,190,.24)', ink:'#f6efe2', muted:'#cfc2aa', acc:'#e0b46a', bt:'#2b1d05', dock:'rgba(43,39,33,.9)', hov:'rgba(255,255,255,.10)' },
+  chalkboard:{ bgs:'#1f3a2c', card:'rgba(44,78,60,.55)', line:'rgba(200,235,210,.26)', ink:'#f2f7f1', muted:'#c0d6c8', acc:'#f2efe0', bt:'#1d2b22', dock:'rgba(26,48,37,.9)', hov:'rgba(255,255,255,.10)' },
+};
+function skinRgb(c, fallback){   // '#rrggbb' | '#rgb' | 'rgba(r,g,b,a)' -> 'r,g,b'
+  const s = String(c || '').trim(); let m;
+  if((m = /^#([0-9a-f]{6})/i.exec(s))) return [0,2,4].map(i=>parseInt(m[1].substr(i,2),16)).join(',');
+  if((m = /^#([0-9a-f])([0-9a-f])([0-9a-f])/i.exec(s))) return [m[1],m[2],m[3]].map(h=>parseInt(h+h,16)).join(',');
+  if((m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(s))) return [m[1],m[2],m[3]].join(',');
+  return fallback || '0,0,0';
+}
+const SKIN_PROPS = ['--sk-ink0','--sk-ink1','--sk-ink2','--sk-ink3','--sk-card','--sk-head','--sk-hov','--sk-dock','--sk-dock-soft','--sk-drawer','--sk-pill','--sk-line','--sk-line-rgb',
+  '--sk-ink','--sk-muted','--sk-acc','--sk-acc-rgb','--sk-acc-hi','--sk-acc-hi-rgb','--sk-on','--sk-on-rgb','--sk-radius','--sk-shadow-rgb','--sk-card-photo'];
+function applySkin(){
+  const root = document.documentElement, tk = PRESET_SKINS[state.theme] || null;
+  if(!tk){ delete root.dataset.tdSkin; SKIN_PROPS.forEach(k=>root.style.removeProperty(k)); return; }
+  const bgs = tk.bgs, acc = tk.acc, accRgb = skinRgb(acc), mix = (rgb, w) => rgb.split(',').map(v=>Math.round(+v + (255 - +v) * w)).join(',');
+  const dark = skinRgb(bgs).split(',').map(v=>Math.round(+v * .35)).join(',');
+  const set = (k, v) => root.style.setProperty(k, v);
+  set('--sk-ink0', bgs); set('--sk-ink1', `color-mix(in srgb, ${bgs} 88%, #ffffff)`); set('--sk-ink2', `color-mix(in srgb, ${bgs} 80%, #ffffff)`); set('--sk-ink3', `color-mix(in srgb, ${bgs} 70%, #ffffff)`);
+  set('--sk-card', tk.card); set('--sk-head', `color-mix(in srgb, ${tk.card} 55%, transparent)`); set('--sk-hov', tk.hov);
+  set('--sk-dock', tk.dock); set('--sk-dock-soft', `color-mix(in srgb, ${tk.dock} 76%, transparent)`); set('--sk-drawer', `color-mix(in srgb, ${bgs} 94%, transparent)`);
+  set('--sk-pill', `color-mix(in srgb, ${tk.hov} 65%, transparent)`); set('--sk-line', tk.line); set('--sk-line-rgb', skinRgb(tk.line, '160,210,255'));
+  set('--sk-ink', tk.ink); set('--sk-muted', tk.muted); set('--sk-acc', acc); set('--sk-acc-rgb', accRgb);
+  set('--sk-acc-hi', `rgb(${mix(accRgb, .3)})`); set('--sk-acc-hi-rgb', mix(accRgb, .3)); set('--sk-on', tk.bt); set('--sk-on-rgb', skinRgb(tk.bt));
+  set('--sk-radius', '16px'); set('--sk-shadow-rgb', dark);
+  set('--sk-card-photo', `color-mix(in srgb, ${bgs} 34%, transparent)`);
+  root.dataset.tdSkin = state.theme;
+}
 let modeSwitch = null, modeToggle = null;   // the Light / Dark switch at the top of the Theme drawer, and its icon-only twin in the top bar (wireThemeDrawer)
 const bgLayer = document.getElementById('bg-layer');
 const bgOverlay = document.getElementById('bg-overlay');
@@ -698,6 +743,10 @@ function paintPreset(){
   bgLayer.style.backgroundSize = 'cover';
 }
 function applyTheme(){
+  const root = document.documentElement, photo = !!(sessionBgUrl || state.customBg);
+  root.dataset.tdBg = photo ? 'image' : 'preset';
+  root.dataset.tdBgid = photo ? '' : (state.theme || 'dusk');   // css/polish.css: paper / chalkboard texture
+  applySkin();
   if(sessionBgUrl){ bgLayer.style.background = `center/cover no-repeat url(${sessionBgUrl})`; }
   else if(state.customBg){ /* custom image is applied async from IndexedDB — see initCustomBg() */ }
   else paintPreset();
@@ -712,13 +761,14 @@ async function initCustomBg(){
   }catch(err){ console.error('AdminDeck: failed to load custom background', err); if(!sessionBgUrl) paintPreset(); }
 }
 function buildPresetSwatches(){
+  if(typeof buildDockSwatches === 'function') buildDockSwatches();
   const grid = document.getElementById('theme-presets');
   grid.innerHTML = '';
   PRESETS.forEach(p=>{
     const sw = document.createElement('button');
     sw.className = 'swatch' + ((!state.customBg && !sessionBgUrl && state.theme===p.id) ? ' active' : '');
     sw.style.background = presetBg(p);
-    sw.setAttribute('aria-label', p.id); sw.title = p.id;
+    sw.setAttribute('aria-label', p.name || p.id); sw.title = p.name || p.id;
     sw.addEventListener('click', ()=>{
       state.theme = p.id; state.customBg = false;
       if(sessionBgUrl){ URL.revokeObjectURL(sessionBgUrl); sessionBgUrl = null; }
@@ -739,6 +789,7 @@ function setLanguage(code){
   paintStatusPill(lastStatusKey, lastStatusCls);
   refreshWidgetTitles();
   buildLayoutModeSelector(); buildDockPlacementList(); updatePushPreview();
+  if(typeof applyAdDock === 'function'){ applyAdDock(); buildDockSwatches(); }   // the dock styles' labels in the new language
   [modeSwitch, modeToggle].forEach(sw=>{ if(sw) sw.relabel({ label:t('mode_title'), light:t('mode_light'), dark:t('mode_dark') }); });
   if(widgetEls.schoolstats) ssRerender();
   // Re-render the other open widgets' bodies too, so their text changes language along with the title bar. The data comes from AD's
@@ -793,6 +844,8 @@ const widgetEls = {};
 let topZ = 10;
 function bringToFront(el){
   if(el.classList.contains('full')) return;          // full-screen widgets (School Stats) stay underneath the floating ones
+  document.querySelectorAll('.widget.is-front').forEach(w=>{ if(w !== el) w.classList.remove('is-front'); });   // UI polish phase 4: css/polish.css
+  el.classList.add('is-front');
   if(+el.style.zIndex === topZ) return;
   el.style.zIndex = ++topZ;
 }
@@ -809,7 +862,7 @@ function startGesture(g){
    windows already stranded by an older build (saved layouts) and after the browser window is resized. */
 function freeBand(){
   const tb = document.querySelector('.topbar'), dk = document.getElementById('dock-wrap');
-  const top = state.toolbarAutoHide ? 8 : (tb ? Math.ceil(tb.getBoundingClientRect().bottom) : 0);   // auto-hide: only the 8px handle is ever in the way
+  const top = toolbarTucked() ? 8 : (tb ? Math.ceil(tb.getBoundingClientRect().bottom) : 0);   // auto-hide: only the 8px handle is ever in the way
   const dockTop = dk ? Math.floor(dk.getBoundingClientRect().top) : wall.clientHeight;
   return { top: Math.max(0, top), bottom: dockTop > 0 ? Math.min(wall.clientHeight || dockTop, dockTop) : wall.clientHeight };
 }
@@ -900,6 +953,7 @@ function openWidget(id){
   const el = document.createElement('section');
   el.className = 'widget' + (def.full ? ' full' : '') + (layout.minimized ? ' minimized' : '');
   el.dataset.wid = id;   // which widget this is (js/bento.js: tile sizes and order on phones and tablets)
+  el.classList.add('td-opening'); el.addEventListener('animationend', ()=> el.classList.remove('td-opening'), { once:true });   // UI polish phase 4
   if(!def.full){
     el.style.left = layout.x+'px'; el.style.top = layout.y+'px'; el.style.width = layout.w+'px';
     if(layout.h && !layout.minimized) el.style.height = layout.h+'px';
@@ -926,7 +980,49 @@ function openWidget(id){
   const body = el.querySelector('.widget-body');
   const cleanup = ProGate.render(def, body);
   widgetEls[id].cleanup = cleanup;
+  attachAutoFit(id, body);
   syncFullscreen();
+}
+/* UI polish phase 1 (from TeachersDeck): a few widgets grow with their window, so they read from the back of the room
+   (join codes on a projector, for one). The content is zoomed to the largest size at which it still fits (never below
+   today's 100%, at most 300%); more content than fits scrolls as before. Data tables and the big pages stay as they are.
+   The content sits in one .fit-wrap inside the body; whatever a widget draws into its body later joins that wrap. */
+const AUTO_FIT = new Set(['joincodes', 'calendar', 'rosterhealth', 'snapshot']);
+function attachAutoFit(id, body){
+  if(!AUTO_FIT.has(id) || body._autoFit) return;
+  let raf = 0, busy = false;
+  function wrap(){
+    const kids = [...body.childNodes];
+    let w = kids.find(k => k.classList && k.classList.contains('fit-wrap'));
+    if(w && kids.length === 1) return w;
+    if(!w){ w = document.createElement('div'); w.className = 'fit-wrap'; }
+    kids.forEach(k=>{ if(k !== w) w.appendChild(k); });   // never a wrap inside a wrap (the zooms would multiply)
+    if(w.parentNode !== body) body.appendChild(w);
+    return w;
+  }
+  function fit(){
+    busy = true;
+    const w = wrap();
+    const cs = getComputedStyle(body);
+    const availH = body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const availW = body.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    // nothing to grow: minimized, a phone's bento tile, or a "Loading…" / empty / locked message (it would only shout)
+    if(availH <= 0 || availW <= 0 || body.closest('.minimized') || document.documentElement.classList.contains('bento') || w.querySelector('.empty, .err-box, .pg-lock')){ w.style.zoom = ''; w.style.width = ''; busy = false; return; }
+    const fits = z => { w.style.zoom = z; w.style.width = (availW / z) + 'px'; return w.scrollHeight * z <= availH + 1 && w.scrollWidth <= availW / z + 1; };
+    let lo = 1, hi = 3;
+    if(!fits(1)){ fits(1); busy = false; return; }   // too much content: 100% and scroll, as before
+    if(fits(hi)) lo = hi;
+    else for(let i = 0; i < 9; i++){ const mid = (lo + hi) / 2; if(fits(mid)) lo = mid; else hi = mid; }
+    fits(Math.floor(lo * 100) / 100);
+    busy = false;
+  }
+  const schedule = () => { if(busy) return; cancelAnimationFrame(raf); raf = requestAnimationFrame(fit); };
+  if('ResizeObserver' in window) new ResizeObserver(schedule).observe(body);
+  new MutationObserver(schedule).observe(body, { childList:true, subtree:true, characterData:true });
+  body.addEventListener('input', schedule);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+  body._autoFit = { schedule };
+  schedule();
 }
 /* v0.4.2: a full-screen widget (School Stats) really takes the whole screen — it starts at the very top and runs to the bottom edge, with the
    top toolbar hidden and the dock floating over it. The toolbar comes back when the page is minimized or closed, or on request (the
@@ -934,7 +1030,7 @@ function openWidget(id){
    the free band at the top changes size. */
 function syncFullscreen(){
   const full = Object.keys(widgetEls).some(id => { const r = widgetEls[id]; return r && r.el.classList.contains('full') && !r.el.classList.contains('minimized'); });
-  const on = full && !state.toolbarAutoHide && !(state.statsUI && state.statsUI.showToolbar);   // with auto-hide the toolbar is already out of the way
+  const on = full && !toolbarTucked() && !(state.statsUI && state.statsUI.showToolbar);   // with auto-hide the toolbar is already out of the way
   document.body.classList.toggle('ss-fullscreen', on);
   rescueWidgets();
 }
@@ -968,6 +1064,7 @@ function syncDock(){
   document.querySelectorAll('.dock-item[data-id], .dock-top-item[data-id], .app-tray-item[data-id]').forEach(b=>{
     b.classList.toggle('active', !!state.active[b.dataset.id]);
   });
+  if(typeof DockStyle !== 'undefined') DockStyle.refresh();   // the dock styles mark open widgets too
 }
 
 /* ---------------- Layout modes, docks and app tray (ported from TeachersDeck v0.15.1) ----------------
@@ -984,7 +1081,7 @@ const PLACEMENT_OPTIONS = ['bottom', 'left', 'right', 'top', 'hidden'];
 // First-run spread for Cozy: the everyday pages along the bottom, the lookup tools in the side drawers.
 const DEFAULT_PLACEMENT = { snapshot:'bottom', schoolstats:'bottom', assignments:'bottom', calendar:'bottom', rosterhealth:'bottom',
                             points:'left', joincodes:'right', teachers:'right',
-                            pulse:'bottom', funnel:'left', families:'left', engage:'right', directory:'bottom', schooldeck:'bottom' };
+                            pulse:'bottom', funnel:'left', families:'left', engage:'right', directory:'bottom', schooldeck:'bottom', clock:'right' };
 
 /* v0.8.0 — five widgets became two (Assignment Pipeline + Homework Completion = Assignments; Points Leaderboard + Points & Rewards Economy = Points & Rewards),
    Class Comparison moved into the School Stats class table, and School Snapshot is INACTIVE: still in the code and in Settings -> Inactive widgets, just off
@@ -1104,9 +1201,12 @@ function buildTopWidgetDock(){
 }
 function applyDockAutoHide(){ const w = document.getElementById('dock-wrap'); if(w) w.classList.toggle('auto-hide', !!state.dockAutoHide); }
 // v0.5.0 — the top toolbar slides away until the pointer reaches the top edge.
+// UI polish: the Floating, Magnifying and Circle docks (and Radial without docks) tuck the toolbar away the same way, unless
+// Theme > Dock > Top bar says "Always shown" (applyTopBarMode, at the end of this file).
+function toolbarTucked(){ return !!state.toolbarAutoHide || (typeof tbDropOn === 'function' && tbDropOn()); }
 function applyToolbarAutoHide(){
-  document.getElementById('topbar').classList.toggle('auto-hide', !!state.toolbarAutoHide);
-  document.body.classList.toggle('toolbar-autohide', !!state.toolbarAutoHide);
+  document.getElementById('topbar').classList.toggle('auto-hide', toolbarTucked());
+  document.body.classList.toggle('toolbar-autohide', toolbarTucked());
   syncFullscreen();                                      // the free band at the top just changed size; re-check School Stats and floating windows
 }
 const PILLS = [
@@ -1228,7 +1328,7 @@ function wireDockDrag(){
   DockDrag.init({
     zones: { bottom:'#dock', left:'#dock-left-items', right:'#dock-right-items', top:'#dock-top-widgets' },
     item: '.dock-item[data-id], .dock-top-item[data-id]', caps: DOCK_CAPS,
-    tray: { grid:'#app-tray-grid', item:'.app-tray-item[data-id]', tab:'#app-tray-tab' },
+    tray: { grid:'#app-tray-grid', item:'.app-tray-item[data-id]', tab:'#app-tray-tab, #dock .dk-tray-btn' },   // the floating and magnifying docks hide the tab and carry a tray button
     move(id, loc, ids){
       const from = state.dockPlacement[id], order = state.dockOrder = state.dockOrder || {};
       state.dockPlacement[id] = loc;
@@ -1537,7 +1637,7 @@ function renderSnapshot(body){
       </div>
       <p class="hint">${activeHint}</p>
       <h4 class="wh">${t('snap_by_class')}</h4>
-      ${byClass.length ? byClass.map(c=>`<div class="arow"><span class="name">${esc(c.className)}</span><span class="meta">${esc(c.teacherName||t('td_no_teacher'))}</span><span class="val">${c.studentCount||0}</span></div>`).join('') : emptyState(t('empty_no_classes'))}
+      ${byClass.length ? byClass.map(c=>`<div class="arow"><span class="name">${esc(c.className)}</span><span class="meta">${esc(c.teacherName||t('td_no_teacher'))}</span><span class="val">${c.studentCount||0}</span></div>`).join('') : emptyState(t('empty_no_classes'), '🏫')}
     `;
     wireRefreshBtn(body);
   });
@@ -1586,7 +1686,7 @@ function pipelineHtml(classes, details){
     const dayLabel = d => d.toLocaleDateString(LOCALE_MAP[state.lang] || 'en-US', { weekday:'short', month:'short', day:'numeric' });
     const anyThisWeek = Object.values(byDay).some(arr=>arr.length);
     let html = `<h4 class="wh">${t('pipe_due_this_week')}</h4>`;
-    if(!anyThisWeek) html += emptyState(t('pipe_empty'));
+    if(!anyThisWeek) html += emptyState(t('pipe_empty'), '📭');
     else days.forEach(d=>{
       const items = byDay[dayKeyLocal(d)] || [];
       if(!items.length) return;
@@ -1604,7 +1704,7 @@ function pipelineHtml(classes, details){
 
 function hwRatesParts(act){
     const classes = act.classes.filter(c=> c.homework.assignmentCount > 0);
-    if(!classes.length) return { tiles:'', list: emptyState(t('hw_none_any')) };
+    if(!classes.length) return { tiles:'', list: emptyState(t('hw_none_any'), '📭') };
     const sorted = classes.slice().sort((a,b)=>{
       const av = a.homework.avgPctDonePast, bv = b.homework.avgPctDonePast;
       if(av == null && bv == null) return a.className.localeCompare(b.className);
@@ -1667,7 +1767,7 @@ function leaderboardHtml(classes, details){
       <h4 class="wh">${t('lead_top_students')}</h4>
       ${top.length ? top.map((s,i)=>`<div class="arow"><span class="rank">${i+1}</span><span class="name">${esc(s.name)}</span><span class="meta">${esc(s.className)}</span><span class="val">${s.points}</span></div>`).join('') : emptyState(t('lead_no_full_classes'))}
       <h4 class="wh">${t('lead_top_classes')}</h4>
-      ${topClasses.length ? topClasses.map((c,i)=>`<div class="arow"><span class="rank">${i+1}</span><span class="name">${esc(c.className)}</span><span class="meta">${c.n}</span><span class="val">${c.avg.toFixed(1)}</span></div>`).join('') : emptyState(t('empty_no_classes'))}
+      ${topClasses.length ? topClasses.map((c,i)=>`<div class="arow"><span class="rank">${i+1}</span><span class="name">${esc(c.className)}</span><span class="meta">${c.n}</span><span class="val">${c.avg.toFixed(1)}</span></div>`).join('') : emptyState(t('empty_no_classes'), '🏫')}
       <p class="hint">${t('lead_anon_note')}</p>
     `;
 }
@@ -1676,7 +1776,7 @@ function economyParts(act){
     const classes = act.classes.filter(c=> c.rosterSize > 0 || c.economy.awarded || c.economy.redeemed);
     const sc = act.school.economy;
     if(!sc.awarded && !sc.deducted && !sc.redeemed && !classes.some(c=>c.economy.totalRewards)){
-      return { tiles:'', list: emptyState(t('eco_empty')) };
+      return { tiles:'', list: emptyState(t('eco_empty'), '📭') };
     }
     const catBadge = st => st === 'none' ? `<span class="badge anon">${t('eco_cat_none')}</span>`
       : st === 'unreachable' ? `<span class="badge warn">${t('eco_cat_unreachable')}</span>`
@@ -1805,7 +1905,7 @@ function renderJoinCodes(body){
           <span class="meta" style="margin-left:6px">${t('jc_parent_code')}</span>${codeBox(cls.parentJoinCode)}
         </div>
       </div>`;
-    }).join('') : emptyState(t('empty_no_classes'));
+    }).join('') : emptyState(t('empty_no_classes'), '🏫');
     body.innerHTML = frameTop() + html;
     body.querySelectorAll('[data-copy]').forEach(btn=> btn.addEventListener('click', async ()=>{
       try{ await navigator.clipboard.writeText(btn.dataset.copy); toast(t('jc_copied')); }
@@ -1837,7 +1937,7 @@ function renderRosterHealth(body){
     });
     const any = emptyClasses.length || noHomework.length || noEvents.length || dupes.length;
     let html;
-    if(!any) html = emptyState(t('rh_all_clear'));
+    if(!any) html = emptyState(t('rh_all_clear'), '✅');
     else {
       html = '';
       if(dupes.length) html += `<h4 class="wh">${t('rh_dupes')}</h4>` + dupes.map(d=>`<div class="arow"><span class="name">${esc(d.name)}</span><span class="meta">${t('rh_in_class',{class:d.className})}</span><span class="badge warn">×${d.n}</span></div>`).join('');
@@ -1887,7 +1987,7 @@ function renderTeachers(body){
         ${t('td_events',{n:te.events})} ·
         ${act ? `${t('td_last_awarded')}: ${relDay((lastByTeacher.get(te.key) || {}).lastAwardMs)}` : `${t('td_last_active')}: ${t('not_available_yet')}`}
       </p>
-    `).join('') : emptyState(t('empty_no_classes'));
+    `).join('') : emptyState(t('empty_no_classes'), '🏫');
     body.innerHTML = frameTop() + html;
     wireRefreshBtn(body);
   });
@@ -1959,7 +2059,7 @@ function renderPulse(body){
             [`${active}<small>/${rosterTotal}</small>`, t('pulse_active')], [fmtNum(sum('readMin')), t('pulse_reading')], [fmtNum(sum('focusMin')), t('pulse_focus')],
             [fmtNum(sum('games')), t('pulse_games')], [fmtNum(sum('idioms')), t('pulse_idioms')], [fmtNum(sum('hwChecks')), t('pulse_hw')]
           ])
-        + (any ? `<h4 class="wh">${t('pulse_by_class')}</h4>${rows}` : emptyState(t('pulse_empty')))
+        + (any ? `<h4 class="wh">${t('pulse_by_class')}</h4>${rows}` : emptyState(t('pulse_empty'), '📭'))
         + moodHtml + noteHtml('pulse_note');
       body.querySelectorAll('[data-win]').forEach(b=> b.addEventListener('click', ()=>{ win = Number(b.dataset.win); paint(); }));
       wireRefreshBtn(body);
@@ -1976,7 +2076,7 @@ function renderFunnel(body){
   return widgetBoot(body, async (body, isAlive)=>{
     const act = await AD.getSchoolActivity();
     if(!isAlive()) return;
-    if(!act.classes.length){ body.innerHTML = frameTop() + emptyState(t('fun_empty')); wireRefreshBtn(body); return; }
+    if(!act.classes.length){ body.innerHTML = frameTop() + emptyState(t('fun_empty'), '📭'); wireRefreshBtn(body); return; }
     const total = act.school.funnel.classes;
     const reached = act.school.funnel.reached;
     const schoolBars = FUNNEL_STAGES.map(k=> barHtml(esc(t('fun_'+k)), `${reached[k]}/${total}`, total ? reached[k]/total*100 : 0, pctClass(total ? reached[k]/total*100 : null))).join('');
@@ -2000,7 +2100,7 @@ function renderFamilies(body){
     const act = await AD.getSchoolActivity();
     if(!isAlive()) return;
     const classes = act.classes.filter(c=> c.rosterSize > 0);
-    if(!classes.length){ body.innerHTML = frameTop() + emptyState(t('fam_empty')); wireRefreshBtn(body); return; }
+    if(!classes.length){ body.innerHTML = frameTop() + emptyState(t('fam_empty'), '📭'); wireRefreshBtn(body); return; }
     const sf = act.school.families;
     const multi = classes.reduce((a,c)=> a + c.families.multiGuardian, 0);
     const maxWk = Math.max(1, ...sf.linkWeeks.map(w=>w.links));
@@ -2032,7 +2132,7 @@ function renderEngagement(body){
     const act = await AD.getSchoolActivity();
     if(!isAlive()) return;
     const teachers = act.teachers.filter(x=> x.teacherUid);
-    if(!teachers.length){ body.innerHTML = frameTop() + emptyState(t('eng_empty')); wireRefreshBtn(body); return; }
+    if(!teachers.length){ body.innerHTML = frameTop() + emptyState(t('eng_empty'), '📭'); wireRefreshBtn(body); return; }
     // least recently active first, so teachers who may need a nudge surface at the top
     const sorted = teachers.slice().sort((a,b)=>{
       if(a.lastAwardMs == null && b.lastAwardMs == null) return (a.name||'').localeCompare(b.name||'');
@@ -2066,6 +2166,7 @@ const WIDGETS = [
   { id:'assignments', labelKey:'w_assignments', icon:'clipboard', w:420, h:520, render: renderAssignments },   // v0.8.0 — Assignment Pipeline + Homework Completion
   { id:'calendar', labelKey:'w_calendar', icon:'calendar', w:400, h:560, render: renderCalendarWidget },
   { id:'joincodes', labelKey:'w_joincodes', icon:'qrcode', w:380, h:400, render: renderJoinCodes },
+  { id:'clock', labelKey:'w_clock', icon:'clock', w:240, h:290, render: b => typeof DeckClock !== 'undefined' ? DeckClock.mount(b, { lang: state.lang }) : null },   // 15 Nov 2026: the Glass Blue demo's Clock face (js/deckclock.js)
   { id:'rosterhealth', labelKey:'w_rosterhealth', icon:'pulse', w:380, h:420, render: renderRosterHealth },
   { id:'teachers', labelKey:'w_teachers', icon:'people', w:380, h:420, render: renderTeachers },
   { id:'teachernotes', labelKey:'w_teachernotes', icon:'people', w:440, h:560, render: renderTeacherNotes },   // v0.9.3
@@ -2088,7 +2189,7 @@ const WIDGETS = [
 /* v0.14.1: in the university edition (CampusDeck) the school widgets go — they read classes, students' points, homework,
    join codes and families, which universities don't have. CampusDeck shows its own campus widgets instead (courses,
    campus stats, course health, teaching staff), and keeps the People Directory. */
-const UNI_KEEP = ['directory', 'files'];
+const UNI_KEEP = ['directory', 'files', 'clock'];   // the Clock stays in CampusDeck too (15 Nov 2026)
 if(UNI) for(let i = WIDGETS.length - 1; i >= 0; i--) if(!UNI_KEEP.includes(WIDGETS[i].id)) WIDGETS.splice(i, 1);
 const DEFAULT_WINDOW = UNI ? ((window.UNI_WIDGETS || [])[0] || { id:'directory' }).id : 'schoolstats';   // first run and Reset layout
 if(UNI) (window.UNI_WIDGETS || []).forEach(w => {
@@ -2097,6 +2198,174 @@ if(UNI) (window.UNI_WIDGETS || []).forEach(w => {
   STRINGS['uw_' + w.id] = STRINGS['uw_' + w.id] || { en: w.title };
   WIDGETS.push({ id:w.id, labelKey:'uw_' + w.id, icon:w.icon || 'school', w:w.w, h:w.h, full:!!w.full, render:w.render });
 });
+
+/* ---------------- Dock styles (UI polish, from TeachersDeck) ----------------
+   Theme → Dock: the standard docks or one of the five dock styles (js/dockstyle.js draws them; the packs are in
+   js/dock-packs.js, checked with StoreCore). AdminDeck has no store, so every style is open to everyone.
+   Floating, Magnifying and Circle (and Radial with its docks off) tuck the top bar away: it drops down at the top edge
+   (the toolbar auto-hide AdminDeck already has) unless Theme → Dock → Top bar says "Always shown". */
+Object.assign(STRINGS, {
+  dock_title:       { en:'Dock', vi:'Dock' },
+  dock_standard:    { en:'Standard', vi:'Tiêu chuẩn' },
+  dock_radial_hint: { en:'Right-click an empty part of the screen (or long-press on a touchscreen) to open your widgets.', vi:'Nhấp chuột phải vào chỗ trống (hoặc nhấn giữ trên màn hình cảm ứng) để mở tiện ích.' },
+  dock_rad_off:     { en:'Docks off', vi:'Tắt dock' },
+  dock_rad_compact: { en:'Compact dock', vi:'Dock gọn' },
+  dock_rad_keep:    { en:'Keep docks', vi:'Giữ dock' },
+  dock_tb_drop:     { en:'Drop down at the top edge', vi:'Thả xuống ở mép trên' },
+  dock_tb_shown:    { en:'Always shown', vi:'Luôn hiện' },
+  dock_floating:    { en:'Floating icons (no dock frame)', vi:'Biểu tượng nổi (bỏ viền dock)' },
+  dock_fl_bottom:   { en:'Bottom dock', vi:'Dock dưới' },
+  dock_fl_sides:    { en:'Side docks', vi:'Dock bên' },
+  dock_fl_rings:    { en:'Rings', vi:'Vòng tròn' },
+  cat_overview:     { en:'School overview', vi:'Tổng quan trường' },
+  cat_classes:      { en:'Classes and learning', vi:'Lớp học và học tập' },
+  cat_people:       { en:'People', vi:'Mọi người' },
+  cat_tools:        { en:'Calendar and files', vi:'Lịch và tệp' },
+  cat_campus:       { en:'Campus', vi:'Khuôn viên' },
+});
+const AD_CAT_OF = { snapshot:'overview', schoolstats:'overview', pulse:'overview', engage:'overview', rosterhealth:'overview',
+  points:'classes', assignments:'classes', funnel:'classes', joincodes:'classes',
+  teachers:'people', teachernotes:'people', directory:'people', schooldeck:'people', families:'people',
+  calendar:'tools', files:'tools', clock:'tools' };
+const AD_CATS = ['overview', 'classes', 'people', 'tools', 'campus'];
+const AD_CAT_ICON = { overview:'chart', classes:'clipboard', people:'people', tools:'calendar', campus:'school' };
+const adCat = id => AD_CAT_OF[id] || 'campus';   // CampusDeck's own widgets (UniDeck) share one category
+function adDockItems(){
+  const out = [];
+  (window.AD_DOCK_PACKS || []).forEach(r=>{
+    if(!window.StoreCore || !r || r.kind !== 'dock') return;
+    const v = StoreCore.validateStorePack(r); if(!v.ok){ console.warn('AdminDeck: dock pack refused', r && r.id, v.error); return; }
+    v.pack.items.forEach(it=>out.push(it));
+  });
+  return out;
+}
+function applyAdDock(){
+  if(typeof DockStyle === 'undefined') return;
+  const it = adDockItems().find(d=>d.style === state.dockStyle);
+  DockStyle.apply(it ? it.style : 'standard', it || null);
+  applyTopBarMode();
+}
+function radialDocks(){ return ['off','compact','keep'].includes(state.radialDocks) ? state.radialDocks : 'off'; }
+function tbDropStyle(){   // a dock style whose top bar tucks away: Floating, Magnifying, Circle, and Radial unless it keeps the docks
+  const s = state.dockStyle || 'standard';
+  return ['float','magnify','circle'].includes(s) || (s === 'radial' && radialDocks() !== 'keep');
+}
+function tbDropOn(){ return tbDropStyle() && state.topBarMode !== 'shown'; }
+function applyTopBarMode(){
+  const s = state.dockStyle || 'standard';
+  document.body.classList.toggle('rad-off', s === 'radial' && radialDocks() === 'off');
+  document.body.classList.toggle('rad-compact', s === 'radial' && radialDocks() === 'compact');
+  applyToolbarAutoHide();
+}
+function modeRow(box, opts, cur, pick){
+  box.innerHTML = '';
+  opts.forEach(([k, key])=>{
+    const b = document.createElement('button'); b.type = 'button';
+    b.className = 'topbar-mode-opt' + (cur === k ? ' active' : ''); b.setAttribute('aria-pressed', cur === k); b.textContent = t(key);
+    b.addEventListener('click', ()=> pick(k));
+    box.appendChild(b);
+  });
+}
+function buildDockSwatches(){
+  const grid = document.getElementById('dock-styles'); if(!grid) return;
+  grid.innerHTML = '';
+  const L = state.lang === 'vi' ? 'vi' : 'en';
+  [{ style:'standard', name:{ en:t('dock_standard') }, swatch:'linear-gradient(180deg,#2a3542,#161c25)' }].concat(adDockItems()).forEach(o=>{
+    const b = document.createElement('button'); b.type = 'button';
+    const on = (state.dockStyle || 'standard') === o.style;
+    b.className = 'dock-style-opt' + (on ? ' active' : ''); b.setAttribute('aria-pressed', on);
+    b.innerHTML = '<span class="dock-style-sw"></span><span class="dock-style-name"></span>';
+    b.querySelector('.dock-style-sw').style.background = o.swatch || '#1e2732';
+    b.querySelector('.dock-style-name').textContent = o.name[L] || o.name.en;
+    b.addEventListener('click', ()=>{
+      state.dockStyle = o.style; saveState(); applyAdDock(); buildDockSwatches();
+      if(o.style === 'radial' && !state.radialHintSeen){ state.radialHintSeen = true; saveState(); toast(t('dock_radial_hint'), 7000); }   // one time: how to open the rings
+    });
+    grid.appendChild(b);
+  });
+  const rm = document.getElementById('radial-mode');   // with Radial the rings hold every widget, so the docks can go
+  if(rm){
+    rm.hidden = state.dockStyle !== 'radial';
+    modeRow(rm, [['off','dock_rad_off'], ['compact','dock_rad_compact'], ['keep','dock_rad_keep']], radialDocks(),
+      k=>{ state.radialDocks = k; saveState(); applyTopBarMode(); buildDockSwatches(); });
+  }
+  const tb = document.getElementById('topbar-mode');
+  if(tb){
+    tb.hidden = !tbDropStyle();
+    modeRow(tb, [['drop','dock_tb_drop'], ['shown','dock_tb_shown']], state.topBarMode === 'shown' ? 'shown' : 'drop',
+      k=>{ state.topBarMode = k; saveState(); applyTopBarMode(); buildDockSwatches(); });
+  }
+  buildFloatingIcons();
+}
+/* Floating icons (Pro, per dock; as in TeachersDeck): the panel behind a dock goes, its icons float on the background with
+   a faint backing each (css/premium.css, body.df-*). Pro = the AdminDeck Pro licence while the Pro gate is on; until
+   launch (PRO_GATE_ENABLED false) everyone has it, like every other Pro feature. */
+const FLOAT_PARTS = [['bottom','dock_fl_bottom'], ['sides','dock_fl_sides'], ['rings','dock_fl_rings']];
+const adPro = () => !ProGate.enabled || !!ProGate.pro;
+function applyFloatingIcons(){
+  const f = (adPro() && state.dockFrameless) || {};
+  FLOAT_PARTS.forEach(([k]) => document.body.classList.toggle('df-' + k, !!f[k]));
+}
+function buildFloatingIcons(){
+  const box = document.getElementById('floating-icons'); if(!box) return;
+  const pro = adPro(), f = state.dockFrameless || {};
+  box.innerHTML = '';
+  const head = document.createElement('p'); head.className = 'drawer-label floating-head';
+  head.innerHTML = '<span></span><span class="ds-pro-badge">Pro</span>';
+  head.querySelector('span').textContent = t('dock_floating');
+  box.appendChild(head);
+  const row = document.createElement('div'); row.className = 'topbar-mode floating-opts';
+  FLOAT_PARTS.forEach(([k, key])=>{
+    const b = document.createElement('button'); b.type = 'button';
+    const on = pro && !!f[k];
+    b.className = 'topbar-mode-opt' + (on ? ' active' : '') + (pro ? '' : ' locked'); b.setAttribute('aria-pressed', on);
+    b.textContent = t(key);
+    b.addEventListener('click', ()=>{
+      if(!adPro()){ ProGate.cta('theme'); return; }
+      state.dockFrameless = Object.assign({}, state.dockFrameless, { [k]: !f[k] });
+      saveState(); applyFloatingIcons(); buildFloatingIcons();
+    });
+    row.appendChild(b);
+  });
+  box.appendChild(row);
+}
+function wireDockStyles(){
+  if(typeof DockStyle === 'undefined') return;
+  const vi = () => state.lang === 'vi';
+  // Radial: School Stats fills the whole wall, so there is rarely an empty spot to right-click. A right-click on the
+  // full-screen page's own background (not its title bar, a control or a link) opens the rings there too.
+  document.addEventListener('contextmenu', e=>{
+    if(DockStyle.current() !== 'radial' || !e.target.closest) return;
+    if(!e.target.closest('.widget.full') || e.target.closest('.widget-head, input, textarea, select, button, a, [contenteditable]')) return;
+    e.preventDefault(); DockStyle.openRings(e.clientX, e.clientY);
+  });
+  DockStyle.configure({
+    widgets: () => WIDGETS.filter(w => widgetOn(w.id)).map(w => ({ id:w.id, label:stripLeadingEmoji(t(w.labelKey)), icon:iconSvg(w.icon), cat:adCat(w.id) })),
+    categories: () => AD_CATS.map(c => [c, t('cat_' + c)]),
+    favourites: () => widgetsFor('bottom').map(w => w.id),
+    isOpen: id => !!widgetEls[id], toggle: id => toggleWidget(id), openTray: () => openAppTray(),
+    get labels(){   // read on every draw, so the dock styles follow the language
+      return vi()
+        ? { tray:'Tất cả tiện ích', widgets:'Tiện ích', favourites:'Yêu thích', pin:'Giữ mở', unpin:'Thu gọn', classes:'Lớp', theme:'Giao diện',
+            language:'Ngôn ngữ', light:'Sáng', dark:'Tối', settings:'Cài đặt', search:'Tìm tiện ích', searchClass:'Tìm lớp', searchLang:'Tìm ngôn ngữ',
+            noMatch:'Không tìm thấy', noFavs:'Nhấp chuột phải vào tiện ích để thêm vào Yêu thích', more:'Thêm', dragHint:'Kéo một biểu tượng lên vòng để đổi chỗ' }
+        : { tray:'All widgets', widgets:'Widgets', favourites:'Favourites', pin:'Keep open', unpin:'Let it fold', classes:'Classes', theme:'Theme',
+            language:'Language', light:'Light', dark:'Dark', settings:'Settings', search:'Search widgets', searchClass:'Search classes', searchLang:'Search languages',
+            noMatch:'Nothing found', noFavs:'Right-click a widget to add it to Favourites', more:'More', dragHint:'Drag an icon onto the ring to swap it in' };
+    },
+    ringDefaults: { overview:['schoolstats','pulse','engage','rosterhealth'], people:['directory','teachers','teachernotes','families'] },
+    nav: {   // the sidebar's own rows: language, Light / Dark, Theme, Settings (AdminDeck has no class switch)
+      languages: () => LANGS.map(l => ({ code:l.code, label:l.name, active:l.code === state.lang })),
+      langLabel: () => (LANGS.find(l => l.code === state.lang) || LANGS[0]).name,
+      setLanguage: code => setLanguage(code),
+      isLight: () => typeof DeckMode !== 'undefined' && DeckMode.get() === 'light',
+      toggleMode: () => { if(typeof DeckMode !== 'undefined') DeckMode.set(DeckMode.get() === 'light' ? 'dark' : 'light'); },
+      openTheme: () => { const b = document.getElementById('btn-theme'); if(b) b.click(); },
+      openSettings: () => { const b = document.getElementById('btn-settings'); if(b) b.click(); },
+      catIcon: id => iconSvg(AD_CAT_ICON[id] || 'files'),
+    },
+  });
+}
 
 /* ---------------- Init ---------------- */
 function init(){
@@ -2111,6 +2380,7 @@ function init(){
   wireDockDrag();
   wireSettingsDrawer();
   wireThemeDrawer();
+  wireDockStyles(); applyAdDock(); applyFloatingIcons();   // UI polish: Theme > Dock
   localizeNode(document);
   // First run on a device: School Stats is the default window (v0.8.0 — it was School Snapshot, which is now inactive; its six numbers are School Stats' overview row).
   // Closing it afterwards sticks. Windows open in dock order and full-screen widgets sit under every floating window.

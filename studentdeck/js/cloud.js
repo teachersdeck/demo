@@ -320,6 +320,15 @@ const SDCloud = (() => {
   let syncInfo = { at: 0, ok: null, mode: '', error: '' };
   const syncListeners = new Set();
   function getSyncInfo(){ return { ...syncInfo }; }
+  /* v0.26.0 (backend v2.32.0): the Item Store. A child never sees a price or buys anything: getStore answers without
+     prices, getMyPacks gives the packs the family owns, setStoreWish marks "I'd like this" (where school and parent allow). */
+  async function storeCall(name, data){
+    if(!ready || !joined) throw new Error('Not joined');
+    return (await functions.httpsCallable(name)(data || {})).data;
+  }
+  const getStore = () => storeCall('getStore');
+  const getMyPacks = (have) => storeCall('getMyPacks', { have: have || {} });
+  const setStoreWish = (sku, on) => storeCall('setStoreWish', { sku, on: !!on });
   function onSyncChanged(fn){ syncListeners.add(fn); return ()=> syncListeners.delete(fn); }
   function setSyncInfo(ok, mode, error){
     syncInfo = { at: Date.now(), ok, mode: mode || '', error: error || '' };
@@ -360,7 +369,8 @@ const SDCloud = (() => {
     subscribeStudent, subscribeClassMeta, subscribeRewards, subscribeCalendar, subscribeHomework, subscribePolicy, subscribeSharedBoard, subscribeHomeworkDone, setHomeworkDone, pushBadge, redeemReward, getRanking, getFamilyCode,
     shareScrapPage, unshareScrapPage, subscribeMyScrapPages, subscribeScrapGallery,
     subscribeBoardAssignments, subscribeMyBoardAnswers, getBoardAssignmentImage, submitBoardAnswer,
-    pushPracticeStats, getSyncInfo, onSyncChanged
+    pushPracticeStats, getSyncInfo, onSyncChanged,
+    getStore, getMyPacks, setStoreWish
   };
 })();
 SDCloud.autoResume();

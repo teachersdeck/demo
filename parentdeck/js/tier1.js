@@ -445,6 +445,7 @@ function renderRewardsWishlist(body) {
             ${bar(r)}
             <div class="wishfoot">${status(r)}<button class="btn pinbtn" data-pin="${esc(r.id)}">${r.id === pinId ? '★ ' + esc(t('wl_unpin')) : '☆ ' + esc(t('wl_pin'))}</button></div>
           </div>`).join('') : emptyState(t('wl_none'))}
+        ${(typeof PD_SHOP !== 'undefined') && PD_SHOP.wishesFor(id).length ? `<p class="muted">♥ ${esc(t('shop_store_wishes', { items: PD_SHOP.wishesFor(id).join(', ') }))}</p>` : ''}
         <h4>${esc(t('wl_redeemed'))}</h4>
         ${redeemed.length ? redeemed.map(p => `<div class="srow"><span>${esc(fmtDate(p.t))} · ${esc(p.reason || '')}</span><b>${p.amount}</b></div>`).join('') : `<p class="muted">${esc(t('wl_no_redeemed'))}</p>`}
         <button type="button" class="btn sm" data-kdsnap="1">${esc(t('kd_snapshot'))}</button>

@@ -1,0 +1,87 @@
+/* UI polish, ported from TeachersDeck's css/polish.css and css/scale.css (14 Nov 2026), adapted to StudentDeck's markup
+   (.widget > .head / .body, the background painted on <body> by js/app.js). The free look, tidied, for every theme:
+   built only on the theme tokens (--line, --lo, --gold-rgb...), so Light mode and premium themes follow without their
+   own rules. Loaded after css/premium.css. */
+
+:root{
+  --ease-out:cubic-bezier(.2,.8,.2,1);   /* one easing curve for the whole app */
+  --t-fast:120ms; --t-mid:200ms; --t-slow:320ms;
+  --radius-panel:16px;                   /* widgets and the dock */
+  --radius-chip:10px;                    /* buttons, pills, dock items */
+}
+
+/* ---------- Corners ---------- */
+.widget:not(.full){ border-radius:var(--radius-panel); }
+.dock{ border-radius:var(--radius-panel); }
+.dock-item, .icon-pill, .hbtn{ border-radius:var(--radius-chip); }
+
+/* ---------- Calmer title bars: the buttons show on hover, focus or the front window ---------- */
+.head{ padding:9px 8px 8px 12px; }
+.head .title{ font-size:12.5px; letter-spacing:.2px; }
+@media (hover:hover){
+  .widget:not(.full) .head .hbtn{ opacity:0; transition:opacity var(--t-fast) var(--ease-out); }
+  .widget:not(.full):is(:hover, :focus-within, .is-front) .head .hbtn{ opacity:1; }
+}
+
+/* ---------- Depth that means something: the front widget stands forward ---------- */
+.widget{ transition:box-shadow var(--t-mid) var(--ease-out), border-color var(--t-mid) var(--ease-out); }
+.widget.is-front:not(.full):not(.is-pinned){
+  box-shadow:0 10px 30px rgba(0,0,0,.35), 0 18px 46px rgba(0,0,0,.26);
+  border-color:rgba(var(--gold-rgb), .42);
+}
+html.bento .widget.is-front:not(.full):not(.is-pinned){ border-color:var(--bento-line, var(--line)); }   /* tiles: no accent edge in the grid */
+
+/* ---------- Motion: one curve, three durations ---------- */
+@keyframes td-open{ from{ opacity:0; transform:translateY(8px) scale(.97); } to{ opacity:1; transform:none; } }
+.widget.td-opening:not(.full){ animation:td-open var(--t-mid) var(--ease-out); }
+.dock-item{ transition:background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out); }
+@media (prefers-reduced-motion:reduce){
+  .widget.td-opening{ animation:none; }
+  .widget, .dock-item, .head .hbtn{ transition:none; }
+}
+
+/* ---------- Better built-in backgrounds: a soft light pool and fine grain (no banding on projectors) ---------- */
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(110% 70% at 50% 112%, rgba(255,255,255,.07), transparent 62%),
+    radial-gradient(70% 50% at 12% -8%, rgba(255,255,255,.05), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-mode="light"] body::before{
+  background:
+    radial-gradient(110% 70% at 50% 112%, rgba(255,255,255,.55), transparent 62%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .4 0 0 0 0 .4 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-td-bg="image"] body::before{ display:none; }   /* your photo is shown as it is */
+/* Paper: a stronger, fibrous grain */
+html[data-td-bgid="paper"] body::before{
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.06), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55 .9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .5 0 0 0 0 .42 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+/* Chalkboard: faint chalk dust where the board was wiped */
+html[data-td-bgid="chalkboard"] body::before{
+  background:
+    radial-gradient(40% 22% at 28% 30%, rgba(255,255,255,.06), transparent 70%),
+    radial-gradient(36% 18% at 70% 62%, rgba(255,255,255,.05), transparent 70%),
+    radial-gradient(60% 30% at 50% 100%, rgba(255,255,255,.05), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Empty states: one friendly line and a way forward ---------- */
+li.td-empty, .td-empty{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 10px 8px; text-align:center; color:var(--lo); font-size:13px; line-height:1.45; border:0; background:none; }
+.td-empty-ic{ font-size:26px; line-height:1; opacity:.85; }
+.td-empty strong{ color:var(--hi); font-weight:600; }
+
+/* ---------- Widgets that grow with their window (TeachersDeck phase 1) ---------- */
+/* Clock: the face fills what the time and date leave free; nothing gets smaller than it was */
+.widget[data-wid="clock"] > .body{ container-type:size; display:flex; flex-direction:column; align-items:center; }
+.widget[data-wid="clock"] .clock-svg{ display:block; flex:1 1 0; min-height:104px; width:100%; height:auto; margin:2px 0 6px; }
+.widget[data-wid="clock"] .clock-skin:not([hidden]){ flex:1 1 0; min-height:104px; width:100%; aspect-ratio:auto; margin:0 0 4px; }
+.widget[data-wid="clock"] .clock-skin svg{ display:block; width:100%; height:100%; }
+.widget[data-wid="clock"] .clock-digital{ font-size:clamp(24px, 12cqmin, 150px); line-height:1.1; flex:none; }
+.widget[data-wid="clock"] .clock-date{ font-size:clamp(12.5px, 5.5cqmin, 64px); flex:none; }
+.widget[data-wid="clock"] :is(.clock-faces, .clock-note){ flex:none; }
+/* Display widgets (Focus Timer, Idiom of the Day): the zoomed content box (js/app.js attachAutoFit) */
+.fit-wrap{ display:block; box-sizing:border-box; }

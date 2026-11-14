@@ -50,15 +50,36 @@
      on first run; a higher version replaces an older one. Packs are DATA ONLY (ScrapCore.validatePack refuses scripts,
      links, images, styles). Pack items are addressed as "packid:itemid". Sticker packs: the format is ready; placing
      pack stickers arrives with the store (M4). */
-  const REG = { masks: Object.assign({}, C.MASKS), stamps: Object.assign({}, C.STAMPS), maskName: { circle: 'Circle', rounded: 'Rounded square', heart: 'Heart' } };
+  const REG = { masks: Object.assign({}, C.MASKS), stamps: Object.assign({}, C.STAMPS), maskName: { circle: 'Circle', rounded: 'Rounded square', heart: 'Heart' },
+    stickerPacks: {}, layouts: {} };   // Item Store: sticker packs (packid -> { name, ids }) and template pages ("pk:packid:itemid" -> { pack, id, name })
   function registerPack(raw) {
     const v = C.validatePack(raw); if (!v.ok) return false; const k = v.pack;
     k.items.forEach(it => { const id = k.id + ':' + it.id;
       if (k.kind === 'mask') { REG.masks[id] = it.path; REG.maskName[id] = it.name.en; }
       else if (k.kind === 'stamp') REG.stamps[id] = { d: it.path, mode: it.mode, name: it.name };
+      else if (k.kind === 'sticker') {
+        STICKER_SVG[id] = it.svg || (SVG_OPEN + '<path d="' + C.scaleUnitPath(it.path, 100, 100) + '" fill="#555"/></svg>');
+        STICKER_NAME[id] = it.name.en;
+        (REG.stickerPacks[k.id] || (REG.stickerPacks[k.id] = { name: k.name, ids: [] })).ids.push(id);
+      } else if (k.kind === 'layout') REG.layouts['pk:' + id] = { pack: k, id: it.id, name: it.name };
     });
     return true;
   }
+  /* Packs the family bought in ParentDeck's Shop (js/store.js), registered again whenever that list changes. */
+  let storeIds = [];
+  function registerStorePacks() {
+    storeIds.forEach(id => { delete STICKER_SVG[id]; delete STICKER_NAME[id]; delete REG.layouts['pk:' + id]; });
+    storeIds = [];
+    Object.keys(REG.stickerPacks).forEach(p => { if (REG.stickerPacks[p].store) delete REG.stickerPacks[p]; });
+    if (typeof SD_STORE === 'undefined' || !SD_STORE.scrapPacks) return;
+    SD_STORE.scrapPacks().forEach(p => {
+      if (!registerPack(p)) return;
+      p.items.forEach(it => storeIds.push(p.id + ':' + it.id));
+      if (REG.stickerPacks[p.id]) REG.stickerPacks[p.id].store = true;
+    });
+  }
+  registerStorePacks();
+  if (typeof SD_STORE !== 'undefined' && SD_STORE.onChange) SD_STORE.onChange(registerStorePacks);
   async function loadPacks(store) {
     const have = {};
     try { (await store.getPacks()).forEach(pk => { if (registerPack(pk)) have[pk.id] = pk.version; }); } catch (e) {}
@@ -716,9 +737,10 @@
     function removeMany(ids) { const pg = curPage(); pg.items = pg.items.filter(i => ids.indexOf(i.id) < 0); S.sel = null; S.extra = new Set(); commit(); drawPage(); }
     function addLayoutPage(name) {
       if (S.book.pageOrder.length >= C.LIMITS.maxPagesPerBook) { toast('This scrapbook has the most pages it can hold.'); return; }
-      const p = C.layoutPage(name); if (!p) return;
+      const L = REG.layouts[name];   // a template page from a store pack, or one of the three built in
+      const p = L ? C.layoutPageFromPack(L.pack, L.id) : C.layoutPage(name); if (!p) return;
       S.book.pageOrder.splice(S.pageIdx + 1, 0, p.id); S.book.pages[p.id] = p; S.pageIdx++; S.sel = null; S.extra = new Set(); commit(); drawPage();
-      keepFocusHere(); toast('Added a \u201c' + C.LAYOUTS[name].name + '\u201d page \u2014 replace the notes with your photos and words');
+      keepFocusHere(); toast('Added a \u201c' + (L ? L.name.en : C.LAYOUTS[name].name) + '\u201d page \u2014 replace the notes with your photos and words');
     }
     function wirePage() {
       const page = q('.sc-page');
@@ -778,10 +800,16 @@
         p.hidden = false; return;
       }
       if (kind === 'layouts') {
-        p.innerHTML = '<p class="muted">Add a new page laid out for\u2026</p><div class="sc-layouts">' + Object.keys(C.LAYOUTS).map(k => '<button class="btn" data-layout="' + k + '">' + esc(C.LAYOUTS[k].name) + '</button>').join('') + '</div>';
+        p.innerHTML = '<p class="muted">Add a new page laid out for\u2026</p><div class="sc-layouts">' + Object.keys(C.LAYOUTS).map(k => '<button class="btn" data-layout="' + k + '">' + esc(C.LAYOUTS[k].name) + '</button>').join('') +
+          Object.keys(REG.layouts).map(k => '<button class="btn sc-store" data-layout="' + esc(k) + '">' + esc(REG.layouts[k].name.en) + '</button>').join('') + '</div>';
         p.hidden = false; return;
       }
-      if (kind === 'stickers') p.innerHTML = '<p class="muted">Pick a sticker</p><div class="sc-pgrid">' + EMOJI.map(g => '<button class="sc-pbtn" data-sticker="' + g + '" aria-label="Sticker ' + g + '">' + g + '</button>').join('') + Object.keys(STICKER_SVG).map(id => '<button class="sc-pbtn" data-svg="' + id + '" aria-label="' + STICKER_NAME[id] + '">' + STICKER_SVG[id] + '</button>').join('') + '</div>';
+      if (kind === 'stickers') {
+        const builtIn = Object.keys(STICKER_SVG).filter(id => id.indexOf(':') < 0);
+        p.innerHTML = '<p class="muted">Pick a sticker</p><div class="sc-pgrid">' + EMOJI.map(g => '<button class="sc-pbtn" data-sticker="' + g + '" aria-label="Sticker ' + g + '">' + g + '</button>').join('') + builtIn.map(id => '<button class="sc-pbtn" data-svg="' + id + '" aria-label="' + STICKER_NAME[id] + '">' + STICKER_SVG[id] + '</button>').join('') + '</div>' +
+          Object.keys(REG.stickerPacks).map(pk => { const P = REG.stickerPacks[pk];   // Item Store: each bought sticker pack under its own heading
+            return '<p class="muted sc-phead">' + esc(P.name.en) + '</p><div class="sc-pgrid">' + P.ids.filter(id => STICKER_SVG[id]).map(id => '<button class="sc-pbtn" data-svg="' + esc(id) + '" aria-label="' + esc(STICKER_NAME[id]) + '" title="' + esc(STICKER_NAME[id]) + '">' + STICKER_SVG[id] + '</button>').join('') + '</div>'; }).join('');
+      }
       else p.innerHTML = '<p class="muted">Pick a shape</p><div class="sc-pgrid">' + Object.keys(SHAPE_PATH).map((k, i) => '<button class="sc-pbtn" data-shape="' + k + '" aria-label="' + SHAPE_NAME[k] + '"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="' + SHAPE_PATH[k] + '" fill="' + PALETTE[i % PALETTE.length] + '" stroke="#222" stroke-width="3" vector-effect="non-scaling-stroke"/></svg></button>').join('') + '</div>';
       p.hidden = false;
     }
