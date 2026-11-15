@@ -99,7 +99,8 @@
     document.body.classList.add('wb-on');
     dd = root.DrawDeck.mount(layer, {
       t: host.t, toast: host.toast, idb: host.idb(), close: function () { }, watermark: host.watermark || null, download: host.download,
-      surface: 'wall', chromeEl: bars, tier: host.tier(), transparent: !!host.get('wbClear') && host.tier() === 'pro', tool: 'off',
+      surface: 'wall', chromeEl: bars, tier: host.tier(),
+      preschool: !!host.preschool, tracing: !!host.preschool, markerSize: host.markerSize,   // TinyTeachersDeck transparent: !!host.get('wbClear') && host.tier() === 'pro', tool: 'off',
       boardId: 'wall:' + host.classId(), boardName: t('wb_board', { cls: host.className() || t('wb_name') }),
       onState: function (s) { st = s; document.body.classList.toggle('wb-light', !s.transparent && s.bg !== 'chalk'); paintLauncher(); },   // css: the top bar's bare text gets a plate on a white board
       onLocked: function (what) { locked(what); },
@@ -157,12 +158,17 @@
     return [
       { key: 'undo', label: t('wb_undo'), icon: IC.undo, dis: !(st && st.canUndo), act: function () { dd.undo(); } },
       { key: 'redo', label: t('wb_redo'), icon: IC.redo, dis: !(st && st.canRedo), act: function () { dd.redo(); } },
-      { key: 'clear', label: t('wb_clear'), icon: IC.clear, dis: !(st && !st.empty), act: function () { if (confirm(t('wb_clear_q'))) dd.clear(); }, close: true },
+      { key: 'clear', label: t('wb_clear'), icon: IC.clear, dis: !(st && !st.empty), act: function () { askClear(); }, close: true },
       { key: 'tools', label: chromeOn ? t('wb_tools_hide') : t('wb_tools'), icon: IC.tools, on: chromeOn, lock: lockedPro, act: function () { if (lockedPro) return locked('tools'); toggleChrome(!chromeOn); }, close: true },
       { key: 'surface', label: t('wb_surface'), icon: IC.surface, lock: lockedPro, panel: true, act: function (b) { if (lockedPro) return locked('surface'); surfacePanel(b); } },
       { key: 'inkbg', label: t('wb_inkbg'), icon: IC.inkbg, on: !!(st && st.transparent), lock: lockedPro, act: function () { if (lockedPro) return locked('surface'); var v = !(st && st.transparent); host.set('wbClear', v); dd.setTransparent(v); } },
       { key: 'pages', label: st && st.pages > 1 ? t('wb_pages') + ' (' + (st.page + 1) + '/' + st.pages + ')' : t('wb_pages'), icon: IC.pages, lock: lockedPro, panel: true, act: function (b) { if (lockedPro) return locked('pages'); pagesPanel(b); } }
     ];
+  }
+  // Clear asks first; in TinyTeachersDeck an adult says yes (host.adultGate: the PIN or a sum), so a child can't wipe it
+  function askClear() {
+    if (host.adultGate) { Promise.resolve(host.adultGate()).then(function (ok) { if (ok && dd) dd.clear(); }, function () { }); return; }
+    if (confirm(t('wb_clear_q'))) dd.clear();
   }
   function toggleChrome(on) { chromeOn = !!on; dd.chrome(chromeOn); if (chromeOn && st && st.tool === 'off') dd.setTool('pen'); }
 

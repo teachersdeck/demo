@@ -1,8 +1,8 @@
 {
   "development": {
     "teachersdeck": {
-      "version": "0.44.0",
-      "label": "0.44.0 beta"
+      "version": "0.45.0",
+      "label": "0.45.0 beta"
     },
     "studentdeck": {
       "version": "0.28.0",
