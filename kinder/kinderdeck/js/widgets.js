@@ -309,7 +309,7 @@ const WIDGETS = [
   } },
 { id:'agenda', em:'🗓️', icon:'list', en:'Agenda Board', vi:'Lịch trình trong ngày', w:340, h:380,
   html() { return KD.agenda.map(a => `<div class="arow"><span class="meta" style="width:44px">${a[0]}</span><span class="name">${esc(L(a[1], a[2]))}</span></div>`).join('') + `<p class="hint" style="margin-top:8px">${L('Preschool template. Editing comes later.', 'Mẫu cho mầm non. Chức năng chỉnh sửa sẽ có sau.')}</p>`; } },
-{ id:'clock', em:'🕒', icon:'clock', en:'Clock', vi:'Đồng hồ', w:240, h:290,   // 15 Nov 2026: the Glass Blue demo's Clock face (js/deckclock.js)
+{ id:'clock', em:'🕒', icon:'clock', en:'Clock', vi:'Đồng hồ', w:240, h:290,   // 15 Nov 2026: TeachersDeck's Classic clock (js/deckclock.js)
   html() { return ''; },
   wire(b) { if (window.DeckClock) DeckClock.mount(b, { lang: state.lang }); } },
 { id:'qr', em:'🔳', icon:'qr', en:'QR Code Generator', vi:'Tạo mã QR', w:300, h:200, soon:true, html: soonHtml }
