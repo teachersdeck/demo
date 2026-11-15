@@ -22,6 +22,11 @@ body.wb-light .topbar > .brand, body.wb-light .topbar > .xp-pill, body.wb-light 
   background:rgba(18,22,30,.86); border-radius:999px; padding:5px 12px; box-shadow:0 4px 14px rgba(0,0,0,.18); }
 html[data-mode="light"] body.wb-light .topbar > :is(.brand,.xp-pill,.badge-chip){ background:rgba(255,255,255,.92); box-shadow:0 2px 10px rgba(0,0,0,.12); }
 
+/* glass widgets (Glass Blue and the other premium themes) are nearly clear: over a white board their light text washes
+   out, so in dark mode they get a solid, dark glass while the board is white */
+html:not([data-mode="light"]) body.wb-light #wall > .widget{ background-color:rgba(18,26,40,.92) !important; }
+html:not([data-mode="light"]) body.wb-light #wall > .widget.is-front{ background-color:rgba(18,26,40,.95) !important; }
+
 /* the corner button: the dock launcher's look (css/dockstyle.css), bottom-left; the Circle dock style owns it when on */
 .wb-launcher{ left:calc(22px + env(safe-area-inset-left,0px)); right:auto; }
 .wb-launcher svg{ width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
