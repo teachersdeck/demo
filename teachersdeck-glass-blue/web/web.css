@@ -1,0 +1,49 @@
+/* Page chrome for the standalone DrawDeck web page (DrawDeck scope step F — free acquisition link).
+   drawdeck.css styles DrawDeck's own UI but expects these custom properties from TeachersDeck's main
+   style.css, which this page doesn't load (it loads only drawdeck.css, not the whole extension). Values
+   copied verbatim from teachersdeck/css/style.css's :root so DrawDeck looks exactly the same here. */
+:root{
+  --ink-0:#0D1117; --ink-1:#161C25; --ink-2:#1E2732; --ink-3:#2A3542;
+  --line: rgba(237,239,243,0.09);
+  --text-hi:#EDEFF3; --text-lo:#8A93A6;
+  --amber:#E8A33D; --amber-hi:#F5B85C; --teal:#47C9B6; --danger:#E06565;
+  --radius-chip: 10px;
+  --shadow-panel: 0 12px 30px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.25);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--ink-0); color:var(--text-hi);
+  font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.web-banner{
+  flex:none; display:flex; align-items:center; gap:12px; padding:8px 14px;
+  background:var(--ink-1); border-bottom:1px solid var(--line); flex-wrap:wrap;
+}
+.web-banner-text{flex:1; min-width:200px}
+.web-banner-cta{
+  background:var(--amber); color:#241a06; font-weight:700; text-decoration:none;
+  padding:6px 14px; border-radius:999px; white-space:nowrap;
+}
+.web-banner-cta:hover{background:var(--amber-hi)}
+.web-banner-x{
+  background:none; border:0; color:var(--text-lo); cursor:pointer; font-size:16px; padding:4px 6px; line-height:1;
+}
+.web-banner-x:hover{color:var(--text-hi)}
+.web-banner.hidden{display:none}
+.web-stage{flex:1; min-height:0; display:flex; flex-direction:column}
+
+/* a small on-page toast, standing in for the extension shell's own toast() */
+.web-toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+  background:var(--ink-2); color:var(--text-hi); border:1px solid var(--line);
+  border-radius:999px; padding:9px 18px; font-size:13px; box-shadow:var(--shadow-panel);
+  opacity:0; pointer-events:none; transition:opacity .2s; z-index:9999;
+}
+.web-toast.on{opacity:1}
+
+@media (max-width:560px){
+  .web-banner{font-size:12px}
+  .web-banner-text{min-width:0}
+}
