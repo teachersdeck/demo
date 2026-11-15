@@ -12,7 +12,7 @@
    The version lives here (tools/release.py checks it against manifest.json, index.html and the README). */
 window.DECK_EDITION = Object.freeze({
   name: 'TinyTeachersDeck',
-  version: '0.17.0',
+  version: '0.18.0',
   uni: false,
   kinder: true,
   store: true,   // premium themes, faces and docks are bought in the Shop (js/tdstore.js; owner, 14 Nov 2026)
