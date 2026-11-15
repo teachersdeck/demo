@@ -2166,7 +2166,7 @@ const WIDGETS = [
   { id:'assignments', labelKey:'w_assignments', icon:'clipboard', w:420, h:520, render: renderAssignments },   // v0.8.0 — Assignment Pipeline + Homework Completion
   { id:'calendar', labelKey:'w_calendar', icon:'calendar', w:400, h:560, render: renderCalendarWidget },
   { id:'joincodes', labelKey:'w_joincodes', icon:'qrcode', w:380, h:400, render: renderJoinCodes },
-  { id:'clock', labelKey:'w_clock', icon:'clock', w:240, h:290, render: b => typeof DeckClock !== 'undefined' ? DeckClock.mount(b, { lang: state.lang }) : null },   // 15 Nov 2026: the Glass Blue demo's Clock face (js/deckclock.js)
+  { id:'clock', labelKey:'w_clock', icon:'clock', w:240, h:290, render: b => typeof DeckClock !== 'undefined' ? DeckClock.mount(b, { lang: state.lang }) : null },   // 15 Nov 2026: TeachersDeck's Classic clock (js/deckclock.js)
   { id:'rosterhealth', labelKey:'w_rosterhealth', icon:'pulse', w:380, h:420, render: renderRosterHealth },
   { id:'teachers', labelKey:'w_teachers', icon:'people', w:380, h:420, render: renderTeachers },
   { id:'teachernotes', labelKey:'w_teachernotes', icon:'people', w:440, h:560, render: renderTeacherNotes },   // v0.9.3
