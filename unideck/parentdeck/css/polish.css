@@ -16,11 +16,11 @@
 .dock-item, .iconbtn, .hbtn{ border-radius:var(--radius-chip); }
 
 /* ---------- Calmer title bars ---------- */
-.widget > .head{ padding:9px 8px 8px 12px; }
-.widget > .head .title{ font-size:12.5px; letter-spacing:.2px; }
+.widget > .widget-head{ padding:9px 8px 8px 12px; }
+.widget > .widget-head .widget-title{ font-size:12.5px; letter-spacing:.2px; }
 @media (hover:hover){
-  .widget:not(.full) > .head .hbtn{ opacity:0; transition:opacity var(--t-fast) var(--ease-out); }
-  .widget:hover > .head .hbtn, .widget:focus-within > .head .hbtn, .widget.is-front > .head .hbtn{ opacity:1; }
+  .widget:not(.full) > .widget-head .hbtn{ opacity:0; transition:opacity var(--t-fast) var(--ease-out); }
+  .widget:hover > .widget-head .hbtn, .widget:focus-within > .widget-head .hbtn, .widget.is-front > .widget-head .hbtn{ opacity:1; }
 }
 
 /* ---------- Depth that means something: the front widget stands forward ---------- */
@@ -38,7 +38,7 @@ html.bento .widget.is-front{ border-color:var(--bento-line, var(--line)); }   /*
 .edge-dock{ transition:transform var(--t-mid) var(--ease-out); }
 @media (prefers-reduced-motion:reduce){
   .widget.td-opening{ animation:none; }
-  .widget, .dock-item, .edge-dock, .widget > .head .hbtn{ transition:none; }
+  .widget, .dock-item, .edge-dock, .widget > .widget-head .hbtn{ transition:none; }
 }
 
 /* ---------- Better built-in backgrounds: a soft light pool and fine grain (no banding on projectors) ----------

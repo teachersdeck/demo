@@ -858,7 +858,7 @@ function bindXpPill() {
 }
 $('#xp').addEventListener('click', () => {
   if (!panels.summary) openWidget('summary');
-  else { const L = ui.layout.summary; if (L && L.min) { L.min = false; panels.summary.el.classList.remove('min'); saveUI(); } }
+  else { const L = ui.layout.summary; if (L && L.min) { L.min = false; panels.summary.el.classList.remove('min', 'minimized'); saveUI(); } }
   const host = $('#sm-stats'); if (!host) return;
   if (!$('.subbody', host)) $('[data-sub]', host).click();          // expand the section if it was collapsed
   host.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1698,7 +1698,7 @@ function renderTheme(body) {
       if (ex.dataset.rad) ui.radialDocks = ex.dataset.rad;
       else if (ex.dataset.tb) ui.topBarMode = ex.dataset.tb;
       else {
-        if (!pdPro()) { if (ProGate.cta) ProGate.cta('floating'); return; }
+        if (!pdOwnsFloatingDocks()) { if (ProGate.cta) ProGate.cta('floating'); return; }
         ui.dockFrameless = Object.assign({}, ui.dockFrameless, { [ex.dataset.fl]: !(ui.dockFrameless || {})[ex.dataset.fl] });
       }
       saveUI(); applyTopBarMode(); applyFloatingIcons(); drawThemeExtras(body); return;
@@ -1851,22 +1851,29 @@ function openWidget(id) {
     const b = $(def.bar).getBoundingClientRect(), wr = wall.getBoundingClientRect();
     L = ui.layout[id] = { ...L, x: Math.round(b.right - wr.left - def.w), y: Math.max(0, Math.round(b.bottom - wr.top + 6)), w: def.w, h: def.h, min: false };
   }
-  const el = document.createElement('section'); el.className = 'widget' + (def.full ? ' full' : '') + (L.min ? ' min' : '');
+  // KeepDeck runs on TeachersDeck's DrawDeck engine, whose stylesheet (css/drawdeck-engine.css, kept identical) styles
+  // .dd-widget .widget-body (no padding) and .widget-full.dd-widget (fixed over the whole screen in full screen). So KeepDeck's
+  // window keeps only the short names for those two and stays as it was; every other window carries both (cleanup Phase 2).
+  const kd = id === 'keepdeck';
+  const el = document.createElement('section'); el.className = 'widget' + (def.full ? (kd ? ' full' : ' full widget-full') : '') + (L.min ? ' min minimized' : '');   // + the staff apps' state names
   el.dataset.wid = id;   // which widget this is (js/bento.js: tile sizes and order on phones and tablets)
   el.classList.add('td-opening'); el.addEventListener('animationend', () => el.classList.remove('td-opening'), { once: true });   // UI polish: a short opening
   const top = clamp(L.y, 0, Math.max(0, wall.clientHeight - 44));
   if (def.full) el.style.zIndex = 1;   // raiseFull() below orders the full-screen widgets among themselves
   else el.style.cssText = `left:${clamp(L.x, 0, Math.max(0, wall.clientWidth - 150))}px;top:${top}px;width:${L.w}px;height:${Math.max(140, Math.min(L.h, wall.clientHeight - top - 8))}px`;
-  el.innerHTML = `<div class="head"><span class="title">${esc(t(def.titleKey))}</span>
+  // The window's parts also carry the staff apps' names (widget-head, widget-title, widget-body, widget-resize), so shared
+  // stylesheets use one set of names (suite cleanup Phase 2). KeepDeck's title bar stays visible in full screen (owner,
+  // 18 Nov 2026): css/style.css outranks the engine's rule that hides it.
+  el.innerHTML = `<div class="head widget-head"><span class="title widget-title">${esc(t(def.titleKey))}</span>
     <button class="hbtn" data-w="min" aria-label="Minimise ${esc(t(def.titleKey))}">–</button><button class="hbtn" data-w="close" aria-label="Close ${esc(t(def.titleKey))}">×</button></div>
-    <div class="body"></div><div class="grip" aria-hidden="true"></div>`;
+    <div class="body${kd ? '' : ' widget-body'}"></div><div class="grip widget-resize" aria-hidden="true"></div>`;
   wall.appendChild(el); front(el);
   if (!def.full) { gesture($('.head', el), el, 'move', id); gesture($('.grip', el), el, 'resize', id); }
   el.addEventListener('pointerdown', () => front(el));
   el.addEventListener('click', e => {
     const w = e.target.closest('[data-w]')?.dataset.w;
     if (w === 'close') closeWidget(id);
-    else if (w === 'min') { L.min = !L.min; el.classList.toggle('min', L.min); saveUI(); }
+    else if (w === 'min') { L.min = !L.min; el.classList.toggle('min', L.min); el.classList.toggle('minimized', L.min); saveUI(); }
   });
   panels[id] = { el, cleanup: ProGate.render(def, $('.body', el)) };
   if (def.full) raiseFull(id);
@@ -1949,7 +1956,7 @@ const toggleWidget = id => {
   const o = panels[id]; if (!o) return openWidget(id);
   // a full-screen widget that is open but hidden under another one is brought to the front instead of closed
   const fullTop = Math.max(0, ...Object.values(panels).filter(x => x.el.classList.contains('full')).map(x => +x.el.style.zIndex || 1));
-  if (o.el.classList.contains('full') && (+o.el.style.zIndex || 1) < fullTop) { o.el.classList.remove('min'); raiseFull(id); } else closeWidget(id);
+  if (o.el.classList.contains('full') && (+o.el.style.zIndex || 1) < fullTop) { o.el.classList.remove('min', 'minimized'); raiseFull(id); } else closeWidget(id);
 };
 
 function syncDock() {
@@ -2164,8 +2171,10 @@ function applyTopBarMode() {
    background by themselves, chosen per dock. ParentDeck's top bar has no panel, so it is not offered. */
 const FLOAT_PARTS = ['bottom', 'sides', 'rings'];
 const pdPro = () => !ProGate.enabled || !!ProGate.pro;   // while the gate is off nothing is locked (PRO-TIERS.md)
+// ...except floating dock icons, premium even while the gate is off (owner, 18 Nov 2026): real Pro or an owned dock style.
+const pdOwnsFloatingDocks = () => !!ProGate.pro || (typeof PD_SHOP !== 'undefined' && PD_SHOP.ownedDocks().length > 0);
 function applyFloatingIcons() {
-  const f = (pdPro() && ui.dockFrameless) || {};
+  const f = (pdOwnsFloatingDocks() && ui.dockFrameless) || {};
   FLOAT_PARTS.forEach(k => document.body.classList.toggle('df-' + k, !!f[k]));
 }
 /* The Theme widget's polish rows: Moving wallpaper, Radial docks, Top bar, Floating icons */
@@ -2181,7 +2190,7 @@ function drawThemeExtras(body) {
   };
   row('#th-radial', dockStyleName() === 'radial', 'rad', [['off', 'th_rad_off'], ['compact', 'th_rad_compact'], ['keep', 'th_rad_keep']], radialDocks());
   row('#th-topbar', tbDropStyle(), 'tb', [['drop', 'th_tb_drop'], ['shown', 'th_tb_shown']], ui.topBarMode === 'shown' ? 'shown' : 'drop');
-  const pro = pdPro(), f = ui.dockFrameless || {};
+  const pro = pdOwnsFloatingDocks(), f = ui.dockFrameless || {};
   $b('#th-float').innerHTML = FLOAT_PARTS.map(k => `<button type="button" class="btn${pro && f[k] ? ' primary' : ''}${pro ? '' : ' locked'}" data-fl="${k}" aria-pressed="${!!(pro && f[k])}">${esc(t('th_fl_' + k))}</button>`).join('');
 }
 applyDockStyle(); applyFloatingIcons();

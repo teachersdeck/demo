@@ -20,4 +20,9 @@
   --tk-accent-hi:#f3c765;
   --tk-accent-rgb:224,169,59;
   --tk-accent-hi-rgb:243,199,101;
+
+  --tk-dock-btn:88px;
+  --tk-dock-bg:rgba(20,26,46,.78);
+  --tk-edge-bg:rgba(20,26,46,.78);
+  --tk-edge-shadow:0 12px 30px rgba(0,0,0,.35);
 }
