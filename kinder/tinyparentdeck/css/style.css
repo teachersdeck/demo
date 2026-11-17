@@ -1,5 +1,6 @@
 @import url('tokens.css');
 @import url('palette-navy.css');
+@import url('shell.css');
 @import url('shell-family.css');
 :root{--bg:var(--tk-surface-0);--bg2:var(--tk-surface-3);--panel:var(--tk-surface-1);--panel2:var(--tk-surface-2);--line:var(--tk-line);--hi:var(--tk-text-hi);--lo:var(--tk-text-lo);--gold:var(--tk-accent);--gold-hi:var(--tk-accent-hi);--r:var(--tk-radius-panel)}
 /* KeepDeck's Home board shares js/drawdeck-engine.js + css/drawdeck-engine.css with TeachersDeck's DrawDeck
@@ -39,6 +40,9 @@ h4{margin:14px 0 6px;font-size:13px}
 .kd-tab:hover{ border-color:var(--gold); }
 .kd-tab.on{ background:var(--gold); border-color:var(--gold); color:var(--text-on-accent); font-weight:700; }
 .kd-pane{ flex:1; min-height:0; position:relative; display:flex; flex-direction:column; overflow:hidden; }
+/* KeepDeck's title bar stays visible in full screen (owner, 18 Nov 2026). css/drawdeck-engine.css (TeachersDeck's DrawDeck CSS,
+   loaded after this file) hides .dd-widget .widget-head when body.dd-fs is set; this outranks it. */
+body.dd-fs .widget.dd-widget > .widget-head{ display:flex; }
 
 /* ---- KeepDeck's Scrapbook tab (js/keepdeck-scrap.js) ---- */
 .kd-scrap-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 10px; border-bottom:1px solid var(--line); flex:0 0 auto; }
@@ -136,8 +140,8 @@ select{font:inherit;font-size:12px;color:var(--hi);background:rgba(0,0,0,.25);bo
 
 /* ---- Full-screen widget (Student Summary): fills the wall, sits under the floating widgets, no drag/resize ---- */
 .widget.full{left:0!important;top:0!important;width:100%!important;height:100%!important;min-width:0;border-radius:0;border-width:0;box-shadow:none;z-index:1}
-.widget.full.min{height:auto!important}
-.widget.full .head{cursor:default;touch-action:auto}.widget.full .grip{display:none}
+.widget.full.minimized{height:auto!important}
+.widget.full .widget-head{cursor:default;touch-action:auto}.widget.full .widget-resize{display:none}
 .widget.full .body{padding:14px clamp(12px,2.5vw,28px) 20px}
 .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:12px;align-items:start}
 .sgrid>div{min-width:0}.sgrid .subwidget{margin:0}
@@ -227,7 +231,7 @@ label.nochrome{cursor:pointer}
 @media print{
   body.print-digest{background:#fff!important;overflow:visible!important;height:auto}
   body.print-digest .top,body.print-digest .dock-wrap,body.print-digest .edge-dock,body.print-digest #toast,body.print-digest .app-tray-backdrop,body.print-digest .modal,body.print-digest .nochrome,
-  body.print-digest .print-target .head,body.print-digest .print-target .grip{display:none!important}
+  body.print-digest .print-target .widget-head,body.print-digest .print-target .widget-resize{display:none!important}
   body.print-digest .widget:not(.print-target){display:none!important}
   body.print-digest #wall{position:static;overflow:visible}
   body.print-digest .widget.print-target{position:static!important;width:auto!important;height:auto!important;box-shadow:none;border:0;background:#fff}
@@ -253,7 +257,7 @@ label.nochrome{cursor:pointer}
 /* unread Notes Home count on the launchers that open the notes */
 .dock-item .badge,.app-tray-item .badge{position:absolute;top:2px;right:8px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#e05353;color:#fff;font:700 10.5px/17px system-ui,sans-serif;font-style:normal;text-align:center}
 @keyframes traysheetup{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
-.app-tray-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 8px;cursor:pointer;border:none;background:rgba(255,255,255,.03);color:var(--lo);font:inherit;font-weight:600;font-size:10.5px;line-height:1.2;text-align:center;border-radius:14px;transition:background .15s ease,color .15s ease,transform .12s ease}
+.app-tray-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 8px;cursor:pointer;border:none;background:rgba(255,255,255,.03);color:var(--lo);font:inherit;font-family:var(--tk-font-ui);font-weight:600;font-size:10.5px;line-height:1.2;text-align:center;border-radius:14px;transition:background .15s ease,color .15s ease,transform .12s ease}
 @media (max-width:680px){.edge-dock-left,.edge-dock-right{display:none}}
 body.dock-auto #wall{bottom:0}
 /* the full-screen Student Summary must never hide under a side drawer; the wall itself ends above the dock (v0.21.1) */
@@ -798,4 +802,4 @@ details.join-classcode summary{cursor:pointer;color:var(--muted, #aab);font-size
 /* ---- interface fonts (cleanup Phase 1, 17 Nov 2026) ----
    Inter for reading (the body rule above) and Quicksand for titles, buttons and big numbers, as in TeachersDeck,
    instead of whatever font the device has. A premium theme's own font still wins (css/premium.css). */
-.brand,.title,.btn,.chip,.app-tray-title,.cal-month,.clock-digital,.tm-time,.big,h3,h4,h5{font-family:var(--tk-font-ui)}
+.brand,.widget-title,.btn,.chip,.app-tray-title,.cal-month,.clock-digital,.tm-time,.big,h3,h4,h5{font-family:var(--tk-font-ui)}

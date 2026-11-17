@@ -18,7 +18,7 @@ html[data-td-skin]:not([data-mode="light"]){
   --shadow-panel:0 14px 34px rgba(var(--sk-shadow-rgb),.45), 0 2px 6px rgba(var(--sk-shadow-rgb),.3);
   /* phones and tablets (css/bento.css) */
   --bento-tile:var(--sk-card); --bento-tile-hi:var(--sk-hov); --bento-line:var(--sk-line); --bento-label:var(--sk-muted);
-  --bento-glass:var(--sk-dock); --bento-glass-line:var(--sk-line); --bento-pop:var(--sk-ink1);
+  --bento-glass:var(--sk-dock); --bento-glass-line:var(--sk-line); --bento-pop:var(--sk-ink1); --tk-surface-0:var(--sk-ink0); --tk-surface-3:var(--sk-ink3); --tk-surface-1:var(--sk-ink1); --tk-surface-2:var(--sk-ink2); --tk-line:var(--sk-line); --tk-text-hi:var(--sk-ink); --tk-text-lo:var(--sk-muted); --tk-text-on-accent:var(--sk-on); --tk-text-on-accent-rgb:var(--sk-on-rgb); --tk-teal:var(--sk-acc); --tk-radius-panel:var(--sk-radius); --tk-radius-chip:12px; --tk-shadow-panel:0 14px 34px rgba(var(--sk-shadow-rgb),.45), 0 2px 6px rgba(var(--sk-shadow-rgb),.3);   /* cleanup Phase 2: the tokens follow too */
 }
 
 /* Widgets: frosted glass over the background, with a soft highlight along the top edge */
@@ -32,7 +32,7 @@ html[data-td-skin]:not([data-mode="light"]) .widget.is-front:not(.full){
   box-shadow:var(--shadow-panel), 0 18px 46px rgba(var(--sk-shadow-rgb),.4), inset 0 1px 0 rgba(255,255,255,.34), inset 0 0 0 1px rgba(var(--sk-line-rgb),.16), inset 0 -18px 30px -24px rgba(var(--sk-acc-rgb),.32);
 }
 html[data-td-skin]:not([data-mode="light"]) .widget.full{ background:color-mix(in srgb, var(--sk-ink0) 55%, transparent); }
-html[data-td-skin]:not([data-mode="light"]) .widget > .head{ background:var(--sk-head); border-radius:inherit; border-bottom-left-radius:0; border-bottom-right-radius:0; }
+html[data-td-skin]:not([data-mode="light"]) .widget > .widget-head{ background:var(--sk-head); border-radius:inherit; border-bottom-left-radius:0; border-bottom-right-radius:0; }
 html[data-td-skin]:not([data-mode="light"]) .hbtn:hover{ background:var(--sk-hov); }
 
 /* Docks, the tray tab and the tray */
@@ -68,7 +68,7 @@ html[data-td-skin]:not([data-mode="light"]) .dd-size.on{ background:rgba(var(--s
 html[data-td-skin]:not([data-mode="light"]) body{ --dk-bg:var(--sk-dock); --dk-line:rgba(var(--sk-line-rgb),.35); --dk-ink:var(--sk-ink); --dk-acc:var(--sk-acc); --dk-hov:var(--sk-hov); }
 
 /* Theme font (the pack's font field) for the brand, titles and big numbers */
-html[data-td-theme] :is(.brand, .widget > .head .title, .s3lv, .bc-hero h2){ font-family:var(--theme-font, inherit); }
+html[data-td-theme] :is(.brand, .widget > .widget-head .widget-title, .s3lv, .bc-hero h2){ font-family:var(--theme-font, inherit); }
 
 /* Arrival: putting on a bought theme fades its wallpaper in and settles the widgets (1 s) */
 @keyframes td-arrive-bg{ from{ opacity:.25; filter:saturate(.6) blur(6px); } to{ opacity:1; filter:none; } }
@@ -201,6 +201,6 @@ html[data-td-greet]:not([data-mode="light"]) #td-greet{ display:flex; }
 html:is([data-td-deco="snow"], [data-td-deco="lanterns"]):not([data-mode="light"]) :is(.brand, .s3lv){ color:var(--sk-acc); }
 /* Tết: a double gold frame on every window; the title bar and body keep the rounded corners */
 html:is([data-td-art~="corner"],[data-td-art~="badge"]):not([data-mode="light"]) .widget:not(.full){ overflow:visible; }
-html:is([data-td-art~="corner"],[data-td-art~="badge"]):not([data-mode="light"]) .widget:not(.full) > .head{ border-radius:inherit; border-bottom-left-radius:0; border-bottom-right-radius:0; }
+html:is([data-td-art~="corner"],[data-td-art~="badge"]):not([data-mode="light"]) .widget:not(.full) > .widget-head{ border-radius:inherit; border-bottom-left-radius:0; border-bottom-right-radius:0; }
 html:is([data-td-art~="corner"],[data-td-art~="badge"]):not([data-mode="light"]) .widget:not(.full) > .body{ border-radius:inherit; border-top-left-radius:0; border-top-right-radius:0; }
 html[data-td-deco="lanterns"]:not([data-mode="light"]) .widget:not(.full){ box-shadow:0 0 0 2px #E5B94E, var(--shadow-panel), inset 0 0 0 7px var(--sk-card), inset 0 0 0 8px rgba(229,185,78,.6); }
