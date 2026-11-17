@@ -29,7 +29,7 @@ html[data-td-skin]:not([data-mode="light"]){
   --bento-label:var(--sk-muted);
   --bento-glass:var(--sk-dock);
   --bento-glass-line:var(--sk-line);
-  --bento-pop:var(--sk-ink1);
+  --bento-pop:var(--sk-ink1); --tk-surface-0:var(--sk-ink0); --tk-surface-1:var(--sk-ink1); --tk-surface-2:var(--sk-ink2); --tk-line:var(--sk-line); --tk-text-hi:var(--sk-ink); --tk-text-lo:var(--sk-muted); --tk-text-on-accent:var(--sk-on); --tk-text-on-accent-rgb:var(--sk-on-rgb); --tk-radius-panel:var(--sk-radius);   /* cleanup Phase 2: the tokens follow too */
 }
 
 /* Widgets: frosted glass */
@@ -39,10 +39,10 @@ html[data-td-skin]:not([data-mode="light"]) .widget{
   background-image:linear-gradient(180deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.03) 28%, rgba(255,255,255,0) 55%);
   box-shadow:0 14px 34px rgba(var(--sk-shadow-rgb),.45), 0 2px 6px rgba(var(--sk-shadow-rgb),.3), inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(var(--sk-line-rgb),.10), inset 0 -18px 30px -24px rgba(var(--sk-acc-rgb),.25);
 }
-html[data-td-skin]:not([data-mode="light"]) .widget.is-front:not(.full){
+html[data-td-skin]:not([data-mode="light"]) .widget.is-front:not(.widget-full){
   box-shadow:0 14px 34px rgba(var(--sk-shadow-rgb),.45), 0 18px 46px rgba(var(--sk-shadow-rgb),.4), inset 0 1px 0 rgba(255,255,255,.34), inset 0 0 0 1px rgba(var(--sk-line-rgb),.16), inset 0 -18px 30px -24px rgba(var(--sk-acc-rgb),.32);
 }
-html[data-td-skin]:not([data-mode="light"]) .widget > .head{ background:var(--sk-head); border-top-left-radius:inherit; border-top-right-radius:inherit; }
+html[data-td-skin]:not([data-mode="light"]) .widget > .widget-head{ background:var(--sk-head); border-top-left-radius:inherit; border-top-right-radius:inherit; }
 html[data-td-skin]:not([data-mode="light"]) .hbtn:hover{ background:var(--sk-hov); }
 
 /* The bottom dock, the side drawers and the app tray */
@@ -79,7 +79,7 @@ html[data-td-skin][data-td-bg="image"]:not([data-mode="light"]) .widget{ backgro
 html[data-td-skin][data-td-bg="image"]:not([data-mode="light"]){ --bento-tile:var(--sk-card-photo); --bento-tile-hi:var(--sk-card-photo); }
 
 /* Theme font (the pack's font field) for titles and big readouts */
-html[data-td-theme] :is(.brand, .head .title, .clock-digital, .tm-time, .td-idle-time){ font-family:var(--theme-font, inherit); }
+html[data-td-theme] :is(.brand, .widget-head .widget-title, .clock-digital, .tm-time, .td-idle-time){ font-family:var(--theme-font, inherit); }
 
 /* Living background: the theme's own gradient drifts very slowly (60 s); still while a timer runs */
 @keyframes td-drift{ 0%{ background-position:0% 30%; } 100%{ background-position:100% 70%; } }
@@ -87,7 +87,7 @@ html[data-td-skin][data-td-bg="theme"]:not([data-mode="light"]) body{ background
 body.td-busy{ animation-play-state:paused !important; }
 /* Arrival: putting on a premium theme settles the widgets and the dock (1 s) */
 @keyframes td-settle{ 0%{ transform:translateY(10px) scale(.985); opacity:.6; } 100%{ transform:none; opacity:1; } }
-html.td-arrive .widget:not(.full){ animation:td-settle .7s cubic-bezier(.2,.8,.2,1) both; }
+html.td-arrive .widget:not(.widget-full){ animation:td-settle .7s cubic-bezier(.2,.8,.2,1) both; }
 html.td-arrive .widget:nth-child(2n){ animation-delay:60ms; }
 html.td-arrive .widget:nth-child(3n){ animation-delay:120ms; }
 html.td-arrive :is(.dock, .edge-dock){ animation:td-settle .7s cubic-bezier(.2,.8,.2,1) 80ms both; }
@@ -182,11 +182,11 @@ body.df-rings :is(.dk-cat, .dk-wid){ box-shadow:0 8px 20px rgba(0,0,0,.4); }
 html[data-td-deco="snow"]:not([data-mode="light"]) .widget{ box-shadow:0 14px 34px rgba(var(--sk-shadow-rgb),.45), inset 0 0 0 1px rgba(240,201,106,.28); }
 /* Tết: a double gold frame on every window, apricot blossoms on its corner, the Fire Goat medallion on the Clock */
 html[data-td-deco="lanterns"]:not([data-mode="light"]) .widget{ box-shadow:0 0 0 2px #E5B94E, 0 14px 34px rgba(var(--sk-shadow-rgb),.45), inset 0 0 0 7px var(--sk-card), inset 0 0 0 8px rgba(229,185,78,.6); }
-html:is([data-td-art~="corner"],[data-td-art~="badge"]):not([data-mode="light"]) .widget:not(.full){ overflow:visible; }
-html:is([data-td-art~="corner"],[data-td-art~="badge"]):not([data-mode="light"]) .widget:not(.full) > .body{ border-radius:0 0 var(--r) var(--r); }
-html[data-td-art~="corner"]:not([data-mode="light"]) .widget:not(.full)::before{ content:""; position:absolute; left:-10px; top:-36px; width:100px; height:50px; z-index:3; pointer-events:none;
+html:is([data-td-art~="corner"],[data-td-art~="badge"]):not([data-mode="light"]) .widget:not(.widget-full){ overflow:visible; }
+html:is([data-td-art~="corner"],[data-td-art~="badge"]):not([data-mode="light"]) .widget:not(.widget-full) > .widget-body{ border-radius:0 0 var(--r) var(--r); }
+html[data-td-art~="corner"]:not([data-mode="light"]) .widget:not(.widget-full)::before{ content:""; position:absolute; left:-10px; top:-36px; width:100px; height:50px; z-index:3; pointer-events:none;
   background:var(--td-art-corner) left bottom/contain no-repeat; }   /* above the title bar, not over the title (15 Nov) */
-html[data-td-art~="badge"]:not([data-mode="light"]) .widget[data-wid="clock"]:not(.full)::after{ content:""; position:absolute; right:-22px; top:-60px; width:60px; height:69px; z-index:4; pointer-events:none;
+html[data-td-art~="badge"]:not([data-mode="light"]) .widget[data-wid="clock"]:not(.widget-full)::after{ content:""; position:absolute; right:-22px; top:-60px; width:60px; height:69px; z-index:4; pointer-events:none;
   background:var(--td-art-badge) center/contain no-repeat; filter:drop-shadow(0 0 10px rgba(255,180,60,.45)); }
 
 /* A theme's greeting and "Premium · name" badge in the middle of the top bar (js/app.js themeGreeting) */

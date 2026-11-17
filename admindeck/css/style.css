@@ -1,4 +1,5 @@
 @import url('tokens.css');
+@import url('shell.css');
 @import url('shell-staff.css');
 
 /* ============================================================
@@ -55,11 +56,11 @@
 .status-pill.err{ color:var(--danger); }
 .widget-drag svg{ width:13px; height:13px; }
 .widget-close, .widget-min{
-  width:20px; height:20px; border-radius:6px; border:none;
+  width:var(--tk-win-btn); height:var(--tk-win-btn); border-radius:var(--tk-radius-chip); border:none;
   background:transparent; color:var(--text-lo); cursor:pointer;
   display:flex; align-items:center; justify-content:center;
 }
-.widget-close svg, .widget-min svg{ width:12px; height:12px; }
+.widget-close svg, .widget-min svg{ width:var(--tk-win-icon); height:var(--tk-win-icon); }
 .widget-body{
   padding:16px; flex:1; user-select:text; overflow-y:auto;
   font-family:'Inter', sans-serif; font-size:13px;

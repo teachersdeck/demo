@@ -11,33 +11,33 @@
 }
 
 /* ---------- Corners ---------- */
-.widget:not(.full){ border-radius:var(--radius-panel); }
+.widget:not(.widget-full){ border-radius:var(--radius-panel); }
 .dock{ border-radius:var(--radius-panel); }
 .dock-item, .icon-pill, .hbtn{ border-radius:var(--radius-chip); }
 
 /* ---------- Calmer title bars: the buttons show on hover, focus or the front window ---------- */
-.head{ padding:9px 8px 8px 12px; }
-.head .title{ font-size:12.5px; letter-spacing:.2px; }
+.widget-head{ padding:9px 8px 8px 12px; }
+.widget-head .widget-title{ font-size:12.5px; letter-spacing:.2px; }
 @media (hover:hover){
-  .widget:not(.full) .head .hbtn{ opacity:0; transition:opacity var(--t-fast) var(--ease-out); }
-  .widget:not(.full):is(:hover, :focus-within, .is-front) .head .hbtn{ opacity:1; }
+  .widget:not(.widget-full) .widget-head .hbtn{ opacity:0; transition:opacity var(--t-fast) var(--ease-out); }
+  .widget:not(.widget-full):is(:hover, :focus-within, .is-front) .widget-head .hbtn{ opacity:1; }
 }
 
 /* ---------- Depth that means something: the front widget stands forward ---------- */
 .widget{ transition:box-shadow var(--t-mid) var(--ease-out), border-color var(--t-mid) var(--ease-out); }
-.widget.is-front:not(.full):not(.is-pinned){
+.widget.is-front:not(.widget-full):not(.is-pinned){
   box-shadow:0 10px 30px rgba(0,0,0,.35), 0 18px 46px rgba(0,0,0,.26);
   border-color:rgba(var(--gold-rgb), .42);
 }
-html.bento .widget.is-front:not(.full):not(.is-pinned){ border-color:var(--bento-line, var(--line)); }   /* tiles: no accent edge in the grid */
+html.bento .widget.is-front:not(.widget-full):not(.is-pinned){ border-color:var(--bento-line, var(--line)); }   /* tiles: no accent edge in the grid */
 
 /* ---------- Motion: one curve, three durations ---------- */
 @keyframes td-open{ from{ opacity:0; transform:translateY(8px) scale(.97); } to{ opacity:1; transform:none; } }
-.widget.td-opening:not(.full){ animation:td-open var(--t-mid) var(--ease-out); }
+.widget.td-opening:not(.widget-full){ animation:td-open var(--t-mid) var(--ease-out); }
 .dock-item{ transition:background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out); }
 @media (prefers-reduced-motion:reduce){
   .widget.td-opening{ animation:none; }
-  .widget, .dock-item, .head .hbtn{ transition:none; }
+  .widget, .dock-item, .widget-head .hbtn{ transition:none; }
 }
 
 /* ---------- Better built-in backgrounds: a soft light pool and fine grain (no banding on projectors) ---------- */
@@ -76,7 +76,7 @@ li.td-empty, .td-empty{ display:flex; flex-direction:column; align-items:center;
 
 /* ---------- Widgets that grow with their window (TeachersDeck phase 1) ---------- */
 /* Clock: the face fills what the time and date leave free; nothing gets smaller than it was */
-.widget[data-wid="clock"] > .body{ container-type:size; display:flex; flex-direction:column; align-items:center; }
+.widget[data-wid="clock"] > .widget-body{ container-type:size; display:flex; flex-direction:column; align-items:center; }
 .widget[data-wid="clock"] .clock-svg{ display:block; flex:1 1 0; min-height:104px; width:100%; height:auto; margin:2px 0 6px; }
 .widget[data-wid="clock"] .clock-skin:not([hidden]){ flex:1 1 0; min-height:104px; width:100%; aspect-ratio:auto; margin:0 0 4px; }
 .widget[data-wid="clock"] .clock-skin svg{ display:block; width:100%; height:100%; }

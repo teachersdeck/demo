@@ -241,7 +241,7 @@ function syncBadges() {
 setInterval(syncBadges, 60000);                                                   // retry anything a failed write left behind
 SDCloud.onStatusChanged(status => { if (status === 'joined') syncBadges(); });    // also fires at once if already joined
 function openBadges() {                                              // strip count / +N / "See all badges" / pop-up click: open the Badges & Rewards widget (v0.9.9)
-  const o = panels.badges; if (o) { o.el.classList.remove('min'); raiseFull('badges'); syncFullscreen(); } else openWidget('badges');
+  const o = panels.badges; if (o) { o.el.classList.remove('min', 'minimized'); raiseFull('badges'); syncFullscreen(); } else openWidget('badges');
 }
 function raiseFull(id) {                                             // full-screen widgets share one layer; the most recently opened one is on top (Esc closes that one)
   Object.entries(panels).forEach(([k, o]) => { if (o.el.classList.contains('full')) o.el.classList.toggle('fs-top', k === id); });
@@ -2030,12 +2030,14 @@ function openWidget(id) {
   let x = 24; Object.values(panels).forEach(o => { x = Math.max(x, o.el.offsetLeft + o.el.offsetWidth + 16); });   // tile beside open panels…
   const fits = x + def.w <= wall.clientWidth, off = fits ? 0 : 30 + n * 32;                                     // …or cascade if there's no room
   const L = state.layout[id] = { x: fits ? x : off, y: fits ? 24 : off, w: def.w, h: def.h, min: false, ...state.layout[id] };
-  const full = !!def.full, el = document.createElement('section'); el.className = 'widget' + (full ? ' full' : '') + (!full && L.min ? ' min' : '');
+  const full = !!def.full, el = document.createElement('section'); el.className = 'widget' + (full ? ' full widget-full' : '') + (!full && L.min ? ' min minimized' : '');   // the staff apps' state names too (cleanup Phase 2)
   const top = clamp(L.y, 0, Math.max(0, wall.clientHeight - 44));                                   // and never taller than the space below it
   if (!full) el.style.cssText = `left:${clamp(L.x, 0, Math.max(0, wall.clientWidth - 150))}px;top:${top}px;width:${L.w}px;height:${Math.max(140, Math.min(L.h, wall.clientHeight - top - 8))}px`;
-  el.innerHTML = `<div class="head">${full ? `<button class="btn" data-w="close" aria-label="${V('Back to', 'Quay lại')} ${APP}">\u2190 ${V('Back to', 'Quay lại')} ${APP}</button>` : ''}<span class="title" data-wl="${def.id}">${esc(widgetLabel(def.title))}</span>
+  // The window's parts also carry the staff apps' names (widget-head, widget-title, widget-body, widget-resize), so shared
+  // stylesheets can use one set of names (suite cleanup Phase 2, 17 Nov 2026). The short names stay until every rule has moved.
+  el.innerHTML = `<div class="head widget-head">${full ? `<button class="btn" data-w="close" aria-label="${V('Back to', 'Quay lại')} ${APP}">\u2190 ${V('Back to', 'Quay lại')} ${APP}</button>` : ''}<span class="title widget-title" data-wl="${def.id}">${esc(widgetLabel(def.title))}</span>
     ${full ? `<button class="hbtn wide" data-w="bar" aria-label="${V('Show or hide the top bar', 'Hiện hoặc ẩn thanh trên cùng')}" title="${V('Show the top bar', 'Hiện thanh trên cùng')}">${V('Toolbar', 'Thanh công cụ')}</button>` : ''}<button class="hbtn" data-w="min" aria-label="${V('Minimise', 'Thu nhỏ')} ${esc(def.title)}">–</button><button class="hbtn" data-w="close" aria-label="${V('Close', 'Đóng')} ${esc(def.title)}">×</button></div>
-    <div class="body"></div>${full ? '' : '<div class="grip" aria-hidden="true"></div>'}`;
+    <div class="body widget-body"></div>${full ? '' : '<div class="grip widget-resize" aria-hidden="true"></div>'}`;
   el.dataset.wid = id; el.classList.add('td-opening'); el.addEventListener('animationend', () => el.classList.remove('td-opening'), { once: true });   // polish: the open animation
   wall.appendChild(el); front(el);
   if (!full) { gesture($('.head', el), el, 'move', id); gesture($('.grip', el), el, 'resize', id); }
@@ -2043,7 +2045,7 @@ function openWidget(id) {
   el.addEventListener('click', e => {
     const w = e.target.closest('[data-w]')?.dataset.w;
     if (w === 'close') requestClose(id);
-    else if (w === 'min') { if (full) el.classList.toggle('min'); else { L.min = !L.min; el.classList.toggle('min', L.min); save(); } syncFullscreen(); }
+    else if (w === 'min') { if (full) { const on = el.classList.toggle('min'); el.classList.toggle('minimized', on); } else { L.min = !L.min; el.classList.toggle('min', L.min); el.classList.toggle('minimized', L.min); save(); } syncFullscreen(); }
     else if (w === 'bar') { state.fsBar = !state.fsBar; save(); syncFullscreen(); }
   });
   panels[id] = { el, cleanup: ProGate.render(def, $('.body', el)) };
@@ -2541,9 +2543,12 @@ function sdTopBar() {
   return sdTopBarApi;
 }
 const sdIsPro = () => !PRO_GATE_ENABLED || (() => { try { return localStorage.getItem('sd_pro') === '1'; } catch (e) { return false; } })();
+// Floating dock icons are premium even while the Pro gate is off (owner, 18 Nov 2026): Pro from home (sd_pro) or an owned
+// dock style; everyone else has the standard dock.
+const sdOwnsFloatingDocks = () => { try { if (localStorage.getItem('sd_pro') === '1') return true; } catch (e) {} return typeof SD_STORE !== 'undefined' && SD_STORE.docks().length > 0; };
 var FLOAT_PARTS = [['bottom', V('Bottom dock', 'Dock dưới')], ['sides', V('Side docks', 'Dock bên')], ['rings', V('Rings', 'Vòng tròn')]];
 function applyFloatingIcons() {
-  const f = (sdIsPro() && state.dockFrameless) || {};
+  const f = (sdOwnsFloatingDocks() && state.dockFrameless) || {};
   FLOAT_PARTS.forEach(([k]) => document.body.classList.toggle('df-' + k, !!f[k]));
 }
 
@@ -2603,17 +2608,17 @@ function buildThemeExtras(pop) {
   }
   const dx = pop.querySelector('.dock-extras'); if (!dx) return;
   const seg = (key, cur, opts) => `<div class="topbar-mode" role="group">${opts.map(([k, label]) => `<button type="button" class="topbar-mode-opt${cur === k ? ' active' : ''}" aria-pressed="${cur === k}" data-seg="${key}" data-v="${k}">${label}</button>`).join('')}</div>`;
-  const s = curDockStyle(), pro = sdIsPro(), f = state.dockFrameless || {};
+  const s = curDockStyle(), pro = sdOwnsFloatingDocks(), f = state.dockFrameless || {};
   dx.innerHTML = (s === 'radial' ? `<p class="pop-sub">${V('With the rings', 'Khi dùng vòng tròn')}</p>` + seg('radialDocks', radialDocks(), [['off', V('Docks off', 'Tắt dock')], ['compact', V('Compact dock', 'Dock gọn')], ['keep', V('Keep docks', 'Giữ dock')]]) : '') +
     (tbDropStyle() ? `<p class="pop-sub">${V('Top bar', 'Thanh trên cùng')}</p>` + seg('topBarMode', state.topBarMode === 'drop' ? 'drop' : 'shown', [['shown', V('Always shown', 'Luôn hiện')], ['drop', V('Drop down at the top edge', 'Thả xuống ở mép trên')]]) : '') +
-    `<p class="pop-sub floating-head"><span>${V('Floating icons (no dock frame)', 'Biểu tượng nổi (bỏ viền dock)')}</span>${PRO_GATE_ENABLED ? '<span class="pro-badge">Pro</span>' : ''}</p>` +
+    `<p class="pop-sub floating-head"><span>${V('Floating icons (no dock frame)', 'Biểu tượng nổi (bỏ viền dock)')}</span><span class="pro-badge">Pro</span></p>` +
     `<div class="topbar-mode floating-opts">${FLOAT_PARTS.map(([k, label]) => { const on = pro && !!f[k]; return `<button type="button" class="topbar-mode-opt${on ? ' active' : ''}${pro ? '' : ' locked'}" aria-pressed="${on}" data-float="${k}">${label}</button>`; }).join('')}</div>`;
   dx.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', e => {
     e.stopPropagation(); state[b.dataset.seg] = b.dataset.v; save(); applyTopBarMode(); buildThemeExtras(pop);
   }));
   dx.querySelectorAll('[data-float]').forEach(b => b.addEventListener('click', e => {
     e.stopPropagation();
-    if (!sdIsPro()) { toast(V('Floating icons come with ParentDeck Pro. Ask a grown-up at home!', 'Biểu tượng nổi có trong ParentDeck Pro. Hãy hỏi người lớn ở nhà nhé!')); return; }
+    if (!sdOwnsFloatingDocks()) { toast(V('Floating icons come with ParentDeck Pro. Ask a grown-up at home!', 'Biểu tượng nổi có trong ParentDeck Pro. Hãy hỏi người lớn ở nhà nhé!')); return; }
     const k = b.dataset.float; state.dockFrameless = Object.assign({}, state.dockFrameless, { [k]: !(state.dockFrameless || {})[k] });
     save(); applyFloatingIcons(); buildThemeExtras(pop);
   }));
