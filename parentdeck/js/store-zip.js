@@ -25,8 +25,8 @@
   var NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.json$/;
 
   // The server's public key (JWK, P-256). Set when the owner creates the signing key (tools/store/make_signing_key.js);
-  // until then, paid packs from files are refused with 'signing-off'.
-  var PUBLIC_KEY = null;
+  // Created 17 Nov 2026; the private half is STORE_SIGNING_KEY in Secret Manager (Google) and never in this repo.
+  var PUBLIC_KEY = { kty: 'EC', crv: 'P-256', x: 'Cd1D7k4IYzu-Ia6eft8bas5m5ufg5mBhVmxNbr12J1Y', y: 'ZynH7DAI9cjMNmn-iClHV9wdAeEVHrpw5JQQfwibD_0' };
 
   var enc = new TextEncoder(), dec = new TextDecoder();
   var subtle = (typeof crypto !== 'undefined' && crypto.subtle) ? crypto.subtle : null;
