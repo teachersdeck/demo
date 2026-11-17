@@ -55,6 +55,7 @@ const AD = (function(){
   async function callFn(name, { method = 'GET', body } = {}){
     const cfg = getConfig();
     if(!cfg.secret) throw new Error('Set your admin secret in Settings first.');
+    if(window.TDBackend) await TDBackend.ready;   // lights-on: the address backend.json names (js/backend.js)
     const url = `${baseUrl(cfg)}/${name}`;
     let res;
     try{
