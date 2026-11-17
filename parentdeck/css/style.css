@@ -1,45 +1,23 @@
-:root{--bg:#141a2e;--bg2:#25335f;--panel:#1f2a44;--panel2:#26335a;--line:rgba(255,255,255,.12);--hi:#f4f1e8;--lo:#a9b1c9;--gold:#e0a93b;--gold-hi:#f3c765;--r:14px}
+@import url('tokens.css');
+@import url('palette-navy.css');
+@import url('shell-family.css');
+:root{--bg:var(--tk-surface-0);--bg2:var(--tk-surface-3);--panel:var(--tk-surface-1);--panel2:var(--tk-surface-2);--line:var(--tk-line);--hi:var(--tk-text-hi);--lo:var(--tk-text-lo);--gold:var(--tk-accent);--gold-hi:var(--tk-accent-hi);--r:var(--tk-radius-panel)}
 /* KeepDeck's Home board shares js/drawdeck-engine.js + css/drawdeck-engine.css with TeachersDeck's DrawDeck
    (tools/check_shared.py keeps both byte-identical to teachersdeck/js/drawdeck.js and css/drawdeck.css).
    The engine's CSS never defines these itself — it only reads them — so each deck supplies its own palette;
    these map to ParentDeck's own --bg/--panel/--panel2/--bg2/--hi/--lo/--gold/--gold-hi scale above. --danger,
    --radius-chip, --shadow-panel and --teal have no ParentDeck equivalent, so they keep DrawDeck's own values. */
-:root{--amber:var(--gold);--amber-hi:var(--gold-hi);--danger:#E06565;--ink-0:var(--bg);--ink-1:var(--panel);--ink-2:var(--panel2);--ink-3:var(--bg2);--radius-chip:10px;--shadow-panel:0 12px 30px rgba(0,0,0,0.35),0 2px 6px rgba(0,0,0,0.25);--teal:#47C9B6;--text-hi:var(--hi);--text-lo:var(--lo);--amber-rgb:224,169,59;--amber-hi-rgb:243,199,101;--text-on-accent:#231604;--text-on-accent-rgb:35,22,4}   /* polish phase 3: the accent as tokens, so a theme recolours every accent */
-*{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--hi);background:radial-gradient(1200px 700px at 20% 0%,var(--bg2) 0%,var(--bg) 60%);overflow:hidden}
+:root{--amber:var(--gold);--amber-hi:var(--gold-hi);--danger:var(--tk-danger);--ink-0:var(--bg);--ink-1:var(--panel);--ink-2:var(--panel2);--ink-3:var(--bg2);--radius-chip:var(--tk-radius-chip);--shadow-panel:var(--tk-shadow-panel);--teal:var(--tk-teal);--text-hi:var(--hi);--text-lo:var(--lo);--amber-rgb:var(--tk-accent-rgb);--amber-hi-rgb:var(--tk-accent-hi-rgb);--text-on-accent:var(--tk-text-on-accent);--text-on-accent-rgb:var(--tk-text-on-accent-rgb)}
+body{font:14px/1.4 var(--tk-font-body);color:var(--hi);background:radial-gradient(1200px 700px at 20% 0%,var(--bg2) 0%,var(--bg) 60%);overflow:hidden}
 .top{position:fixed;top:0;left:0;right:0;height:44px;display:flex;align-items:center;gap:16px;padding:0 16px;z-index:5}
-.brand{font-weight:800;font-size:17px;white-space:nowrap}.mark{color:var(--gold)}
-.ver{color:var(--lo);font-size:11px}
-#wall{position:fixed;top:44px;left:0;right:0;bottom:0;overflow:hidden}   /* --dock-clear is measured from the real dock in js/app.js (syncDockClearance) */
-.widget{position:absolute;min-width:220px;min-height:140px;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.widget.min{min-height:0;height:auto!important}.widget.min .body,.widget.min .grip{display:none}
-.head{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;cursor:grab;touch-action:none;user-select:none;border-bottom:1px solid var(--line)}
-.head:active{cursor:grabbing}.widget.min .head{border-bottom:0}
-.title{flex:1;font-weight:700}
-.hbtn{width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--lo);font-size:16px;line-height:1;cursor:pointer}
-.hbtn:hover{background:rgba(255,255,255,.1);color:var(--hi)}
-.body{flex:1;overflow:auto;padding:12px}
-.grip{position:absolute;right:2px;bottom:2px;width:18px;height:18px;cursor:nwse-resize;opacity:.45;touch-action:none;background:linear-gradient(135deg,transparent 55%,var(--lo) 55% 62%,transparent 62% 76%,var(--lo) 76% 83%,transparent 83%)}
-.grip:hover{opacity:1}
-.btn,.chip{font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--hi);border-radius:10px;padding:7px 12px;cursor:pointer}
-.btn:hover,.chip:hover{border-color:var(--gold)}.btn.primary{background:var(--gold);border-color:var(--gold);color:var(--text-on-accent);font-weight:700}
-.chip.on{background:rgba(var(--amber-rgb),.2);border-color:var(--gold);color:var(--gold-hi)}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}.center{justify-content:center}
+.brand{font-weight:800;font-size:17px;white-space:nowrap}
+#wall{position:fixed;top:44px;left:0;right:0;bottom:0;overflow:hidden}
 input[type=text]{font:inherit;color:var(--hi);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:7px 10px;min-width:0;flex:1}
-input:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
-.muted{color:var(--lo);font-size:12px}
-#toast{position:fixed;left:50%;top:54px;transform:translateX(-50%);max-width:min(440px,92vw);background:var(--panel2);border:1px solid var(--gold);padding:9px 14px;border-radius:12px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
-#toast.show{opacity:1}
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.tile{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
-.tile b{display:block;font-size:17px;color:var(--gold-hi)}.tile span{font-size:11px;color:var(--lo)}
+.tile b{display:block;font-size:17px;color:var(--gold-hi)}
 .srow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px}
-.lvl{display:flex;align-items:center;gap:12px;margin-bottom:8px}.lvl .big{font-size:30px;font-weight:800;color:var(--gold-hi)}
+.lvl{display:flex;align-items:center;gap:12px;margin-bottom:8px}
 .big{font-weight:800}
-.xpbar{display:inline-block;width:70px;height:7px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden}.xpbar.wide{display:block;width:100%;height:10px}
-.xpbar i{display:block;height:100%;background:var(--gold);border-radius:5px;transition:width .4s}
 h4{margin:14px 0 6px;font-size:13px}
-.x{border:0;background:transparent;color:var(--lo);font-size:18px;cursor:pointer}.x:hover{color:#ff8b8b}
 
 /* ---- ParentDeck-specific: header kid switcher + account ---- */
 .hright{margin-left:auto;display:flex;align-items:center;gap:14px}
@@ -146,8 +124,7 @@ select{font:inherit;font-size:12px;color:var(--hi);background:rgba(0,0,0,.25);bo
 .settings-row:last-child{border-bottom:0}
 
 /* ---- Header XP pill (StudentDeck style: level + bar + total; opens Trends) ---- */
-.xp{position:relative;display:flex;align-items:center;gap:8px;font:inherit;font-size:12px;color:var(--hi);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;flex:none}
-.xp:hover{border-color:var(--gold)}.xp b{color:var(--gold-hi)}
+.xp{position:relative;display:flex;align-items:center;gap:8px;font:inherit;font-size:12px;color:var(--hi);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;flex:none}.xp b{color:var(--gold-hi)}
 .xp[hidden]{display:none}
 
 /* ---- Nested "widget in a widget" chrome (Class Ranking / Behaviour Log inside Student Summary) ---- */
@@ -169,30 +146,6 @@ select{font:inherit;font-size:12px;color:var(--hi);background:rgba(0,0,0,.25);bo
 .bar{display:grid;grid-template-columns:minmax(80px,38%) 1fr auto;align-items:center;gap:8px;padding:4px 0;font-size:12px}
 .bar>div{height:8px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden}.bar>div i{display:block;height:100%;background:var(--gold);border-radius:5px}
 .bar b{color:var(--gold-hi);white-space:nowrap}
-
-/* Month calendar (nested inside the Homework Assignments widget) — ported from
-   TeachersDeck's canonical .cal-* calendar CSS, variable names mapped to this app's
-   palette (--line/--hi/--lo/--gold/--gold-hi in place of TD's --line/--text-hi/--text-lo/
-   --amber/--amber-hi). Read-only here: no manage/edit states. */
-.cal-head{display:flex;align-items:center;gap:6px;margin-bottom:8px}
-.cal-nav{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--hi);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
-.cal-nav:hover{background:rgba(255,255,255,.08)}
-.cal-month{flex:1;text-align:center;font-weight:700;font-size:13px}
-.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:var(--lo);text-align:center;margin-bottom:4px}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:10px}
-.cal-cell{aspect-ratio:1;border:none;border-radius:8px;background:transparent;color:var(--hi);font-size:11.5px;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center}
-.cal-cell:hover:not(.empty){background:rgba(255,255,255,.06)}
-.cal-cell.empty{cursor:default}
-.cal-cell.today{font-weight:700;color:var(--gold-hi)}
-.cal-cell.selected{background:var(--gold);color:var(--text-on-accent);font-weight:700}
-.cal-dot{position:absolute;bottom:2px;left:4px;width:4px;height:4px;border-radius:50%;background:#47c9b6}
-.cal-cell.selected .cal-dot{background:#231604}
-.cal-day-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.cal-day-label{font-weight:600;font-size:12px;color:var(--lo)}
-.cal-ev-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;max-height:120px;overflow-y:auto}
-.cal-ev-row{display:flex;align-items:center;gap:7px;font-size:12px;background:rgba(255,255,255,.03);border-radius:8px;padding:6px 8px}
-.cal-ev-time{font-weight:600;color:var(--gold-hi);font-size:11px;flex-shrink:0}
-.cal-ev-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ---- v0.9.0: Notes Home ---- */
 .note-card{display:block;width:100%;text-align:left;margin:0 0 8px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--hi);font:inherit;cursor:pointer}
@@ -295,54 +248,13 @@ label.nochrome{cursor:pointer}
 .demobar{position:fixed;left:8px;bottom:84px;z-index:60;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .demotab{padding:6px 12px;border:1px solid var(--gold);border-radius:999px;background:rgba(var(--amber-rgb),.2);color:var(--gold-hi);font:inherit;font-size:12px;cursor:pointer}
 .demopanel{width:min(300px,calc(100vw - 16px));padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 10px 30px rgba(0,0,0,.45)}
-.demopanel[hidden]{display:none}
-
-/* ============================================================
-   v0.12.0 — layout modes, docks and the app tray (ported from StudentDeck v0.9.0, which ported them from TeachersDeck v0.14.1),
-   the 3-column Stats & XP section, and the Teacher Notes widget
-   ============================================================ */
-.dock-wrap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;max-width:calc(100vw - 40px)}
-.dock{z-index:5;display:flex;gap:4px;padding:8px 10px;background:rgba(20,26,46,.78);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(12px);box-shadow:0 12px 30px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.25);max-width:100%;overflow-x:auto;scrollbar-width:thin}
-.dock-item{display:flex;flex-direction:column;align-items:center;gap:5px;width:88px;flex:none;padding:8px 4px 6px;cursor:pointer;border:none;background:rgba(255,255,255,.03);color:var(--lo);font:inherit;font-weight:600;font-size:10.5px;line-height:1.2;text-align:center;transition:background .15s ease,color .15s ease,transform .12s ease;position:relative;border-radius:12px;margin:0 1px}
 .dock-item>span:last-child,.app-tray-item>span:last-child{max-width:100%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;white-space:normal;overflow-wrap:break-word}
-.dock-item:hover{background:rgba(255,255,255,.08);color:var(--hi);z-index:2;transform:translateY(-2px)}
-.dock-item.active{background:rgba(var(--amber-rgb),.14);color:var(--gold-hi);z-index:3}
-.dock-item.active .dock-ic{background:rgba(var(--amber-rgb),.16);color:var(--gold-hi)}
-.dock-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);color:inherit}
 .dock-ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 /* unread Notes Home count on the launchers that open the notes */
 .dock-item .badge,.app-tray-item .badge{position:absolute;top:2px;right:8px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#e05353;color:#fff;font:700 10.5px/17px system-ui,sans-serif;font-style:normal;text-align:center}
-/* tab on the dock's top edge + the sheet that slides up */
-.app-tray-tab{z-index:6;width:46px;height:20px;padding:0;flex:none;border-radius:12px 12px 4px 4px;border:1px solid var(--line);border-bottom:none;background:rgba(20,26,46,.78);color:var(--lo);cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);box-shadow:0 12px 30px rgba(0,0,0,.35);transition:background .15s ease;margin-bottom:-1px}
-.app-tray-tab:hover{background:rgba(255,255,255,.1)}
-.app-tray-tab-line{display:block;width:22px;height:4px;border-radius:2px;background:var(--lo);transition:background .15s ease}
-.app-tray-tab:hover .app-tray-tab-line{background:var(--hi)}
-.app-tray-tab.open .app-tray-tab-line{background:var(--gold-hi)}
-.app-tray-backdrop{position:fixed;inset:0;z-index:45;background:rgba(6,9,14,.55);display:flex;align-items:flex-end;justify-content:center}
-.app-tray-backdrop[hidden]{display:none}
-.app-tray{width:100%;max-width:760px;max-height:72vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:20px 20px 0 0;box-shadow:0 -16px 40px rgba(0,0,0,.45);padding:8px 18px 24px;animation:traysheetup .2s ease}
 @keyframes traysheetup{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
-.app-tray-handle{display:block;width:44px;height:5px;border-radius:3px;margin:6px auto 14px;background:var(--line);border:none;cursor:pointer;padding:0}
-.app-tray-title{font-weight:700;font-size:12.5px;letter-spacing:.4px;color:var(--lo);text-align:center;margin:0 0 14px}
-.app-tray-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
-.app-tray-cat{grid-column:1/-1;margin:8px 0 0;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--lo)}
 .app-tray-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 8px;cursor:pointer;border:none;background:rgba(255,255,255,.03);color:var(--lo);font:inherit;font-weight:600;font-size:10.5px;line-height:1.2;text-align:center;border-radius:14px;transition:background .15s ease,color .15s ease,transform .12s ease}
-.app-tray-item .dock-ic{width:38px;height:38px}
-.app-tray-item:hover{background:rgba(255,255,255,.08);color:var(--hi);transform:translateY(-2px)}
-.app-tray-item.active{background:rgba(var(--amber-rgb),.14);color:var(--gold-hi)}
-.app-tray-item.active .dock-ic{background:rgba(var(--amber-rgb),.16);color:var(--gold-hi)}
-/* side drawers */
-.edge-dock{position:fixed;z-index:6;background:rgba(20,26,46,.78);border:1px solid var(--line);backdrop-filter:blur(12px);box-shadow:0 12px 30px rgba(0,0,0,.35);transition:transform .22s ease}
-.edge-dock[hidden]{display:none}
-.edge-dock-items{display:flex;flex-direction:column;gap:4px}
-.edge-dock-left,.edge-dock-right{top:50%;transform:translateY(-50%);border-radius:14px;padding:10px 6px}
-.edge-dock-left{left:12px}.edge-dock-right{right:12px}
-.edge-dock-left .dock-item,.edge-dock-right .dock-item{width:88px;margin:1px 0}
-.edge-dock-left .dock-item:hover{transform:translateX(2px)}.edge-dock-right .dock-item:hover{transform:translateX(-2px)}
 @media (max-width:680px){.edge-dock-left,.edge-dock-right{display:none}}
-/* hide-the-dock option: the dock + tab unit slides down until only the tab shows; hover the tab (or Tab to a button) to bring it back */
-.dock-wrap.auto-hide{bottom:0;padding-bottom:16px;transform:translateX(-50%) translateY(calc(100% - 20px));transition:transform .22s ease .35s}
-.dock-wrap.auto-hide:hover,.dock-wrap.auto-hide:has(:focus-visible){transform:translateX(-50%);transition-delay:0s}
 body.dock-auto #wall{bottom:0}
 /* the full-screen Student Summary must never hide under a side drawer; the wall itself ends above the dock (v0.21.1) */
 .widget.full .body{padding-bottom:calc(var(--dock-clear,132px) + 8px)}   /* the wall is full height again, so the full-screen Summary keeps its last section clear of the floating dock */
@@ -350,21 +262,11 @@ body.dock-auto .widget.full .body{padding-bottom:40px}   /* dock hidden: only th
 body.dl .widget.full .body{padding-left:128px}
 body.dr .widget.full .body{padding-right:128px}
 @media (max-width:680px){body.dl .widget.full .body{padding-left:clamp(12px,2.5vw,28px)}body.dr .widget.full .body{padding-right:clamp(12px,2.5vw,28px)}}
-
-/* Layout section of the Settings widget */
-.layout-mode-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
-.layout-mode-opt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--hi);font:inherit;cursor:pointer;transition:border-color .15s ease,background .15s ease}
-.layout-mode-opt:hover{background:rgba(255,255,255,.03)}
-.layout-mode-opt.active{border-color:var(--gold);background:rgba(var(--amber-rgb),.08)}
-.layout-mode-name{font-weight:700;font-size:12.5px}
-.layout-mode-desc{font-size:11px;color:var(--lo);line-height:1.4}
+.layout-mode-opt.active{border-color:var(--gold);background:rgba(var(--tk-accent-rgb),.08)}
 .switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--lo);margin-top:6px}
 .switch-row input{accent-color:var(--gold);width:16px;height:16px;flex:none}
-.switch-row.locked,.dock-vis-row.locked{opacity:.45}
 .lock-hint{margin:4px 0 8px}
 .dock-vis-list{display:grid;grid-template-columns:1fr;gap:6px;margin:6px 0;max-height:240px;overflow-y:auto;padding-right:2px}
-.dock-vis-row{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
-.dock-vis-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .placement-row select{flex:none;width:122px;padding:4px}
 .placement-row select option{color:#222}
 .st-section{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
@@ -499,8 +401,6 @@ body.dr .widget.full .body{padding-right:128px}
 
 .medal{--m1:#cd7f32;--m2:#8a4f1d;position:relative;display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;flex-shrink:0;
   background:conic-gradient(from 210deg,var(--m1),var(--m2),var(--m1),var(--m2),var(--m1));box-shadow:0 3px 14px rgba(0,0,0,.45),0 0 14px color-mix(in srgb,var(--m1) 55%,transparent)}
-.medal.t2{--m1:#e2e6ee;--m2:#8e97a8}.medal.t3{--m1:#ffe27a;--m2:#c48a12}.medal.t4{--m1:#9ff0ff;--m2:#4a8bff}
-.medal .mi{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:23px;background:radial-gradient(circle at 35% 30%,#2e3b63,#171f3a);box-shadow:inset 0 2px 6px rgba(0,0,0,.55)}
 .medal::after{content:'';position:absolute;inset:0;border-radius:50%;background:linear-gradient(110deg,transparent 0,rgba(255,255,255,.7) 48%,transparent 62%);background-size:55% 100%;background-repeat:no-repeat;background-position:-130% 0}
 
 .bc{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
@@ -512,7 +412,7 @@ body.dr .widget.full .body{padding-right:128px}
 .bc-spot.fresh .medal{animation:bcSpin 1.3s ease-in-out both}
 .bc-spot.empty{width:96px;height:96px;display:flex;align-items:center;justify-content:center;font-size:48px;border-radius:50%;border:2px dashed var(--line);opacity:.6;animation:none;cursor:default}
 .bc-hero-t{flex:1;min-width:220px}.bc-hero-t h2{margin:0 0 4px;font-size:clamp(20px,3.2vw,30px)}
-.bc-count{margin:0 0 6px;font-size:clamp(15px,2vw,19px);color:var(--gold-hi)}.bc-last{margin:8px 0 0}
+.bc-count{margin:0 0 6px;font-size:clamp(15px,2vw,19px);color:var(--gold-hi)}
 .bc-chips{display:flex;flex-wrap:wrap;gap:6px}
 .bc-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 11px 3px 8px;border-radius:999px;font-size:12px;background:rgba(255,255,255,.07);border:1px solid var(--line)}
 .bc-chip i{width:12px;height:12px;border-radius:50%;background:conic-gradient(var(--m1,#cd7f32),var(--m2,#8a4f1d),var(--m1,#cd7f32))}
@@ -817,13 +717,7 @@ body.dr .widget.full .body{padding-right:128px}
 /* v0.21.3: "class code instead" fallback in Link a child */
 details.join-classcode{margin:6px 0 4px}
 details.join-classcode summary{cursor:pointer;color:var(--muted, #aab);font-size:.9em}
-
-/* Pro gate: a locked widget (js/progate.js) */
-.pg-lock{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;height:100%;min-height:140px;padding:18px}
-.pg-lock .pg-star{font-size:34px;filter:drop-shadow(0 0 8px rgba(255,203,92,.6))}
 .pg-lock b{font-size:16px}.pg-lock p{margin:0;max-width:34ch;opacity:.85;line-height:1.4}
-.pg-lock .pg-cta{margin-top:4px;padding:8px 16px;border-radius:999px;border:0;cursor:pointer;font-weight:600;background:linear-gradient(135deg,#ffcb5c,#f59e0b);color:#3b2600}
-.pg-lock .pg-note{font-size:12px;opacity:.6}
 .pro-on{color:var(--gold-hi, #ffcb5c);font-weight:600}
 
 /* anti-theft: shown only in a copy running under a different extension ID */
@@ -896,9 +790,12 @@ details.join-classcode summary{cursor:pointer;color:var(--muted, #aab);font-size
 .shop-layouts{display:flex;flex-direction:column;gap:4px;width:100%}
 .shop-layouts span{background:rgba(255,255,255,.9);color:#2a3142;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600}
 .store-new{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));top:calc(60px + env(safe-area-inset-top,0px));z-index:70;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--panel,#1a2234);border:1px solid var(--gold);box-shadow:0 12px 30px rgba(0,0,0,.4);max-width:min(380px,calc(100vw - 32px))}
-.store-new .sn-gift{font-size:22px}
 .store-new div{display:flex;flex-direction:column;min-width:0;flex:1}
 .store-new b{font-size:12px;color:var(--gold)}
 .store-new span{font-size:13px;color:var(--hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .store-new em{font-style:normal;color:var(--lo);font-size:12px}
-.store-new .btn{white-space:nowrap}
+
+/* ---- interface fonts (cleanup Phase 1, 17 Nov 2026) ----
+   Inter for reading (the body rule above) and Quicksand for titles, buttons and big numbers, as in TeachersDeck,
+   instead of whatever font the device has. A premium theme's own font still wins (css/premium.css). */
+.brand,.title,.btn,.chip,.app-tray-title,.cal-month,.clock-digital,.tm-time,.big,h3,h4,h5{font-family:var(--tk-font-ui)}
