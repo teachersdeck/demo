@@ -1,0 +1,131 @@
+/* =========================================================
+   The family apps' shared shell (cleanup Phase 2, Nov 2026).
+   ---------------------------------------------------------
+   ONE FILE IN TWO APPS: studentdeck/css/shell-family.css is the copy to edit; tools/check_shared.py keeps ParentDeck's
+   identical. Each app's css/style.css loads it right after css/tokens.css and css/palette-navy.css, before its own
+   rules.
+
+   What is here: the rules StudentDeck and ParentDeck both had, word for word, in their own style.css (the page, the top
+   bar, windows, buttons, the docks, the app tray, the calendar grid). They were moved, not rewritten. A rule moved
+   only if nothing left behind in either app could have been beating it before, so every tie still falls the same way.
+
+   This is the first slice; the aim is one css/shell.css with the staff apps (css/shell-staff.css).
+   ========================================================= */
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+.mark{color:var(--gold)}
+.ver{color:var(--lo);font-size:11px}
+.widget{position:absolute;min-width:220px;min-height:140px;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.widget.min{min-height:0;height:auto!important}
+.widget.min .body,.widget.min .grip{display:none}
+.head{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;cursor:grab;touch-action:none;user-select:none;border-bottom:1px solid var(--line)}
+.head:active{cursor:grabbing}
+.widget.min .head{border-bottom:0}
+.title{flex:1;font-weight:700}
+.hbtn{width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--lo);font-size:16px;line-height:1;cursor:pointer}
+.hbtn:hover{background:rgba(255,255,255,.1);color:var(--hi)}
+.body{flex:1;overflow:auto;padding:12px}
+.grip{position:absolute;right:2px;bottom:2px;width:18px;height:18px;cursor:nwse-resize;opacity:.45;touch-action:none;background:linear-gradient(135deg,transparent 55%,var(--lo) 55% 62%,transparent 62% 76%,var(--lo) 76% 83%,transparent 83%)}
+.grip:hover{opacity:1}
+.btn,.chip{font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--hi);border-radius:10px;padding:7px 12px;cursor:pointer}
+.btn:hover,.chip:hover{border-color:var(--gold)}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:var(--text-on-accent);font-weight:700}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.center{justify-content:center}
+input:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.muted{color:var(--lo);font-size:12px}
+.x{border:0;background:transparent;color:var(--lo);font-size:18px;cursor:pointer}
+.x:hover{color:#ff8b8b}
+#toast{position:fixed;left:50%;top:54px;transform:translateX(-50%);max-width:min(440px,92vw);background:var(--panel2);border:1px solid var(--gold);padding:9px 14px;border-radius:12px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+.xpbar{display:inline-block;width:70px;height:7px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden}
+.xpbar.wide{display:block;width:100%;height:10px}
+.xpbar i{display:block;height:100%;background:var(--gold);border-radius:5px;transition:width .4s}
+.lvl .big{font-size:30px;font-weight:800;color:var(--gold-hi)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.tile{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+/* Month calendar (nested inside the Homework Assignments widget) — ported from
+   TeachersDeck's canonical .cal-* calendar CSS, variable names mapped to this app's
+   palette (--line/--hi/--lo/--gold/--gold-hi in place of TD's --line/--text-hi/--text-lo/
+   --amber/--amber-hi). Read-only here: no manage/edit states. */
+.cal-head{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.cal-nav{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--hi);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.cal-nav:hover{background:rgba(255,255,255,.08)}
+.cal-month{flex:1;text-align:center;font-weight:700;font-size:13px}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:var(--lo);text-align:center;margin-bottom:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:10px}
+.cal-cell{aspect-ratio:1;border:none;border-radius:8px;background:transparent;color:var(--hi);font-size:11.5px;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center}
+.cal-cell:hover:not(.empty){background:rgba(255,255,255,.06)}
+.cal-cell.empty{cursor:default}
+.cal-cell.today{font-weight:700;color:var(--gold-hi)}
+.cal-cell.selected{background:var(--gold);color:var(--text-on-accent);font-weight:700}
+.cal-dot{position:absolute;bottom:2px;left:4px;width:4px;height:4px;border-radius:50%;background:#47c9b6}
+.cal-cell.selected .cal-dot{background:#231604}
+.cal-day-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cal-day-label{font-weight:600;font-size:12px;color:var(--lo)}
+.cal-ev-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;max-height:120px;overflow-y:auto}
+.cal-ev-row{display:flex;align-items:center;gap:7px;font-size:12px;background:rgba(255,255,255,.03);border-radius:8px;padding:6px 8px}
+.cal-ev-time{font-weight:600;color:var(--gold-hi);font-size:11px;flex-shrink:0}
+.cal-ev-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---- v0.9.0: layout modes, docks, app tray, Settings drawer (ported from TeachersDeck v0.14.1) ---- */
+.dock-wrap{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;max-width:calc(100vw - 40px)}
+.dock{z-index:5;display:flex;gap:4px;padding:8px 10px;background:rgba(20,26,46,.78);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(12px);box-shadow:0 12px 30px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.25);max-width:100%;overflow-x:auto;scrollbar-width:thin}
+/* tab on the dock's top edge + the sheet that slides up */
+.app-tray-tab{z-index:6;width:46px;height:20px;padding:0;flex:none;border-radius:12px 12px 4px 4px;border:1px solid var(--line);border-bottom:none;background:rgba(20,26,46,.78);color:var(--lo);cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);box-shadow:0 12px 30px rgba(0,0,0,.35);transition:background .15s ease;margin-bottom:-1px}
+.app-tray-tab:hover{background:rgba(255,255,255,.1)}
+.app-tray-tab-line{display:block;width:22px;height:4px;border-radius:2px;background:var(--lo);transition:background .15s ease}
+.app-tray-tab:hover .app-tray-tab-line{background:var(--hi)}
+.app-tray-tab.open .app-tray-tab-line{background:var(--gold-hi)}
+.app-tray{width:100%;max-width:760px;max-height:72vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:20px 20px 0 0;box-shadow:0 -16px 40px rgba(0,0,0,.45);padding:8px 18px 24px;animation:traysheetup .2s ease}
+.app-tray-handle{display:block;width:44px;height:5px;border-radius:3px;margin:6px auto 14px;background:var(--line);border:none;cursor:pointer;padding:0}
+.app-tray-title{font-weight:700;font-size:12.5px;letter-spacing:.4px;color:var(--lo);text-align:center;margin:0 0 14px}
+.app-tray-cat{grid-column:1/-1;margin:8px 0 0;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--lo)}
+.edge-dock[hidden]{display:none}
+.edge-dock-items{display:flex;flex-direction:column;gap:4px}
+.edge-dock-left,.edge-dock-right{top:50%;transform:translateY(-50%);border-radius:14px;padding:10px 6px}
+.edge-dock-left{left:12px}
+.edge-dock-right{right:12px}
+/* hide-the-dock option: the whole dock + tab unit slides down until only the tab shows; hover the tab (or Tab to a button) to bring it back */
+.dock-wrap.auto-hide{bottom:0;padding-bottom:16px;transform:translateX(-50%) translateY(calc(100% - 20px));transition:transform .22s ease .35s}
+.dock-wrap.auto-hide:hover,.dock-wrap.auto-hide:has(:focus-visible){transform:translateX(-50%);transition-delay:0s}
+.layout-mode-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+.layout-mode-opt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--hi);font:inherit;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.layout-mode-opt:hover{background:rgba(255,255,255,.03)}
+.layout-mode-name{font-weight:700;font-size:12.5px}
+.layout-mode-desc{font-size:11px;color:var(--lo);line-height:1.4}
+.switch-row.locked,.dock-vis-row.locked{opacity:.45}
+.dock-vis-row{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+.demopanel[hidden]{display:none}
+.bc-last{margin:8px 0 0}
+/* Pro gate: a locked widget (js/progate.js) */
+.pg-lock{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;height:100%;min-height:140px;padding:18px}
+.pg-lock .pg-star{font-size:34px;filter:drop-shadow(0 0 8px rgba(255,203,92,.6))}
+.store-new .sn-gift{font-size:22px}
+.xp:hover{border-color:var(--gold)}
+.dock-item:hover{background:rgba(255,255,255,.08);color:var(--hi);z-index:2;transform:translateY(-2px)}
+.dock-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);color:inherit}
+.app-tray-backdrop{position:fixed;inset:0;z-index:45;background:rgba(6,9,14,.55);display:flex;align-items:flex-end;justify-content:center}
+.app-tray-backdrop[hidden]{display:none}
+/* side drawers */
+.edge-dock{position:fixed;z-index:6;background:rgba(20,26,46,.78);border:1px solid var(--line);backdrop-filter:blur(12px);box-shadow:0 12px 30px rgba(0,0,0,.35);transition:transform .22s ease}
+.edge-dock-left .dock-item:hover{transform:translateX(2px)}
+.edge-dock-right .dock-item:hover{transform:translateX(-2px)}
+.dock-vis-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.medal.t2{--m1:#e2e6ee;--m2:#8e97a8}
+.medal.t3{--m1:#ffe27a;--m2:#c48a12}
+.medal.t4{--m1:#9ff0ff;--m2:#4a8bff}
+.medal .mi{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:23px;background:radial-gradient(circle at 35% 30%,#2e3b63,#171f3a);box-shadow:inset 0 2px 6px rgba(0,0,0,.55)}
+.pg-lock .pg-cta{margin-top:4px;padding:8px 16px;border-radius:999px;border:0;cursor:pointer;font-weight:600;background:linear-gradient(135deg,#ffcb5c,#f59e0b);color:#3b2600}
+.pg-lock .pg-note{font-size:12px;opacity:.6}
+.store-new .btn{white-space:nowrap}
+.chip.on{background:rgba(var(--tk-accent-rgb),.2);border-color:var(--gold);color:var(--gold-hi)}
+.tile span{font-size:11px;color:var(--lo)}
+.dock-item.active{background:rgba(var(--tk-accent-rgb),.14);color:var(--gold-hi);z-index:3}
+.dock-item.active .dock-ic{background:rgba(var(--tk-accent-rgb),.16);color:var(--gold-hi)}
+.app-tray-item .dock-ic{width:38px;height:38px}
+.app-tray-item:hover{background:rgba(255,255,255,.08);color:var(--hi);transform:translateY(-2px)}
+.app-tray-item.active{background:rgba(var(--tk-accent-rgb),.14);color:var(--gold-hi)}
+.app-tray-item.active .dock-ic{background:rgba(var(--tk-accent-rgb),.16);color:var(--gold-hi)}
+.dock-item{display:flex;flex-direction:column;align-items:center;gap:5px;width:88px;flex:none;padding:8px 4px 6px;cursor:pointer;border:none;background:rgba(255,255,255,.03);color:var(--lo);font:inherit;font-weight:600;font-size:10.5px;line-height:1.2;text-align:center;transition:background .15s ease,color .15s ease,transform .12s ease;position:relative;border-radius:12px;margin:0 1px}
+.app-tray-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.edge-dock-left .dock-item,.edge-dock-right .dock-item{width:88px;margin:1px 0}
