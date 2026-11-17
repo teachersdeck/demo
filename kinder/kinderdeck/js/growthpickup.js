@@ -11,13 +11,14 @@
    it at the gate in TinyTeachersDeck's Attendance. "New code" replaces a lost card's code. Codes are kept here
    (state.pickup.codes) for printing. QR codes are drawn by js/qrcode-lib.js (MIT, a copy of TinyTeachersDeck's). */
 (() => {
-  const BASE = window.TDBackend ? TDBackend.base() : 'https://backend.demo.invalid';   // lights-on: backend.json (js/backend.js)
+  const BASE = () => window.TDBackend ? TDBackend.base() : 'https://backend.demo.invalid';   // read at each call, not at load   // lights-on: backend.json (js/backend.js)
   const key = () => (state.tsync && state.tsync.key) || '';
   const pad = n => String(n).padStart(2, '0');
   const todayISO = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
   const dmy = iso => iso ? iso.split('-').reverse().join('/') : '';
   async function post(fn, body) {
-    const r = await fetch(`${BASE}/${fn}`, {method:'POST', headers:{'Content-Type':'application/json', 'X-Admin-Secret':key()}, body:JSON.stringify(body)});
+    if(window.TDBackend) await TDBackend.ready;
+    const r = await fetch(`${BASE()}/${fn}`, {method:'POST', headers:{'Content-Type':'application/json', 'X-Admin-Secret':key()}, body:JSON.stringify(body)});
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(r.status === 401 ? L('The school key was refused.', 'Mã trường không đúng.') : (j.errors && j.errors[0] ? `${j.errors[0].field}: ${j.errors[0].code}` : j.error || ('HTTP ' + r.status)));
     return j;

@@ -629,6 +629,7 @@ const PD = (() => {
     const role = await ensureParentRole();
     if (role && role !== 'parent') throw wrongRoleError(role);
     const token = await auth.currentUser.getIdToken();
+    if(window.TDBackend) await TDBackend.ready;   // lights-on: the address backend.json names (js/backend.js)
     const res = await fetch(window.TDBackend ? TDBackend.url(name) : `https://us-central1-${window.FIREBASE_CONFIG.projectId}.cloudfunctions.net/${name}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body || {}) });
     let data = {}; try { data = await res.json(); } catch (e) {}
