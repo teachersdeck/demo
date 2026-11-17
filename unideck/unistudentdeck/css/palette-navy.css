@@ -1,0 +1,23 @@
+/* =========================================================
+   The family palette (navy + gold) for StudentDeck and ParentDeck (cleanup Phase 1, Nov 2026).
+   ---------------------------------------------------------
+   ONE FILE IN TWO APPS: studentdeck/css/palette-navy.css is the copy to edit; tools/check_shared.py keeps
+   ParentDeck's identical. Loaded by each app's css/style.css right after css/tokens.css, it gives the same token
+   names this palette's colours. Everything not named here (danger, good, radius, shadow, the text scale) is the
+   staff palette's, from tokens.css.
+   ========================================================= */
+:root{
+  --tk-surface-0:#141a2e;
+  --tk-surface-1:#1f2a44;
+  --tk-surface-2:#26335a;
+  --tk-surface-3:#25335f;
+  --tk-line:rgba(255,255,255,.12);
+
+  --tk-text-hi:#f4f1e8;
+  --tk-text-lo:#a9b1c9;
+
+  --tk-accent:#e0a93b;
+  --tk-accent-hi:#f3c765;
+  --tk-accent-rgb:224,169,59;
+  --tk-accent-hi-rgb:243,199,101;
+}
