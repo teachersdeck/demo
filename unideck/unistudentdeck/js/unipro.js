@@ -58,6 +58,7 @@
     const F = fb(), u = F && F.auth().currentUser;
     if (!u) throw Object.assign(new Error('Sign in first.'), { code: 'signed-out' });
     const token = await u.getIdToken();
+    if(window.TDBackend) await TDBackend.ready;   // lights-on: the address backend.json names (js/backend.js)
     const res = await fetch(window.TDBackend ? TDBackend.url(fn) : `https://us-central1-${window.FIREBASE_CONFIG.projectId}.cloudfunctions.net/${fn}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body || {}) });
     let data = {}; try { data = await res.json(); } catch (e) {}

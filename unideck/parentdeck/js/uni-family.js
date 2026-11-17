@@ -20,7 +20,7 @@
   try { current = localStorage.getItem('ud_family_student'); } catch (e) {}
 
   /* ---------- data: the real backend, or the demo ---------- */
-  const call = async (name, data) => (await firebase.functions().httpsCallable(name)(data || {})).data;
+  const call = async (name, data) => (await (window.TDBackend ? TDBackend.functions() : firebase.functions()).httpsCallable(name)(data || {})).data;   // lights-on: backend.json (js/backend.js)
   const R = {
     students: () => call('myFamilyStudents', {}).then((r) => r.students),
     join: (code) => call('joinFamily', { code }),
