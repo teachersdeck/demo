@@ -803,3 +803,8 @@ details.join-classcode summary{cursor:pointer;color:var(--muted, #aab);font-size
    Inter for reading (the body rule above) and Quicksand for titles, buttons and big numbers, as in TeachersDeck,
    instead of whatever font the device has. A premium theme's own font still wins (css/premium.css). */
 .brand,.widget-title,.btn,.chip,.app-tray-title,.cal-month,.clock-digital,.tm-time,.big,h3,h4,h5{font-family:var(--tk-font-ui)}
+
+/* 18 Nov 2026 (owner): the Theme widget picks backgrounds, themes and docks with the card deck (js/facepicker.js) */
+#th-grid .th-deck{ grid-column:1/-1; justify-content:flex-start; }
+#th-grid .th-deck .fp-trigger, #th-docks.fp-row .fp-trigger{ margin:0; }
+.shop-deck{ margin:4px 0 10px; }

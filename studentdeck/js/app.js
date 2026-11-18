@@ -2439,27 +2439,58 @@ function buildThemePop() {                                          // Light / D
   }
   $('#dim-toggle', pop).checked = !!state.dim;
   const grid = pop.querySelector('.swatch-grid');
-  grid.innerHTML = PRESETS.map(p => `<button class="swatch ${!bgUrl && state.theme === p.id ? 'active' : ''}" data-theme="${p.id}" style="background:${presetBg(p)}" aria-label="${V('Theme', 'Giao diện')} ${p.id}"></button>`).join('');
   const owned = typeof SD_STORE !== 'undefined' ? SD_STORE.themes() : [], lockedT = typeof SD_STORE !== 'undefined' ? SD_STORE.lockedThemes() : [];
   const box = pop.querySelector('.store-themes'), pgrid = pop.querySelector('.swatch-grid.prem');
-  box.hidden = !owned.length && !lockedT.length;
-  pgrid.innerHTML = owned.map(x => `<button class="swatch ${!bgUrl && state.theme === x.key ? 'active' : ''}" data-theme="${esc(x.key)}" style="background:${x.item.swatch}" title="${esc(x.item.name[V('en', 'vi')] || x.item.name.en)}" aria-label="${V('Theme', 'Giao diện')} ${esc(x.item.name.en)}"></button>`).join('') +
-    lockedT.map(x => `<button class="swatch locked" data-lock="${esc(x.sku)}" data-name="${esc(x.name[V('en', 'vi')] || x.name.en)}" style="background:${x.swatch || '#333'}" title="${V('Ask a grown-up at home', 'Hãy hỏi người lớn ở nhà')}" aria-label="${esc(x.name.en)} (${V('locked', 'chưa mở')})"></button>`).join('');
-  pop.querySelectorAll('[data-theme]').forEach(sw => sw.addEventListener('click', () => {
-    state.theme = sw.dataset.theme; state.customBg = false;          // a preset replaces the photo (it stays stored until the next upload)
+  const pickTheme = id => {
+    state.theme = id; state.customBg = false;          // a preset replaces the photo (it stays stored until the next upload)
     if (bgUrl) { URL.revokeObjectURL(bgUrl); bgUrl = null; }
     save(); applyTheme(); buildThemePop();
-  }));
-  pgrid.querySelectorAll('[data-lock]').forEach(sw => sw.addEventListener('click', e => { e.stopPropagation(); storeLockedNote(pop.querySelector('.store-note'), sw.dataset.lock, sw.dataset.name); }));
+  };
   const ownedD = typeof SD_STORE !== 'undefined' ? SD_STORE.docks() : [], lockedD = typeof SD_STORE !== 'undefined' ? SD_STORE.lockedDocks() : [];
   const dbox = pop.querySelector('.store-docks'), dpick = pop.querySelector('.dock-pick');
   dbox.hidden = !ownedD.length && !lockedD.length;
   const curD = ownedD.find(x => x.key === state.dockStyle) ? state.dockStyle : '';
-  dpick.innerHTML = `<button class="chip${curD ? '' : ' on'}" data-dock="">${V('Standard', 'Chuẩn')}</button>` +
-    ownedD.map(x => `<button class="chip${curD === x.key ? ' on' : ''}" data-dock="${esc(x.key)}">${esc(x.item.name[V('en', 'vi')] || x.item.name.en)}</button>`).join('') +
-    lockedD.map(x => `<button class="chip locked" data-dlock="${esc(x.sku)}" data-name="${esc(x.name[V('en', 'vi')] || x.name.en)}" title="${V('Ask a grown-up at home', 'Hãy hỏi người lớn ở nhà')}">${esc(x.name[V('en', 'vi')] || x.name.en)}</button>`).join('');
-  dpick.querySelectorAll('[data-dock]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); state.dockStyle = b.dataset.dock || null; save(); applyDockStyle(); buildThemePop(); }));
-  dpick.querySelectorAll('[data-dlock]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); storeLockedNote(pop.querySelector('.dock-note'), b.dataset.dlock, b.dataset.name); }));
+  const pickDock = key => { state.dockStyle = key || null; save(); applyDockStyle(); buildThemePop(); };
+  if (typeof FacePicker !== 'undefined') {
+    /* 18 Nov 2026 (owner): the Clock's card deck (js/facepicker.js) for the backgrounds, the premium themes and the docks.
+       Locked items sit in their own group and show the "ask a grown-up" note, as in the Clock. */
+    const L = V('en', 'vi'), nm = n => (n && (n[L] || n.en)) || '', cap = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+    const ASK = V('Ask at home', 'Hỏi ở nhà'), curT = bgUrl ? '' : state.theme;
+    const tOpts = PRESETS.map(p => ({ key: p.id, name: p.name || cap(p.id), bg: presetBg(p), mock: true, group: V('Backgrounds', 'Hình nền') }))
+      .concat(owned.map(x => ({ key: x.key, name: nm(x.item.name), bg: StoreCore.themeBackground ? StoreCore.themeBackground(x.item, false) : x.item.swatch, mock: true, group: V('Premium', 'Cao cấp') })))
+      .concat(lockedT.map(x => ({ key: 'lock:' + x.sku + ':' + nm(x.name), sku: x.sku, name: nm(x.name), bg: x.swatch || '#333', mock: true, locked: true, group: ASK })));
+    const curO = tOpts.find(o => o.key === curT);
+    grid.classList.add('fp-row'); grid.innerHTML = '';
+    const tBtn = FacePicker.trigger({ lang: L, label: V('Choose a theme', 'Chọn giao diện'),
+      current: curO ? { name: curO.name, swatch: curO.bg } : { name: V('Your image', 'Ảnh của bạn'), swatch: 'conic-gradient(#e06565,#e0a93b,#5fb27a,#5b8fd9,#e06565)' } });
+    FacePicker.attach(tBtn, () => ({ lang: L, title: V('Choose a theme', 'Chọn giao diện'), options: tOpts, current: curT, onPick: pickTheme,
+      onLocked: o => { box.hidden = false; storeLockedNote(pop.querySelector('.store-note'), o.sku, o.name); }, refocus: () => $('#theme-pop .swatch-grid .fp-trigger') }));
+    grid.appendChild(tBtn);
+    box.hidden = !owned.length && !lockedT.length; pgrid.hidden = true; box.querySelector('.pop-label').hidden = true;
+    // docks: a little picture of each
+    const styleOf = sku => String(sku || '').replace(/^dock-/, '');
+    const dOpts = [{ key: '', name: V('Standard', 'Chuẩn'), html: FacePicker.dockArt('standard'), group: V('Docks', 'Dock') }]
+      .concat(ownedD.map(x => ({ key: x.key, name: nm(x.item.name), html: FacePicker.dockArt(x.item.style, x.item.swatch), swatch: x.item.swatch, group: V('Docks', 'Dock') })))
+      .concat(lockedD.map(x => ({ key: 'lock:' + x.sku + ':' + nm(x.name), sku: x.sku, name: nm(x.name), html: FacePicker.dockArt(styleOf(x.sku), x.swatch), locked: true, group: ASK })));
+    const curDO = dOpts.find(o => o.key === curD) || dOpts[0];
+    dpick.classList.add('fp-row'); dpick.innerHTML = '';
+    const dBtn = FacePicker.trigger({ lang: L, label: V('Choose a dock', 'Chọn dock'), current: { name: curDO.name, swatch: curDO.swatch || 'linear-gradient(180deg,#2a3542,#161c25)' } });
+    FacePicker.attach(dBtn, () => ({ lang: L, title: V('Choose a dock', 'Chọn dock'), options: dOpts, current: curD, onPick: pickDock,
+      onLocked: o => storeLockedNote(pop.querySelector('.dock-note'), o.sku, o.name), refocus: () => $('#theme-pop .dock-pick .fp-trigger') }));
+    dpick.appendChild(dBtn);
+  } else {
+    grid.innerHTML = PRESETS.map(p => `<button class="swatch ${!bgUrl && state.theme === p.id ? 'active' : ''}" data-theme="${p.id}" style="background:${presetBg(p)}" aria-label="${V('Theme', 'Giao diện')} ${p.id}"></button>`).join('');
+    box.hidden = !owned.length && !lockedT.length;
+    pgrid.innerHTML = owned.map(x => `<button class="swatch ${!bgUrl && state.theme === x.key ? 'active' : ''}" data-theme="${esc(x.key)}" style="background:${x.item.swatch}" title="${esc(x.item.name[V('en', 'vi')] || x.item.name.en)}" aria-label="${V('Theme', 'Giao diện')} ${esc(x.item.name.en)}"></button>`).join('') +
+      lockedT.map(x => `<button class="swatch locked" data-lock="${esc(x.sku)}" data-name="${esc(x.name[V('en', 'vi')] || x.name.en)}" style="background:${x.swatch || '#333'}" title="${V('Ask a grown-up at home', 'Hãy hỏi người lớn ở nhà')}" aria-label="${esc(x.name.en)} (${V('locked', 'chưa mở')})"></button>`).join('');
+    pop.querySelectorAll('[data-theme]').forEach(sw => sw.addEventListener('click', () => pickTheme(sw.dataset.theme)));
+    pgrid.querySelectorAll('[data-lock]').forEach(sw => sw.addEventListener('click', e => { e.stopPropagation(); storeLockedNote(pop.querySelector('.store-note'), sw.dataset.lock, sw.dataset.name); }));
+    dpick.innerHTML = `<button class="chip${curD ? '' : ' on'}" data-dock="">${V('Standard', 'Chuẩn')}</button>` +
+      ownedD.map(x => `<button class="chip${curD === x.key ? ' on' : ''}" data-dock="${esc(x.key)}">${esc(x.item.name[V('en', 'vi')] || x.item.name.en)}</button>`).join('') +
+      lockedD.map(x => `<button class="chip locked" data-dlock="${esc(x.sku)}" data-name="${esc(x.name[V('en', 'vi')] || x.name.en)}" title="${V('Ask a grown-up at home', 'Hãy hỏi người lớn ở nhà')}">${esc(x.name[V('en', 'vi')] || x.name.en)}</button>`).join('');
+    dpick.querySelectorAll('[data-dock]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); pickDock(b.dataset.dock); }));
+    dpick.querySelectorAll('[data-dlock]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); storeLockedNote(pop.querySelector('.dock-note'), b.dataset.dlock, b.dataset.name); }));
+  }
   const files = pop.querySelector('.store-files'), list = typeof SD_STORE !== 'undefined' ? SD_STORE.loaded() : [];
   files.innerHTML = list.length ? list.map(x => `<div class="store-item${x.hidden ? ' off' : ''}"><i style="background:${x.swatch || 'var(--line)'}"></i><span>${esc(x.name[V('en', 'vi')] || x.name.en)}${x.hidden ? ` <em>${V('hidden', 'đã ẩn')}</em>` : ''}</span>${x.hidden ? '' : `<button class="x" data-rm="${esc(x.id)}" aria-label="${V('Remove', 'Gỡ')} ${esc(x.name.en)}">×</button>`}</div>`).join('')
     : `<p class="muted store-empty">${V('Items your family buys, or a .tdpack file, appear here.', 'Mục gia đình mua, hoặc tệp .tdpack, sẽ hiện ở đây.')}</p>`;
@@ -2652,7 +2683,7 @@ $('#theme-pill').addEventListener('click', e => {
   $('#theme-pop').hidden = !open;
   $('#theme-pill').setAttribute('aria-expanded', String(open));
 });
-document.addEventListener('click', e => { if (!e.target.closest('.theme-pill-wrap')) $('#theme-pop').hidden = true; });
+document.addEventListener('click', e => { if (!e.target.closest('.theme-pill-wrap, .fp-veil')) $('#theme-pop').hidden = true; });   // the card deck's pop-up keeps the Theme pop open
 applyTheme();
 
 touchDay(); drawXP(0, false); checkBadges();

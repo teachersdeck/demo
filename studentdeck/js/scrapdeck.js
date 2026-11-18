@@ -790,6 +790,30 @@
       }
     }
 
+    /* ----- page templates: the Clock's card deck (js/facepicker.js), each card a little drawing of the page (18 Nov 2026) ----- */
+    const okColour = c => typeof c === 'string' && /^#[0-9a-f]{3,8}$/i.test(c) ? c : null;
+    function layoutThumb(bg, items) {
+      const B = BG[bg] || BG.white, W = C.PAGE_W, H = C.PAGE_H;
+      const shapes = (items || []).slice(0, 40).map(it => {
+        const x = +it.x || 0, y = +it.y || 0, w = Math.max(4, +it.w || 0), h = Math.max(4, +it.h || 0), rot = +it.rot || 0;
+        const tf = rot ? ` transform="rotate(${rot.toFixed(1)} ${(x + w / 2).toFixed(0)} ${(y + h / 2).toFixed(0)})"` : '';
+        if (it.type === 'text') return `<rect x="${x}" y="${y + h * 0.3}" width="${w * 0.8}" height="${Math.max(18, h * 0.4)}" rx="10" fill="${okColour(it.color) || '#444'}" opacity=".75"${tf}/>`;
+        if (it.type === 'tape') return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${okColour(it.color) || '#9bd3f0'}" opacity=".85"${tf}/>`;
+        if (it.type === 'note') return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${okColour(it.color) || '#fff3b0'}" stroke="rgba(0,0,0,.18)" stroke-width="4"${tf}/>`;
+        return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="rgba(0,0,0,.18)"${tf}/>`;
+      }).join('');
+      return `<svg viewBox="0 0 ${W} ${H}" width="104" height="70" aria-hidden="true" style="border-radius:6px;box-shadow:0 6px 12px rgba(0,0,0,.3)"><rect width="${W}" height="${H}" fill="${okColour(B[0]) || '#fff'}"/>${shapes}</svg>`;
+    }
+    function openLayoutDeck(anchor) {
+      if (typeof FacePicker === 'undefined') return openPop('layouts');
+      closePop();
+      const options = Object.keys(C.LAYOUTS).map(k => ({ key: k, name: C.LAYOUTS[k].name, html: layoutThumb(C.LAYOUTS[k].bg, C.LAYOUTS[k].items), group: 'Built in' }))
+        .concat(Object.keys(REG.layouts).map(k => { const L = REG.layouts[k], src = (L.pack.items || []).find(x => x.id === L.id) || {};
+          return { key: k, name: L.name.en, html: layoutThumb(src.bg, src.items), group: L.pack.name ? L.pack.name.en : 'Store', badge: 'Store' }; }));
+      FacePicker.open({ anchor, lang: 'en', title: 'Add a new page laid out for…', options, current: '', pickLabel: () => 'Add this page',
+        onPick: k => addLayoutPage(k), refocus: () => anchor && anchor.isConnected ? anchor : null });
+    }
+
     /* ----- pop-ups for stickers and shapes ----- */
     function closePop() { S.pop = ''; const p = q('.sc-pop'); if (p) { p.hidden = true; p.innerHTML = ''; } }
     function openPop(kind) {
@@ -981,7 +1005,7 @@
         case 'tape': addItem({ type: 'tape', w: 220, h: 46, color: ['#f4a6c0', '#9bd3f0', '#ffd166', '#b8e0a8'][curPage().items.length % 4], pattern: 'stripes', rot: -4 }); break;
         case 'note': { const n = addItem({ type: 'note', text: 'Write here\u2026', w: 280, h: 210, color: '#fff3b0' }); if (n) startTextEdit(n); break; }
         case 'stamps': openPop('stamps'); break;
-        case 'layouts': openPop('layouts'); break;
+        case 'layouts': openLayoutDeck(b); break;
         case 'crop': if (it) { if (S.cropping === it.id) endCrop(); else startCrop(it); } break;
         case 'group': { const ids = selIds(); if (C.groupItems(curPage().items, ids)) { commit(); updateCtx(); toast('Grouped ' + ids.length + ' things'); } break; }
         case 'ungroup': C.ungroupItems(curPage().items, selIds()); commit(); updateCtx(); break;

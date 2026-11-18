@@ -2222,17 +2222,27 @@ function buildDockSwatches(){
   const grid = document.getElementById('dock-styles'); if(!grid) return;
   grid.innerHTML = '';
   const L = state.lang === 'vi' ? 'vi' : 'en';
-  [{ style:'standard', name:{ en:t('dock_standard') }, swatch:'linear-gradient(180deg,#2a3542,#161c25)' }].concat(adDockItems()).forEach(o=>{
+  const opts = [{ style:'standard', name:{ en:t('dock_standard') }, swatch:'linear-gradient(180deg,#2a3542,#161c25)' }].concat(adDockItems());
+  const pickDock = style=>{
+    state.dockStyle = style; saveState(); applyAdDock(); buildDockSwatches();
+    if(style === 'radial' && !state.radialHintSeen){ state.radialHintSeen = true; saveState(); toast(t('dock_radial_hint'), 7000); }   // one time: how to open the rings
+  };
+  if(typeof FacePicker !== 'undefined'){   // 18 Nov 2026 (owner): the card deck (js/facepicker.js), each card a little picture of the dock
+    const curStyle = opts.some(o=>o.style === state.dockStyle) ? state.dockStyle : 'standard', cur = opts.find(o=>o.style === curStyle);
+    const btn = FacePicker.trigger({ lang: L, label: t('dock_title') || 'Dock', current: { name: cur.name[L] || cur.name.en, swatch: cur.swatch } });
+    FacePicker.attach(btn, ()=>({ lang: L, title: t('dock_title') || 'Dock', current: curStyle,
+      options: opts.map(o=>({ key: o.style, name: o.name[L] || o.name.en, html: FacePicker.dockArt(o.style, o.swatch), swatch: o.swatch })),
+      onPick: pickDock, refocus: ()=>document.querySelector('#dock-styles .fp-trigger') }));
+    grid.classList.add('fp-row'); grid.appendChild(btn);
+  }
+  else opts.forEach(o=>{
     const b = document.createElement('button'); b.type = 'button';
     const on = (state.dockStyle || 'standard') === o.style;
     b.className = 'dock-style-opt' + (on ? ' active' : ''); b.setAttribute('aria-pressed', on);
     b.innerHTML = '<span class="dock-style-sw"></span><span class="dock-style-name"></span>';
     b.querySelector('.dock-style-sw').style.background = o.swatch || '#1e2732';
     b.querySelector('.dock-style-name').textContent = o.name[L] || o.name.en;
-    b.addEventListener('click', ()=>{
-      state.dockStyle = o.style; saveState(); applyAdDock(); buildDockSwatches();
-      if(o.style === 'radial' && !state.radialHintSeen){ state.radialHintSeen = true; saveState(); toast(t('dock_radial_hint'), 7000); }   // one time: how to open the rings
-    });
+    b.addEventListener('click', ()=> pickDock(o.style));
     grid.appendChild(b);
   });
   const rm = document.getElementById('radial-mode');   // with Radial the rings hold every widget, so the docks can go
