@@ -1820,22 +1820,13 @@ function front(el) {
   if (+el.style.zIndex !== topZ) el.style.zIndex = ++topZ;
 }   // full-screen widgets stay underneath
 
+// Moving and resizing go through js/winmove.js, one file in all four apps (cleanup Phase 2).
 function gesture(handle, el, mode, id) {
-  handle.addEventListener('pointerdown', e => {
-    if (e.button !== 0 || (mode === 'move' && e.target.closest('button'))) return;
-    const sx = e.clientX, sy = e.clientY, ox = el.offsetLeft, oy = el.offsetTop, ow = el.offsetWidth, oh = el.offsetHeight;
-    handle.setPointerCapture(e.pointerId); front(el); e.preventDefault();
-    const mv = ev => {
-      const dx = ev.clientX - sx, dy = ev.clientY - sy;
-      if (mode === 'move') { el.style.left = clamp(ox + dx, 0, wall.clientWidth - 150) + 'px'; el.style.top = clamp(oy + dy, 0, wall.clientHeight - 44) + 'px'; }
-      else { el.style.width = Math.max(220, ow + dx) + 'px'; el.style.height = Math.max(140, oh + dy) + 'px'; }
-    };
-    const up = () => {
-      ['pointermove', 'pointerup', 'pointercancel'].forEach((t, i) => handle.removeEventListener(t, [mv, up, up][i]));
-      const L = ui.layout[id]; L.x = el.offsetLeft; L.y = el.offsetTop; L.w = el.offsetWidth; if (!L.min) L.h = el.offsetHeight; saveUI();
-    };
-    handle.addEventListener('pointermove', mv); handle.addEventListener('pointerup', up); handle.addEventListener('pointercancel', up);
-  });
+  WinMove.attach({ el, handle, kind: mode === 'move' ? 'move' : 'size', minW: 220, minH: 140,
+    skip: e => mode === 'move' && !!e.target.closest('button'),
+    bounds: WinMove.wallBounds(wall),
+    start: () => front(el),
+    end: () => { const L = ui.layout[id]; L.x = el.offsetLeft; L.y = el.offsetTop; L.w = el.offsetWidth; if (!L.min) L.h = el.offsetHeight; saveUI(); } });
 }
 
 function openWidget(id) {

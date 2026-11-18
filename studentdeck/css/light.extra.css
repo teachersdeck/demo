@@ -3,7 +3,7 @@
    2. Light-mode fixes the generator can't guess, each scoped to html[data-mode="light"]. */
 
 /* ---------- 1. where the Light / Dark switch sits (its look is css/mode.css, shared by all four apps) ---------- */
-.swatch-pop .pop-label{ margin:0 0 6px; font-size:11px; font-weight:700; letter-spacing:.3px; color:var(--lo); }
+.swatch-pop .pop-label{ margin:0 0 6px; font-size:var(--tk-fs-12); font-weight:700; letter-spacing:.3px; color:var(--lo); }
 .swatch-pop .mode-switch{ margin-bottom:12px; }
 #mode-toggle{ --deck-bar-h:32px; }
 
