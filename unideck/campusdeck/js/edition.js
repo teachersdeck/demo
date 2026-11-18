@@ -12,4 +12,4 @@ window.DECK_EDITION = Object.freeze({
   uni: true                   // the university edition
 });
 document.documentElement.classList.add('uni');
-document.title = '🏛️ CampusDeck';
+document.title = 'CampusDeck';

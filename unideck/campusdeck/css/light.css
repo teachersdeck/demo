@@ -8,44 +8,40 @@
   --tk-surface-1:#f3f4f6;
   --tk-surface-2:#f8f9fa;
   --tk-surface-3:#fefefe;
-  --tk-line:rgba(15,23,42,0.099);
-  --tk-text-hi:#21242a;
-  --tk-text-lo:#636975;
-  --tk-shadow-panel:0 12px 30px rgba(0,0,0,0.158), 0 2px 6px rgba(0,0,0,0.113);
+  --tk-line:rgba(15,23,42,0.388);
+  --tk-text-hi:#17191d;
+  --tk-text-lo:#525761;
+  --tk-shadow-panel:0 12px 30px rgba(0,0,0,0.28), 0 2px 6px rgba(0,0,0,0.2);
   --tk-dock-bg:rgba(240,241,244,0.72);
   --tk-edge-bg:rgba(240,241,244,0.78);
+  --tk-tint-1:rgba(15,23,42,0.033);
+  --tk-tint-2:rgba(15,23,42,0.066);
+  --tk-tint-3:rgba(15,23,42,0.11);
+  --tk-tint-4:rgba(15,23,42,0.176);
+  --tk-tint-5:rgba(15,23,42,0.275);
+  --tk-shade-1:rgba(0,0,0,0.09);
+  --tk-shade-2:rgba(0,0,0,0.15);
+  --tk-shade-3:rgba(0,0,0,0.21);
+  --tk-shade-4:rgba(0,0,0,0.27);
+  --tk-shade-5:rgba(0,0,0,0.36);
+  --tk-shadow-1:rgba(0,0,0,0.12);
+  --tk-shadow-2:rgba(0,0,0,0.2);
+  --tk-shadow-3:rgba(0,0,0,0.28);
+  --tk-shadow-4:rgba(0,0,0,0.36);
+  --tk-shadow-5:rgba(0,0,0,0.48);
 }
 
 /* ---- from css/shell.css ---- */
-:where(html[data-mode="light"]) .app-tray-tab:hover{
-  background:rgba(15,23,42,0.11);
-}
 :where(html[data-mode="light"]) .app-tray-backdrop{
   background:rgba(6,9,14,0.33);
 }
-:where(html[data-mode="light"]) .app-tray{
-  box-shadow:0 -16px 40px rgba(0,0,0,0.203);
-}
-:where(html[data-mode="light"]) .dock-item:hover{
-  background:rgba(15,23,42,0.088);
-}
 :where(html[data-mode="light"]) .dock-item.active .dock-ic{
+  background:rgba(232,163,61,0.46);
   color:#bf7402;
-}
-:where(html[data-mode="light"]) .dock-ic{
-  background:rgba(15,23,42,0.044);
-}
-:where(html[data-mode="light"]) .app-tray-item:hover{
-  background:rgba(15,23,42,0.088);
 }
 :where(html[data-mode="light"]) .app-tray-item.active .dock-ic{
+  background:rgba(232,163,61,0.46);
   color:#bf7402;
-}
-:where(html[data-mode="light"]) .layout-mode-opt:hover{
-  background:rgba(15,23,42,0.033);
-}
-:where(html[data-mode="light"]) .dock-vis-row{
-  background:rgba(15,23,42,0.022);
 }
 
 /* ---- from css/shell-staff.css ---- */
@@ -58,47 +54,21 @@
 :where(html[data-mode="light"]) .lang-toggle{
   background:rgba(242,243,245,0.55);
 }
-:where(html[data-mode="light"]) .widget-drag:hover{
-  background:rgba(15,23,42,0.066);
-}
 :where(html[data-mode="light"]) .lock-hint{
   color:#bf7402 !important;
-}
-:where(html[data-mode="light"]) .lang-toggle button:not(.active):hover{
-  background:rgba(15,23,42,0.066);
 }
 :where(html[data-mode="light"]) .icon-btn:hover{
   background:rgba(248,249,250,0.85);
 }
-:where(html[data-mode="light"]) .widget.dragging{
-  box-shadow:0 20px 40px rgba(0,0,0,0.225);
-}
-:where(html[data-mode="light"]) .widget-min:hover{
-  background:rgba(15,23,42,0.088);
-}
 :where(html[data-mode="light"]) .widget-close:hover{
+  background:rgba(224,101,101,0.48);
   color:#a81a1a;
 }
 :where(html[data-mode="light"]) .wbtn:hover{
   background:#fefefe;
 }
-:where(html[data-mode="light"]) .brand-mark{
-  color:#b5710d;
-}
-:where(html[data-mode="light"]) .widget-head{
-  background:rgba(15,23,42,0.022);
-}
-:where(html[data-mode="light"]) .app-tray-item{
-  background:rgba(15,23,42,0.033);
-}
 :where(html[data-mode="light"]) .widget{
   background:rgba(243,244,246,0.86);
-}
-:where(html[data-mode="light"]) .dock-item{
-  background:rgba(15,23,42,0.033);
-}
-:where(html[data-mode="light"]) .drawer{
-  box-shadow:-16px 0 40px rgba(0,0,0,0.18);
 }
 
 /* ---- from css/style.css ---- */
@@ -116,69 +86,61 @@
 }
 :where(html[data-mode="light"]) .wbtn.danger{
   color:#a81a1a;
+  border-color:rgba(191,38,38,0.9);
+}
+:where(html[data-mode="light"]) .wbtn.danger:hover{
+  background:rgba(224,101,101,0.42);
 }
 :where(html[data-mode="light"]) .dock-item.active{
+  background:rgba(232,163,61,0.44);
   color:#bf7402;
 }
 :where(html[data-mode="light"]) .app-tray-item.active{
+  background:rgba(232,163,61,0.44);
   color:#bf7402;
 }
 :where(html[data-mode="light"]) .ghost-btn.danger{
   color:#a81a1a;
-}
-:where(html[data-mode="light"]) .tile{
-  background:rgba(15,23,42,0.033);
-}
-:where(html[data-mode="light"]) .bar .track{
-  background:rgba(15,23,42,0.066);
-}
-:where(html[data-mode="light"]) .chip{
-  background:rgba(15,23,42,0.033);
+  border-color:rgba(191,38,38,0.9);
 }
 :where(html[data-mode="light"]) .chip.on{
+  background:rgba(232,163,61,0.46);
   color:#bf7402;
+  border-color:rgba(205,132,24,0.9);
 }
 :where(html[data-mode="light"]) .badge.full{
+  background:rgba(111,207,151,0.46);
   color:#2b9657;
 }
 :where(html[data-mode="light"]) .badge.warn{
+  background:rgba(232,163,61,0.46);
   color:#bf7402;
 }
 :where(html[data-mode="light"]) .badge.bad{
+  background:rgba(224,101,101,0.46);
   color:#a81a1a;
 }
-:where(html[data-mode="light"]) .code-box button:hover{
-  background:rgba(15,23,42,0.088);
-}
-:where(html[data-mode="light"]) .cal-cell{
-  background:rgba(15,23,42,0.022);
-}
-:where(html[data-mode="light"]) .cal-cell.has-evt:hover{
-  background:rgba(15,23,42,0.066);
+:where(html[data-mode="light"]) .cal-cell.sel{
+  background:rgba(232,163,61,0.44);
 }
 :where(html[data-mode="light"]) .err-box{
   color:#a81a1a;
+  background:rgba(224,101,101,0.4);
+  border:1px solid rgba(191,38,38,0.9);
 }
 :where(html[data-mode="light"]) .ss-link{
   color:#bf7402;
 }
-:where(html[data-mode="light"]) .ss-x:hover{
-  background:rgba(15,23,42,0.088);
-}
-:where(html[data-mode="light"]) .ss-banner{
-  background:rgba(15,23,42,0.044);
-}
 :where(html[data-mode="light"]) .ss-banner.warn{
   color:#bf7402;
+  background:rgba(232,163,61,0.38);
+  border-color:rgba(205,132,24,0.9);
 }
 :where(html[data-mode="light"]) .ss-delta.up{
   color:#2b9657;
 }
 :where(html[data-mode="light"]) .ss-delta.down{
   color:#a81a1a;
-}
-:where(html[data-mode="light"]) .ss-sub{
-  background:rgba(15,23,42,0.033);
 }
 :where(html[data-mode="light"]) .ss-sum.up{
   color:#2b9657;
@@ -195,20 +157,32 @@
 :where(html[data-mode="light"]) .ss-barfill{
   fill:#b5710d;
 }
-:where(html[data-mode="light"]) .ss-btrack{
-  background:rgba(15,23,42,0.066);
+:where(html[data-mode="light"]) button.ss-legrow:hover,
+:where(html[data-mode="light"]) .ss-legrow.on{
+  background:rgba(232,163,61,0.42);
 }
-:where(html[data-mode="light"]) .ss-table th{
-  background:rgba(15,23,42,0.033);
+:where(html[data-mode="light"]) button.ss-barrow:hover,
+:where(html[data-mode="light"]) .ss-barrow.on{
+  background:rgba(232,163,61,0.42);
+}
+:where(html[data-mode="light"]) .ss-table tbody tr:hover,
+:where(html[data-mode="light"]) .ss-table tbody tr.on{
+  background:rgba(232,163,61,0.4);
 }
 :where(html[data-mode="light"]) .ss-spark polyline{
   stroke:#299888;
 }
 :where(html[data-mode="light"]) .ss-banner.demo{
   color:#299888;
+  background:rgba(71,201,182,0.23);
+  border-color:rgba(52,177,159,0.7);
 }
 :where(html[data-mode="light"]) .demo-btn{
+  background:rgba(232,163,61,0.44);
   color:#b5710d;
+}
+:where(html[data-mode="light"]) .demo-btn:hover{
+  background:rgba(232,163,61,0.56);
 }
 :where(html[data-mode="light"]) .demotab{
   background:rgba(247,245,240,0.88);
@@ -216,7 +190,6 @@
 }
 :where(html[data-mode="light"]) .demopanel{
   background:rgba(242,243,245,0.94);
-  box-shadow:0 10px 30px rgba(0,0,0,0.203);
 }
 :where(html[data-mode="light"]) .dock-top-item{
   background:rgba(242,243,245,0.55);
@@ -226,6 +199,10 @@
 }
 :where(html[data-mode="light"]) .dock-top-item.active{
   color:#bf7402;
+  background:rgba(232,163,61,0.44);
+}
+:where(html[data-mode="light"]) .layout-mode-opt.active{
+  background:rgba(232,163,61,0.38);
 }
 :where(html[data-mode="light"]) .dock-vis-row input{
   accent-color:#b5710d;
@@ -233,41 +210,50 @@
 :where(html[data-mode="light"]) .topbar.auto-hide{
   background:rgba(240,241,244,0.88);
 }
-:where(html[data-mode="light"]) details.fold > summary .sumbar .track{
-  background:rgba(15,23,42,0.066);
+:where(html[data-mode="light"]) .push-confirm{
+  background:rgba(232,163,61,0.38);
+}
+:where(html[data-mode="light"]) .dir-banner{
+  border:1px solid rgba(205,132,24,0.9);
+  background:rgba(232,163,61,0.4);
 }
 :where(html[data-mode="light"]) .dir-confirm{
   color:#bf7402;
 }
-:where(html[data-mode="light"]) .dir-row:hover{
-  background:rgba(15,23,42,0.033);
-}
-:where(html[data-mode="light"]) .dir-detail{
-  background:rgba(0,0,0,0.108);
+:where(html[data-mode="light"]) .dir-row.sel{
+  background:rgba(232,163,61,0.37);
 }
 :where(html[data-mode="light"]) .badge.t-teacher{
+  background:rgba(71,201,182,0.31);
   color:#299888;
 }
 :where(html[data-mode="light"]) .badge.t-student{
+  background:rgba(232,163,61,0.46);
   color:#bf7402;
 }
 :where(html[data-mode="light"]) .badge.t-parent{
+  background:rgba(138,147,230,0.33);
   color:#1a2ca8;
 }
 :where(html[data-mode="light"]) .badge.t-staff{
   background:rgba(15,23,42,0.11);
 }
-:where(html[data-mode="light"]) .dir-panel{
-  background:rgba(0,0,0,0.09);
-}
 :where(html[data-mode="light"]) .dir-err{
   color:#a81a1a;
 }
-:where(html[data-mode="light"]) .dir-plan{
-  background:rgba(15,23,42,0.044);
+:where(html[data-mode="light"]) .dir-dup{
+  border:1px solid rgba(205,132,24,0.9);
+  background:rgba(232,163,61,0.38);
 }
 :where(html[data-mode="light"]) .ss-sub:hover{
-  box-shadow:0 6px 18px rgba(0,0,0,0.113);
+  border-color:rgba(205,132,24,0.9);
+}
+:where(html[data-mode="light"]) .ss-tiles .tile:hover{
+  border-color:rgba(205,132,24,0.9);
+}
+:where(html[data-mode="light"]) .ss-tiles .tile{
+  border-color:rgba(230,156,0,0.66);
+  background:rgba(255,203,92,0.2);
 }
 :where(html[data-mode="light"]) .ss-tiles .tile b,
 :where(html[data-mode="light"]) .ss-overview .tile b{
@@ -277,60 +263,74 @@
   color:#b4800e;
 }
 :where(html[data-mode="light"]) .ss-tiles .tile.na b{
-  color:#736749;
+  color:#5e553c;
 }
 :where(html[data-mode="light"]) .ss-tiles .tile b small.ss-u{
   color:#b4800e;
 }
+:where(html[data-mode="light"]) .ss-tiles .tile:hover{
+  border-color:rgba(230,156,0,0.9);
+}
 :where(html[data-mode="light"]) .ss-pickcol input{
   accent-color:#b5710d;
 }
+:where(html[data-mode="light"]) .ss-table tbody tr.picked{
+  background:rgba(245,184,92,0.37);
+}
+:where(html[data-mode="light"]) .ss-cmp{
+  border:1px solid rgba(216,135,13,0.9);
+  background:rgba(245,184,92,0.34);
+}
 :where(html[data-mode="light"]) .ss-cmp-head b{
-  color:#c28400;
+  color:#bf7402;
 }
 :where(html[data-mode="light"]) .ss-cmptable td.best{
-  color:#c28400;
+  color:#bf7402;
 }
-:where(html[data-mode="light"]) .sd-tile{
-  background:rgba(15,23,42,0.033);
+:where(html[data-mode="light"]) .ss-root{
+  --st-good-bg:rgba(46,230,107,0.37);
+  --st-watch-bg:rgba(255,230,0,0.35);
+  --st-bad-bg:rgba(255,59,59,0.39);
 }
 :where(html[data-mode="light"]) .sd-step.done .sd-mark{
+  background:rgba(111,207,151,0.46);
   color:#2b9657;
+  border-color:rgba(57,172,105,0.9);
 }
 :where(html[data-mode="light"]) .sd-step.doing .sd-mark{
+  background:rgba(232,163,61,0.46);
   color:#bf7402;
+  border-color:rgba(205,132,24,0.9);
 }
 :where(html[data-mode="light"]) .sd-dept{
   color:#bf7402;
-}
-:where(html[data-mode="light"]) .sd-card{
-  background:rgba(15,23,42,0.033);
 }
 :where(html[data-mode="light"]) .sd-lines a,
 :where(html[data-mode="light"]) .sd-table a{
   color:#299888;
 }
 :where(html[data-mode="light"]) .sd-link.stale{
+  border-color:rgba(191,38,38,0.9);
   color:#a81a1a;
 }
 :where(html[data-mode="light"]) .sd-x:hover,
 :where(html[data-mode="light"]) .sd-x:focus-visible{
+  background:rgba(224,101,101,0.55);
   color:#a81a1a;
 }
-:where(html[data-mode="light"]) .sch-row{
-  background:rgba(15,23,42,0.055);
-}
-:where(html[data-mode="light"]) .tn-item{
-  background:rgba(15,23,42,0.055);
+:where(html[data-mode="light"]) .sch-once{
+  background:rgba(245,184,92,0.42);
+  border:1px solid rgba(216,135,13,0.9);
 }
 :where(html[data-mode="light"]) .tn-state.read{
   color:#2f9358;
 }
-:where(html[data-mode="light"]) .sc-grid{
-  background:rgba(15,23,42,0.022);
+:where(html[data-mode="light"]) .sc-block{
+  background:rgba(110,168,254,0.37);
+  border:1px solid rgba(2,93,228,0.9);
 }
-:where(html[data-mode="light"]) .pol-row{
-  border-bottom:1px solid rgba(15,23,42,0.088);
+:where(html[data-mode="light"]) .sc-block.sc-clash{
+  background:rgba(255,99,99,0.43);
 }
 :where(html[data-mode="light"]) .fl-err{
   color:#c21b00;

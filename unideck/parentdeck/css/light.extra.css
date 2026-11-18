@@ -3,7 +3,7 @@
    2. Light-mode fixes the generator can't guess, each scoped to html[data-mode="light"]. */
 
 /* ---------- 1. where the Light / Dark switch sits (its look is css/mode.css, shared by all four apps) ---------- */
-.theme-label{ margin:0 0 6px; font-size:11.5px; font-weight:700; letter-spacing:.3px; color:var(--lo); }
+.theme-label{ margin:0 0 6px; font-size:var(--tk-fs-12); font-weight:700; letter-spacing:.3px; color:var(--lo); }
 #th-mode{ margin-bottom:14px; }
 #mode-toggle{ --deck-bar-h:32px; --deck-bar-r:10px; }
 

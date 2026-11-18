@@ -457,19 +457,12 @@ if(typeof FL_STRINGS !== 'undefined') Object.assign(STRINGS, FL_STRINGS);
 if(typeof SHELL_I18N !== 'undefined'){
   Object.keys(SHELL_I18N).forEach(k=>{ STRINGS[k] = Object.assign({}, SHELL_I18N[k], STRINGS[k] || {}); });
 }
-function t(key, vars){
-  const entry = STRINGS[key];
-  let str = (entry && (entry[state.lang] || entry.en)) || key;
-  if(vars){ Object.keys(vars).forEach(k=>{ str = str.replace(`{${k}}`, vars[k]); }); }
-  return str;
-}
+function t(key, vars){ return DeckI18n.t(STRINGS, state.lang, key, vars); }   // js/i18n.js, the same in every suite app
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function localizeNode(root){
-  root = root || document;
-  root.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.dataset.i18n); });
-  root.querySelectorAll('[data-i18n-widget-label]').forEach(el=>{ el.textContent = widgetLabel(el.dataset.i18nWidgetLabel); });
-  root.querySelectorAll('[data-i18n-aria]').forEach(el=>{ el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
-  root.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.title = t(el.dataset.i18nTitle); });
+function localizeNode(root){   // js/i18n.js does the shared attributes; widget labels are AdminDeck's own
+  DeckI18n.localize(root, t, scope => {
+    scope.querySelectorAll('[data-i18n-widget-label]').forEach(el=>{ el.textContent = widgetLabel(el.dataset.i18nWidgetLabel); });
+  });
 }
 
 /* ---------------- Icons ---------------- */
@@ -849,13 +842,6 @@ function bringToFront(el){
   if(+el.style.zIndex === topZ) return;
   el.style.zIndex = ++topZ;
 }
-let gesture = null;
-function startGesture(g){
-  if(gesture && gesture.pointerId !== g.pointerId) endGesture();
-  gesture = g;
-  bringToFront(g.el);
-  if(g.kind === 'move') g.el.classList.add('dragging');
-}
 /* The wall fills the whole window, but the top bar and the dock are drawn ABOVE it (z-index 5 vs the wall's 2). Before v0.4.1 a window could be
    dragged until its title bar sat under either of them — and a title bar you can't click can't be dragged back ("I can't move a window if I
    put it at the top"). Now the title bar always stays inside the free band between the two. rescueWidgets() applies the same rule to
@@ -886,56 +872,22 @@ function rescueWidgets(){
   if(changed) saveState();
 }
 window.addEventListener('resize', rescueWidgets);
-function moveGesture(e){
-  if(!gesture || e.pointerId !== gesture.pointerId) return;
-  const g = gesture;
-  const dx = e.clientX - g.sx, dy = e.clientY - g.sy;
-  if(g.kind === 'move'){
-    const p = clampToBand(g.el, g.ox + dx, g.oy + dy);
-    g.el.style.left = p.x + 'px';
-    g.el.style.top  = p.y + 'px';
-  } else {
-    g.el.style.width  = Math.max(260, g.ox + dx) + 'px';
-    g.el.style.height = Math.max(160, g.oy + dy) + 'px';
-  }
-}
-function endGesture(e){
-  if(!gesture) return;
-  if(e && e.pointerId !== undefined && e.pointerId !== gesture.pointerId) return;
-  const g = gesture;
-  gesture = null;
-  g.el.classList.remove('dragging');
-  const layout = state.layout[g.id];
-  if(layout){
-    if(g.kind === 'move'){ layout.x = g.el.offsetLeft; layout.y = g.el.offsetTop; }
-    else { layout.w = g.el.offsetWidth; layout.h = g.el.offsetHeight; }
-    saveState();
-  }
-}
-window.addEventListener('pointermove', moveGesture);
-window.addEventListener('pointerup', endGesture);
-window.addEventListener('pointercancel', endGesture);
-window.addEventListener('blur', ()=> endGesture());
 
+// Moving and resizing go through js/winmove.js, one file in all four apps (cleanup Phase 2). The title bar stays inside
+// the free band between the top bar and the dock (clampToBand). The smallest a window can be made is 220px wide, the
+// windows' minimum since 17 Nov 2026 (the owner's decision; this was still 260px here).
 function makeDraggable(el, id){
-  const head = el.querySelector('.widget-head');
-  head.addEventListener('pointerdown', e=>{
-    if(e.button != null && e.button !== 0) return;
-    if(e.target.closest('.widget-head-actions')) return;
-    startGesture({ kind:'move', el, id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, ox:el.offsetLeft, oy:el.offsetTop });
-    try{ head.setPointerCapture(e.pointerId); }catch(err){}
-    e.preventDefault();
-  });
+  WinMove.attach({ el, handle: el.querySelector('.widget-head'), kind: 'move',
+    skip: e => !!e.target.closest('.widget-head-actions'),
+    bounds: (x, y) => clampToBand(el, x, y),
+    start: () => { bringToFront(el); el.classList.add('dragging'); },
+    end: () => { el.classList.remove('dragging'); const L = state.layout[id]; if(L){ L.x = el.offsetLeft; L.y = el.offsetTop; saveState(); } } });
   el.addEventListener('pointerdown', ()=> bringToFront(el));
 }
 function makeResizable(el, id){
-  const handle = el.querySelector('.widget-resize');
-  handle.addEventListener('pointerdown', e=>{
-    if(e.button != null && e.button !== 0) return;
-    startGesture({ kind:'size', el, id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, ox:el.offsetWidth, oy:el.offsetHeight });
-    try{ handle.setPointerCapture(e.pointerId); }catch(err){}
-    e.preventDefault(); e.stopPropagation();
-  });
+  WinMove.attach({ el, handle: el.querySelector('.widget-resize'), kind: 'size', minW: 220, minH: 160,
+    start: () => bringToFront(el),
+    end: () => { const L = state.layout[id]; if(L){ L.w = el.offsetWidth; L.h = el.offsetHeight; saveState(); } } });
 }
 function defaultLayout(def){
   const usedCount = Object.keys(state.layout).filter(k => { const d = WIDGETS.find(w => w.id === k); return !(d && d.full); }).length;

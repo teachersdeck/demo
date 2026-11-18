@@ -23,5 +23,5 @@
 
   const html = document.documentElement;
   html.classList.add('uni'); html.classList.toggle('no-xp', !xpOn);
-  document.title = '🎓 UniStudentDeck';
+  document.title = 'UniStudentDeck';
 })();

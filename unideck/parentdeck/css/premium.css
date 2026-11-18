@@ -24,7 +24,7 @@ html[data-td-skin]:not([data-mode="light"]){
 /* Widgets: frosted glass over the background, with a soft highlight along the top edge */
 html[data-td-skin]:not([data-mode="light"]) .widget:not(.full){
   background:var(--sk-card);
-  background-image:linear-gradient(180deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.03) 28%, rgba(255,255,255,0) 55%);
+  background-image:linear-gradient(180deg, rgba(255,255,255,.13) 0%, var(--tk-tint-1) 28%, rgba(255,255,255,0) 55%);
   -webkit-backdrop-filter:blur(18px) saturate(140%); backdrop-filter:blur(18px) saturate(140%);
   box-shadow:var(--shadow-panel), inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(var(--sk-line-rgb),.10), inset 0 -18px 30px -24px rgba(var(--sk-acc-rgb),.25);
 }
@@ -89,7 +89,7 @@ html.td-arrive :is(.dock, .edge-dock){ animation:td-settle .7s cubic-bezier(.2,.
 /* ---------- Top bar with the new docks (js/app.js applyTopBarMode): Floating, Magnifying, Circle (and Radial without
    docks) tuck the top bar away; it drops down at the top edge, or stays shown ("Always shown"). ---------- */
 html:not(.bento-phone) body.tb-drop .top{ transform:translateY(calc(-100% - 6px)); transition:transform .22s ease; }
-html:not(.bento-phone) body.tb-drop.tb-open .top{ transform:none; background:var(--sk-dock, rgba(20,26,46,.86)); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); box-shadow:0 10px 30px rgba(0,0,0,.3); }
+html:not(.bento-phone) body.tb-drop.tb-open .top{ transform:none; background:var(--sk-dock, rgba(20,26,46,.86)); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); box-shadow:0 10px 30px var(--tk-shadow-3); }
 html[data-mode="light"]:not(.bento-phone) body.tb-drop.tb-open .top{ background:rgba(255,255,255,.88); }
 html:not(.bento-phone) body.tb-drop #wall{ top:0; }
 #tb-edge{ display:none; position:fixed; left:0; right:0; top:0; height:6px; z-index:7; }
@@ -109,7 +109,7 @@ body.rad-compact #dock .dock-item{ width:46px; padding:6px 0; }
 body.rad-compact #dock .dock-item > span:not(.dock-ic){ display:none; }
 
 /* Circle launcher: the same size as the AgentDeck button opposite it */
-.dk-launcher{ width:44px !important; height:44px !important; left:max(18px, env(safe-area-inset-left)) !important; bottom:max(18px, env(safe-area-inset-bottom)) !important; box-shadow:0 8px 18px -6px rgba(0,0,0,.4) !important; }
+.dk-launcher{ width:44px !important; height:44px !important; left:max(18px, env(safe-area-inset-left)) !important; bottom:max(18px, env(safe-area-inset-bottom)) !important; box-shadow:0 8px 18px -6px var(--tk-shadow-4) !important; }
 .dk-launcher svg{ width:22px !important; height:22px !important; }
 
 /* Floating icons (Pro): no panel behind the chosen docks; each icon keeps a faint backing and a soft shadow */
@@ -122,7 +122,7 @@ html body.df-bottom #dock-wrap #dock .dock-item,
 html body.df-sides :is(#dock-left, #dock-right) .dock-item{ background:transparent !important; }
 html body.df-bottom #dock-wrap #dock .dock-ic,
 html body.df-sides :is(#dock-left, #dock-right) .dock-ic{
-  background:rgba(14,19,28,.46) !important; border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,.30);
+  background:rgba(14,19,28,.46) !important; border-radius:12px; box-shadow:0 6px 16px var(--tk-shadow-3);
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
 }
 html[data-td-skin]:not([data-mode="light"]) body.df-bottom #dock-wrap #dock .dock-ic,
@@ -132,24 +132,24 @@ html[data-td-skin]:not([data-mode="light"]) body.df-sides :is(#dock-left, #dock-
 html[data-mode="light"] body.df-bottom #dock-wrap #dock .dock-ic,
 html[data-mode="light"] body.df-sides :is(#dock-left, #dock-right) .dock-ic{ background:rgba(255,255,255,.78) !important; box-shadow:0 6px 16px rgba(20,30,50,.18); }
 html body.df-bottom #dock-wrap #dock .dock-item > span:not(.dock-ic),
-html body.df-sides :is(#dock-left, #dock-right) .dock-item > span:not(.dock-ic){ text-shadow:0 1px 3px rgba(0,0,0,.65); color:#f2f5f9; }
+html body.df-sides :is(#dock-left, #dock-right) .dock-item > span:not(.dock-ic){ text-shadow:0 1px 3px var(--tk-shadow-5); color:#f2f5f9; }
 html[data-mode="light"] body.df-bottom #dock-wrap #dock .dock-item > span:not(.dock-ic),
 html[data-mode="light"] body.df-sides :is(#dock-left, #dock-right) .dock-item > span:not(.dock-ic){ text-shadow:0 1px 2px rgba(255,255,255,.9); color:#1f2a3c; }
 html body:is(.df-bottom, .df-sides) .dock-item.active .dock-ic{ outline:2px solid rgba(var(--amber-rgb), .8); outline-offset:1px; }
-html body.df-top .top :is(.iconbtn, .langpill, .deck-mode-toggle, .deck-mode-switch, .chip){ box-shadow:0 6px 16px rgba(0,0,0,.28); }
+html body.df-top .top :is(.iconbtn, .langpill, .deck-mode-toggle, .deck-mode-switch, .chip){ box-shadow:0 6px 16px var(--tk-shadow-2); }
 html body.df-sides :is(#dock-left, #dock-right){ z-index:950; }
 html body.df-bottom #dock-wrap{ z-index:950; }
 body.df-rings .dk-rings::before, body.df-rings .dk-rings::after{ display:none; }
 body.df-rings .dk-veil{ background:rgba(6,9,14,.18); backdrop-filter:none; }
-body.df-rings :is(.dk-cat, .dk-wid){ box-shadow:0 8px 20px rgba(0,0,0,.4); }
+body.df-rings :is(.dk-cat, .dk-wid){ box-shadow:0 8px 20px var(--tk-shadow-4); }
 
 /* The Theme widget's new rows */
 .th-modes{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
 .th-modes[hidden]{ display:none; }
-.th-modes .btn{ flex:1 1 30%; font-size:12px; padding:6px 8px; }
+.th-modes .btn{ flex:1 1 30%; font-size:var(--tk-fs-12); padding:6px 8px; }
 .th-modes .btn.locked{ opacity:.6; }
-.pro-badge{ font-weight:800; font-size:9.5px; letter-spacing:.06em; padding:2px 6px; border-radius:6px; background:var(--gold); color:var(--text-on-accent, #231604); vertical-align:middle; }
-.th-switch{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:4px 0 10px; font-size:13px; }
+.pro-badge{ font-weight:800; font-size:var(--tk-fs-12); letter-spacing:.06em; padding:2px 6px; border-radius:6px; background:var(--gold); color:var(--text-on-accent, #231604); vertical-align:middle; }
+.th-switch{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:4px 0 10px; font-size:var(--tk-fs-13); }
 .th-switch[hidden]{ display:none; }
 
 /* ---------- Fonts the premium themes ask for (fonts/, SIL Open Font License; StoreCore.THEME_FONTS names them) ---------- */
@@ -194,8 +194,8 @@ html[data-td-art] .widget.full::before{ display:none; }
 /* The theme's greeting and a "Premium · name" badge, centred in the top bar (js/app.js themeGreeting) */
 #td-greet{ position:absolute; left:50%; top:calc(50% + 9px); transform:translate(-50%,-50%); display:none; align-items:center; gap:10px; pointer-events:none; z-index:1; }
 html[data-td-greet]:not([data-mode="light"]) #td-greet{ display:flex; }
-#td-greet .tg-text{ padding:6px 16px; border:1.5px solid rgba(var(--sk-acc-rgb),.55); border-radius:999px; color:var(--sk-ink); font-size:13px; font-weight:600; white-space:nowrap; background:rgba(0,0,0,.12); }
-#td-greet .tg-badge{ padding:6px 14px; border-radius:999px; background:var(--sk-acc); color:var(--sk-on); font-size:12px; font-weight:800; white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+#td-greet .tg-text{ padding:6px 16px; border:1.5px solid rgba(var(--sk-acc-rgb),.55); border-radius:999px; color:var(--sk-ink); font-size:var(--tk-fs-13); font-weight:600; white-space:nowrap; background:var(--tk-shade-1); }
+#td-greet .tg-badge{ padding:6px 14px; border-radius:999px; background:var(--sk-acc); color:var(--sk-on); font-size:var(--tk-fs-12); font-weight:800; white-space:nowrap; box-shadow:0 4px 14px var(--tk-shadow-2); }
 @media (max-width:1180px){ #td-greet .tg-badge{ display:none; } }
 @media (max-width:900px){ html[data-td-greet] #td-greet{ display:none; } }
 html:is([data-td-deco="snow"], [data-td-deco="lanterns"]):not([data-mode="light"]) :is(.brand, .s3lv){ color:var(--sk-acc); }

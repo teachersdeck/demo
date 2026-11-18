@@ -17,7 +17,7 @@
 
 /* ---------- Calmer title bars ---------- */
 .widget > .widget-head{ padding:9px 8px 8px 12px; }
-.widget > .widget-head .widget-title{ font-size:12.5px; letter-spacing:.2px; }
+.widget > .widget-head .widget-title{ font-size:var(--tk-fs-13); letter-spacing:.2px; }
 @media (hover:hover){
   .widget:not(.full) > .widget-head .hbtn{ opacity:0; transition:opacity var(--t-fast) var(--ease-out); }
   .widget:hover > .widget-head .hbtn, .widget:focus-within > .widget-head .hbtn, .widget.is-front > .widget-head .hbtn{ opacity:1; }
@@ -26,7 +26,7 @@
 /* ---------- Depth that means something: the front widget stands forward ---------- */
 .widget{ transition:box-shadow var(--t-mid) var(--ease-out), border-color var(--t-mid) var(--ease-out); }
 .widget.is-front:not(.full){
-  box-shadow:var(--shadow-panel), 0 18px 46px rgba(0,0,0,.26);
+  box-shadow:var(--shadow-panel), 0 18px 46px var(--tk-shadow-2);
   border-color:rgba(var(--amber-rgb), .42);
 }
 html.bento .widget.is-front{ border-color:var(--bento-line, var(--line)); }   /* tiles: no accent edge in the grid */
@@ -46,8 +46,8 @@ html.bento .widget.is-front{ border-color:var(--bento-line, var(--line)); }   /*
 body::before{
   content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
   background:
-    radial-gradient(110% 70% at 50% 112%, rgba(255,255,255,.07), transparent 62%),
-    radial-gradient(70% 50% at 12% -8%, rgba(255,255,255,.05), transparent 60%),
+    radial-gradient(110% 70% at 50% 112%, var(--tk-tint-2), transparent 62%),
+    radial-gradient(70% 50% at 12% -8%, var(--tk-tint-2), transparent 60%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 html[data-mode="light"] body::before{
@@ -59,19 +59,19 @@ html[data-td-bg="theme"][data-td-wallpaper="1"] body::before{ display:none; }   
 /* Paper: a stronger, fibrous grain */
 html[data-td-bgid="paper"] body::before{
   background:
-    radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.06), transparent 70%),
+    radial-gradient(120% 80% at 50% 0%, var(--tk-tint-2), transparent 70%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55 .9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .5 0 0 0 0 .42 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
 }
 /* Chalkboard: faint chalk dust where the board was wiped */
 html[data-td-bgid="chalkboard"] body::before{
   background:
-    radial-gradient(40% 22% at 28% 30%, rgba(255,255,255,.06), transparent 70%),
-    radial-gradient(36% 18% at 70% 62%, rgba(255,255,255,.05), transparent 70%),
-    radial-gradient(60% 30% at 50% 100%, rgba(255,255,255,.05), transparent 70%),
+    radial-gradient(40% 22% at 28% 30%, var(--tk-tint-2), transparent 70%),
+    radial-gradient(36% 18% at 70% 62%, var(--tk-tint-2), transparent 70%),
+    radial-gradient(60% 30% at 50% 100%, var(--tk-tint-2), transparent 70%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 @media print{ body::before{ display:none; } }
 
 /* ---------- Empty states: one friendly line (js/app.js emptyState) ---------- */
-.td-empty{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 10px 8px; margin-top:8px; text-align:center; color:var(--lo); font-size:13px; line-height:1.45; }
-.td-empty-ic{ font-size:26px; line-height:1; opacity:.85; }
+.td-empty{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 10px 8px; margin-top:8px; text-align:center; color:var(--lo); font-size:var(--tk-fs-13); line-height:1.45; }
+.td-empty-ic{ font-size:var(--tk-fs-26); line-height:1; opacity:.85; }

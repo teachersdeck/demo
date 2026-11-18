@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>👪 ParentDeck</title>
+<title>ParentDeck</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon32.png">   <!-- the browser tab: the suite logo -->
+<link rel="icon" type="image/png" sizes="128x128" href="icons/icon128.png">
 <script src="js/mode.js?v=0.5.0"></script>   <!-- first: Light or Dark before anything paints (the same file in every suite app) -->
 <script src="js/edition.js?v=0.5.0"></script>   <!-- first: says which app this is (js/app.js is shared with ParentDeck) -->
+<script src="js/i18n.js?v=0.5.0"></script>   <!-- translating by key: the same file in every suite app -->
 <link rel="stylesheet" href="css/style.css?v=0.5.0">
 <link rel="stylesheet" href="css/drawdeck-engine.css?v=0.5.0">
 <link rel="stylesheet" href="css/mode.css?v=0.5.0">
@@ -19,7 +22,7 @@
 </head>
 <body>
   <header class="top">
-    <div class="brand"><span class="mark">◆</span> ParentDeck</div>
+    <div class="brand"><img class="mark" src="icons/icon48.png" width="24" height="24" alt=""> ParentDeck</div>
     <div id="kids" class="kids" aria-label="Your children"></div>
     <div class="hright">
       <button class="xp" id="xp" aria-label="Open Student Stats and XP" hidden><b id="xp-lv"></b><span class="xpbar"><i id="xp-fill"></i></span><span id="xp-tot"></span></button>
@@ -84,6 +87,7 @@
   <script src="js/dockstyle.js?v=0.5.0"></script>
   <script src="js/shop.js?v=0.5.0"></script>
   <script src="js/dockdrag.js?v=0.5.0"></script>   <!-- before app.js: dragging launchers (shared with the suite) -->
+  <script src="js/winmove.js?v=0.5.0"></script>   <!-- moving and resizing windows (shared with the suite) -->
   <script src="js/app.js?v=0.5.0"></script>
 </body>
 </html>

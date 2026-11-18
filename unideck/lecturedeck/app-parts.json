@@ -1,0 +1,19 @@
+{
+  "about": "TeachersDeck's app.js, split in page order (cleanup Phase 4). index.html loads them in this order, js/app.js last; so do the Moodle loader (moodle/js/moodle.js) and every app that shares the code. After moving code between them, run tools/cleanup/app_load_order.js.",
+  "parts": [
+    "app-core.js",
+    "app-i18n.js",
+    "app-shell.js",
+    "app-widgets-class.js",
+    "app-xp-badges.js",
+    "app-files-games.js",
+    "app-calendar.js",
+    "app-lesson-poll-noise.js",
+    "app-media-wave1.js",
+    "app-tools.js",
+    "app-settings.js",
+    "app-cloud-class.js",
+    "app-class-builder.js",
+    "app.js"
+  ]
+}

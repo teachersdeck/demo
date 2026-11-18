@@ -14,4 +14,4 @@ window.DECK_EDITION = Object.freeze({
   officialIds: ['lglogedbdfjcncfhmkbgkehljfnokbjd']   // this build's extension ID (manifest key); js/app.js treats it as official
 });
 document.documentElement.classList.add('uni');
-document.title = '🎓 LectureDeck';
+document.title = 'LectureDeck';

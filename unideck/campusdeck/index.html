@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>🏛️ CampusDeck</title>
+<title>CampusDeck</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon32.png">   <!-- the browser tab: the suite logo -->
+<link rel="icon" type="image/png" sizes="128x128" href="icons/icon128.png">
 <script src="js/mode.js?v=0.6.0"></script>   <!-- first: Light or Dark before anything paints (the same file in every suite app) -->
 <script src="js/edition.js?v=0.6.0"></script>   <!-- first: says which app this is (js/app.js is shared with AdminDeck) -->
+<script src="js/i18n.js?v=0.6.0"></script>   <!-- translating by key: the same file in every suite app -->
 <script src="js/usage.js?v=0.6.0"></script>   <!-- anonymous usage statistics; Settings can turn it off (the same file as AdminDeck) -->
 <link rel="stylesheet" href="css/style.css?v=0.6.0">
 <link rel="stylesheet" href="css/mode.css?v=0.6.0">
@@ -27,7 +30,7 @@
   <!-- Top bar -->
   <header class="topbar" id="topbar">
     <div class="brand">
-      <span class="brand-mark">◆</span>
+      <img class="brand-mark" src="icons/icon48.png" width="24" height="24" alt="">
       <span class="brand-name">CampusDeck</span>
     </div>
 
@@ -247,6 +250,7 @@
   <script src="js/dock-packs.js?v=0.6.0"></script>
   <script src="js/dockstyle.js?v=0.6.0"></script>
   <script src="js/dockdrag.js?v=0.6.0"></script>   <!-- before app.js: dragging launchers (shared with the suite) -->
+  <script src="js/winmove.js?v=0.6.0"></script>   <!-- moving and resizing windows (shared with the suite) -->
   <script src="js/app.js?v=0.6.0"></script>
 </body>
 </html>
