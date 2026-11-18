@@ -163,6 +163,43 @@ const PD_SHOP = (() => {
   // ---------- the widget ----------
   function render(body) {
     let alive = true, faces = [], poll = 0;
+    let deck = null, deckAt = null, deckGroup = null;   // the Shop's card deck keeps its group and card across redraws
+    /** A card's picture: the theme's own background, the face's drawing, the dock's shape, stickers, a page, a bundle. */
+    function deckArt(it) {
+      const pv = (state.previews || {})[it.sku], L = ui.lang === 'vi' ? 'vi' : 'en';
+      const bundle = () => `<span class="fp-bundle"><b>${it.includes.length}</b>${esc(t('shop_bundle_packs'))}</span>`;
+      if (it.kind === 'bundle') {
+        const th = it.themePack && it.includes.map(s => (state.previews || {})[s]).find(x => x && x.kind === 'theme' && x.items && x.items[0]);
+        return th ? { bg: StoreCore.themeBackground(th.items[0], false), html: bundle() } : { html: bundle() };
+      }
+      if (!pv) return { swatch: '#2a3542' };
+      const first = pv.items && pv.items[0];
+      if (pv.kind === 'theme' && first) return { bg: StoreCore.themeBackground(first, false), mock: true };
+      if (pv.kind === 'face' && first) return { svg: first.svg, swatch: first.swatch };
+      if (pv.kind === 'dock' && first) return { html: FacePicker.dockArt(first.style, first.swatch) };
+      if (pv.kind === 'sticker') return { html: `<span class="fp-stk">${(pv.items || []).slice(0, 6).map(x => `<span>${x.svg || ''}</span>`).join('')}</span>` };
+      if (pv.kind === 'layout') { const n = (pv.names || [])[0]; return { html: `<span class="fp-page">${esc((n && (n[L] || n.en)) || '')}</span>` }; }
+      return { swatch: (first && first.swatch) || '#2a3542' };
+    }
+    function mountDeck(sections, order, priceOf, hadFocus) {
+      const host = body.querySelector('.shop-deck'); if (!host) return;
+      const L = ui.lang === 'vi' ? 'vi' : 'en', options = [];
+      sections.forEach(([key, list]) => list.forEach(it => {
+        const owned = isOwned(it), price = priceOf(it), inB = basket.has(it.sku);
+        options.push(Object.assign({ key: it.sku, name: it.name[L] || it.name.en, group: t(key),
+          badge: owned ? t('shop_owned') : (inB ? '✓ ' : '') + vndS(price), sub: (it.blurb && (it.blurb[L] || it.blurb.en)) || '',
+          noPick: owned || !!order, owned, inB, price }, deckArt(it)));
+      }));
+      if (deck) {
+        host.appendChild(deck.el); deck.update(options, '');
+        if (hadFocus) { const c = deck.el.querySelector('.fp-card[tabindex="0"]'); if (c) c.focus({ preventScroll: true }); }
+        return;
+      }
+      deck = FacePicker.inline(host, { lang: L, title: t('w_shop'), options, current: '', at: deckAt, group: deckGroup,
+        pickLabel: o => o.owned ? t('shop_owned') : o.inB ? t('shop_in_basket') : t('shop_add') + ' · ' + vndS(o.price),
+        onMove: (o, g) => { if (o) deckAt = o.key; deckGroup = g; },
+        onPick: sku => { if (readOrder()) return; basket.has(sku) ? basket.delete(sku) : basket.add(sku); draw(); } });
+    }
     const stopFaces = () => { faces.forEach(f => f.stop()); faces = []; };
     async function load() {
       if (!signedIn()) { body.innerHTML = `<p class="muted">${esc(t(typeof PD_DEMO !== 'undefined' && PD_DEMO.active === true ? 'shop_demo' : 'shop_signin'))}</p>`; return; }
@@ -183,10 +220,10 @@ const PD_SHOP = (() => {
       const { lines, amount } = priced();
       const min = state.minOrder || 20000;
       const s = PD.getSession();
+      const priceOf = it => it.kind === 'bundle' ? Math.max(0, it.price - it.includes.filter(x => state.owned.includes(x)).reduce((n, x) => n + ((itemOf(x) || {}).price || 0), 0)) : it.price;
       const card = it => {
         const owned = isOwned(it);
-        let price = it.price;
-        if (it.kind === 'bundle') price = Math.max(0, it.price - it.includes.filter(x => state.owned.includes(x)).reduce((n, x) => n + ((itemOf(x) || {}).price || 0), 0));
+        const price = priceOf(it);
         return `<article class="shop-card">${previewHtml(it)}
           <div class="shop-cbody"><b>${esc(it.name[ui.lang] || it.name.en)}</b><span class="muted">${esc((it.blurb && (it.blurb[ui.lang] || it.blurb.en)) || '')}</span>
           <div class="shop-cfoot"><span class="shop-price">${owned ? '' : esc(vndS(price))}${it.kind === 'bundle' && !owned && price !== it.price ? ` <s>${esc(vndS(it.price))}</s>` : ''}</span>
@@ -196,10 +233,13 @@ const PD_SHOP = (() => {
       const GROUPS = [['theme', null, 'shop_g_themes'], ['face', 'watch', 'shop_g_watch'], ['face', 'pocket', 'shop_g_pocket'], ['face', 'wall', 'shop_g_wall'],
         ['face', 'alarm', 'shop_g_alarm'], ['face', 'desk', 'shop_g_desk'], ['sticker', null, 'shop_g_stickers'], ['layout', null, 'shop_g_layouts'], ['dock', null, 'shop_g_docks'], ['bundle', null, 'shop_g_bundle']];
       const packsFirst = state.catalog.filter(i => i.kind === 'bundle' && i.themePack);
-      const cards = (packsFirst.length ? `<h4 class="shop-group">${esc(t('shop_g_packs'))}</h4><div class="shop-grid">${packsFirst.map(card).join('')}</div>` : '') + GROUPS.map(([kind, form, key]) => {
-        const list = state.catalog.filter(i => i.kind === kind && (!form || (i.form || 'watch') === form) && !(i.kind === 'bundle' && i.themePack));
-        return list.length ? `<h4 class="shop-group">${esc(t(key))}</h4><div class="shop-grid">${list.map(card).join('')}</div>` : '';
-      }).join('');
+      const sections = (packsFirst.length ? [['shop_g_packs', packsFirst]] : []).concat(GROUPS.map(([kind, form, key]) =>
+        [key, state.catalog.filter(i => i.kind === kind && (!form || (i.form || 'watch') === form) && !(i.kind === 'bundle' && i.themePack))]).filter(g => g[1].length));
+      // 18 Nov 2026 (owner): the Clock's card deck (js/facepicker.js), drawn in the widget, one group per section
+      const useDeck = typeof FacePicker !== 'undefined';
+      const cards = useDeck ? '<div class="shop-deck"></div>'
+        : sections.map(([key, list]) => `<h4 class="shop-group">${esc(t(key))}</h4><div class="shop-grid">${list.map(card).join('')}</div>`).join('');
+      const deckFocus = !!(deck && deck.el.contains(document.activeElement));
       const wishes = (state.children || []).flatMap(c => c.wishes.map(sku => ({ c, sku }))).filter(w => itemName(w.sku));
       const st = x => t('shop_status_' + x) || x;
       body.innerHTML = `
@@ -218,6 +258,7 @@ const PD_SHOP = (() => {
         <label class="row" style="gap:8px;align-items:center"><input type="checkbox" data-shop="wishes"${state.settings.wishesOn ? ' checked' : ''}> ${esc(t('shop_wishes_on'))}</label>
         <h4>${esc(t('shop_purchases'))}</h4>
         ${state.orders.length ? state.orders.map(o => `<div class="srow"><span>${esc(fmtShort(o.createdAt))} · ${esc(o.token)} · ${esc((o.lines || []).map(l => l.name).join(', '))} <span class="muted">(${esc(st(o.status))})</span></span><b>${esc(vndS(o.amount))}</b></div>`).join('') : `<p class="muted">${esc(t('shop_no_purchases'))}</p>`}`;
+      if (useDeck) mountDeck(sections, order, priceOf, deckFocus);
       body.querySelectorAll('[data-face]').forEach(el => {
         const [sku, i] = el.dataset.face.split(':'); const f = state.previews[sku].items[+i];
         faces.push(StoreCore.mountFace(el, f, { lang: ui.lang, reduceMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));

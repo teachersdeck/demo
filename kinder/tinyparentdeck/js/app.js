@@ -1654,6 +1654,37 @@ function renderTheme(body) {
   });
   function draw() {
     const prem = (typeof PD_SHOP !== 'undefined') ? PD_SHOP.ownedThemes() : [];
+    const shopLink = PD.getSession && PD.getSession() && !KINDER && !UNI ? `<button class="btn" data-shop-open="1" style="grid-column:1/-1">${t('shop_theme_get')}</button>` : '';
+    const dk = $('#th-docks', body);
+    if (typeof FacePicker !== 'undefined') {
+      /* 18 Nov 2026 (owner): the Clock's card deck (js/facepicker.js) for the backgrounds, the bought themes and the docks */
+      const L = ui.lang === 'vi' ? 'vi' : 'en', nm = n => (n && (n[L] || n.en)) || '';
+      const opts = THEME_PRESETS.map(p => ({ key: p.id, name: p.name, bg: presetBg(p), mock: true, group: t('theme_backgrounds') }))
+        .concat(prem.map(x => ({ key: x.key, name: nm(x.item.name), bg: StoreCore.themeBackground ? StoreCore.themeBackground(x.item, false) : x.item.swatch, mock: true, group: t('shop_theme_owned') })));
+      const cur = opts.find(o => o.key === ui.theme) || opts[0];
+      const grid = $('#th-grid', body);
+      grid.innerHTML = `<div class="fp-row fp-row-wide th-deck"></div>${shopLink}`;
+      const btn = FacePicker.trigger({ lang: L, label: t('w_theme'), current: { name: cur.name, swatch: cur.bg } });
+      FacePicker.attach(btn, () => ({ lang: L, title: t('w_theme'), options: opts, current: ui.theme,
+        onPick: id => { ui.theme = id; saveUI(); applyThemePreset(id); draw(); }, refocus: () => $('.th-deck .fp-trigger', body) }));
+      grid.firstElementChild.appendChild(btn);
+      if (dk && typeof PD_SHOP !== 'undefined') {
+        const own = PD_SHOP.ownedDocks(), curD = own.find(x => x.key === ui.dockStyle) ? ui.dockStyle : '';
+        dk.hidden = !own.length; dk.previousElementSibling.hidden = !own.length;
+        const dOpts = [{ key: '', name: t('dock_standard'), html: FacePicker.dockArt('standard') }]
+          .concat(own.map(x => ({ key: x.key, name: nm(x.item.name), html: FacePicker.dockArt(x.item.style, x.item.swatch), swatch: x.item.swatch })));
+        const curDO = dOpts.find(o => o.key === curD) || dOpts[0];
+        dk.innerHTML = '';
+        dk.classList.add('fp-row');
+        const dBtn = FacePicker.trigger({ lang: L, label: t('dock_title'), current: { name: curDO.name, swatch: curDO.swatch || 'linear-gradient(180deg,#2a3542,#161c25)' } });
+        FacePicker.attach(dBtn, () => ({ lang: L, title: t('dock_title'), options: dOpts, current: curD,
+          onPick: key => {
+            ui.dockStyle = key || null; saveUI(); applyDockStyle(); draw();
+            if (dockStyleName() === 'radial' && !ui.radialHintSeen) { ui.radialHintSeen = true; saveUI(); toast(t('th_radial_hint'), 7000); }   // one time: how to open the rings
+          }, refocus: () => $('#th-docks .fp-trigger', body) }));
+        dk.appendChild(dBtn);
+      }
+    } else {
     $('#th-grid', body).innerHTML = THEME_PRESETS.map(p => `
       <button class="theme-swatch${ui.theme === p.id ? ' on' : ''}" data-id="${p.id}">
         <span class="theme-swatch-dot" style="background:${presetBg(p)}"></span>
@@ -1663,14 +1694,13 @@ function renderTheme(body) {
       <button class="theme-swatch${ui.theme === x.key ? ' on' : ''}" data-id="${esc(x.key)}">
         <span class="theme-swatch-dot" style="background:${x.item.swatch}"></span>
         <span>${esc(x.item.name[ui.lang] || x.item.name.en)}</span>
-      </button>`).join('') : '') +
-      (PD.getSession && PD.getSession() && !KINDER && !UNI ? `<button class="btn" data-shop-open="1" style="grid-column:1/-1">${t('shop_theme_get')}</button>` : '');
+      </button>`).join('') : '') + shopLink;
     // v0.28.0: store files — what is loaded, Browse… for a .tdpack, Remove, Reset to default, Save my items as a file
-    const dk = $('#th-docks', body);
     if (dk && typeof PD_SHOP !== 'undefined') {
       const own = PD_SHOP.ownedDocks(), cur = own.find(x => x.key === ui.dockStyle) ? ui.dockStyle : '';
       dk.hidden = !own.length; dk.previousElementSibling.hidden = !own.length;
       dk.innerHTML = `<button class="btn${cur ? '' : ' primary'}" data-dock="">${t('dock_standard')}</button>` + own.map(x => `<button class="btn${cur === x.key ? ' primary' : ''}" data-dock="${esc(x.key)}">${esc(x.item.name[ui.lang] || x.item.name.en)}</button>`).join('');
+    }
     }
     drawThemeExtras(body);
     const files = $('#th-files', body); if (!files || typeof PD_SHOP === 'undefined') return;
