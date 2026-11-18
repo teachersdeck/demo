@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>TinyTeachersDeck</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon32.png">   <!-- the browser tab: the suite logo -->
+<link rel="icon" type="image/png" sizes="128x128" href="icons/icon128.png">
 <script src="js/mode.js?v=0.18.0"></script>   <!-- first: Light or Dark before anything paints (the same file in every suite app) -->
 <script src="js/edition.js?v=0.18.0"></script>   <!-- first: says which app this is (js/app.js is shared with TeachersDeck and UniDeck) -->
+<script src="js/i18n.js?v=0.18.0"></script>   <!-- translating by key: the same file in every suite app -->
 <script src="js/kinder-contract.js?v=0.18.0"></script>   <!-- Kinder edition: the data contracts (../contracts) as constants -->
 <script src="js/kinder-strings.js?v=0.18.0"></script>   <!-- Kinder edition: string overrides, merged by js/app.js -->
 <link rel="stylesheet" href="css/style.css?v=0.18.0">
@@ -33,7 +36,7 @@
   <!-- Top bar -->
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">◆</span>
+      <img class="brand-mark" src="icons/icon48.png" width="24" height="24" alt="">
       <span class="brand-name">TinyTeachersDeck</span>
     </div>
 
@@ -359,6 +362,20 @@
   <script src="js/whiteboard.js?v=0.18.0"></script>   <!-- after drawdeck.js and dockstyle.js, before app.js: the Whiteboard background (shared with the suite) -->
   <script src="js/facepicker.js?v=0.18.0"></script>
 <script src="js/dockdrag.js?v=0.18.0"></script>   <!-- before app.js: dragging launchers (shared with the suite) -->
+  <script src="js/winmove.js?v=0.18.0"></script>   <!-- moving and resizing windows (shared with the suite) -->
+  <script src="js/app-core.js?v=0.18.0"></script>   <!-- js/app.js in page order (the suite's teachersdeck/app-parts.json): keep the order -->
+  <script src="js/app-i18n.js?v=0.18.0"></script>
+  <script src="js/app-shell.js?v=0.18.0"></script>
+  <script src="js/app-widgets-class.js?v=0.18.0"></script>
+  <script src="js/app-xp-badges.js?v=0.18.0"></script>
+  <script src="js/app-files-games.js?v=0.18.0"></script>
+  <script src="js/app-calendar.js?v=0.18.0"></script>
+  <script src="js/app-lesson-poll-noise.js?v=0.18.0"></script>
+  <script src="js/app-media-wave1.js?v=0.18.0"></script>
+  <script src="js/app-tools.js?v=0.18.0"></script>
+  <script src="js/app-settings.js?v=0.18.0"></script>
+  <script src="js/app-cloud-class.js?v=0.18.0"></script>
+  <script src="js/app-class-builder.js?v=0.18.0"></script>
   <script src="js/app.js?v=0.18.0"></script>
   <script src="js/bento.js?v=0.18.0"></script>   <!-- after app.js: the widget wall as a bento grid on phones and tablets -->
 </body>

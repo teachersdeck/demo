@@ -8,12 +8,27 @@
   --tk-surface-1:#f3f4f6;
   --tk-surface-2:#f8f9fa;
   --tk-surface-3:#fefefe;
-  --tk-line:rgba(15,23,42,0.099);
-  --tk-text-hi:#21242a;
-  --tk-text-lo:#636975;
-  --tk-shadow-panel:0 12px 30px rgba(0,0,0,0.158), 0 2px 6px rgba(0,0,0,0.113);
+  --tk-line:rgba(15,23,42,0.388);
+  --tk-text-hi:#17191d;
+  --tk-text-lo:#525761;
+  --tk-shadow-panel:0 12px 30px rgba(0,0,0,0.28), 0 2px 6px rgba(0,0,0,0.2);
   --tk-dock-bg:rgba(240,241,244,0.72);
   --tk-edge-bg:rgba(240,241,244,0.78);
+  --tk-tint-1:rgba(15,23,42,0.033);
+  --tk-tint-2:rgba(15,23,42,0.066);
+  --tk-tint-3:rgba(15,23,42,0.11);
+  --tk-tint-4:rgba(15,23,42,0.176);
+  --tk-tint-5:rgba(15,23,42,0.275);
+  --tk-shade-1:rgba(0,0,0,0.09);
+  --tk-shade-2:rgba(0,0,0,0.15);
+  --tk-shade-3:rgba(0,0,0,0.21);
+  --tk-shade-4:rgba(0,0,0,0.27);
+  --tk-shade-5:rgba(0,0,0,0.36);
+  --tk-shadow-1:rgba(0,0,0,0.12);
+  --tk-shadow-2:rgba(0,0,0,0.2);
+  --tk-shadow-3:rgba(0,0,0,0.28);
+  --tk-shadow-4:rgba(0,0,0,0.36);
+  --tk-shadow-5:rgba(0,0,0,0.48);
 }
 
 /* ---- from css/palette-navy.css ---- */
@@ -22,76 +37,33 @@
   --tk-surface-1:#fcfdfd;
   --tk-surface-2:#fdfefe;
   --tk-surface-3:#fdfefe;
-  --tk-line:rgba(15,23,42,0.132);
-  --tk-text-hi:#2f2b1f;
-  --tk-text-lo:#464c5d;
+  --tk-line:rgba(15,23,42,0.484);
+  --tk-text-hi:#211e16;
+  --tk-text-lo:#393d4b;
   --tk-dock-bg:rgba(244,245,248,0.78);
   --tk-edge-bg:rgba(244,245,248,0.78);
-  --tk-edge-shadow:0 12px 30px rgba(0,0,0,0.158);
+  --tk-edge-shadow:0 12px 30px rgba(0,0,0,0.28);
 }
 
 /* ---- from css/shell.css ---- */
-:where(html[data-mode="light"]) .app-tray-tab:hover{
-  background:rgba(15,23,42,0.11);
-}
 :where(html[data-mode="light"]) .app-tray-backdrop{
   background:rgba(6,9,14,0.33);
 }
-:where(html[data-mode="light"]) .app-tray{
-  box-shadow:0 -16px 40px rgba(0,0,0,0.203);
-}
-:where(html[data-mode="light"]) .dock-item:hover{
-  background:rgba(15,23,42,0.088);
-}
 :where(html[data-mode="light"]) .dock-item.active .dock-ic{
+  background:rgba(232,163,61,0.46);
   color:#bc8406;
-}
-:where(html[data-mode="light"]) .dock-ic{
-  background:rgba(15,23,42,0.044);
-}
-:where(html[data-mode="light"]) .app-tray-item:hover{
-  background:rgba(15,23,42,0.088);
 }
 :where(html[data-mode="light"]) .app-tray-item.active .dock-ic{
+  background:rgba(232,163,61,0.46);
   color:#bc8406;
-}
-:where(html[data-mode="light"]) .layout-mode-opt:hover{
-  background:rgba(15,23,42,0.033);
-}
-:where(html[data-mode="light"]) .dock-vis-row{
-  background:rgba(15,23,42,0.022);
 }
 
 /* ---- from css/shell-family.css ---- */
-:where(html[data-mode="light"]) .mark{
-  color:#af7b13;
-}
-:where(html[data-mode="light"]) .widget{
-  box-shadow:0 10px 30px rgba(0,0,0,0.158);
-}
-:where(html[data-mode="light"]) .hbtn:hover{
-  background:rgba(15,23,42,0.11);
-}
 :where(html[data-mode="light"]) .x:hover{
   color:#c20000;
 }
-:where(html[data-mode="light"]) .xpbar{
-  background:rgba(15,23,42,0.165);
-}
 :where(html[data-mode="light"]) .lvl .big{
   color:#bc8406;
-}
-:where(html[data-mode="light"]) .tile{
-  background:rgba(0,0,0,0.12);
-}
-:where(html[data-mode="light"]) .cal-nav{
-  background:rgba(15,23,42,0.033);
-}
-:where(html[data-mode="light"]) .cal-nav:hover{
-  background:rgba(15,23,42,0.088);
-}
-:where(html[data-mode="light"]) .cal-cell:hover:not(.empty){
-  background:rgba(15,23,42,0.066);
 }
 :where(html[data-mode="light"]) .cal-cell.today{
   color:#bc8406;
@@ -99,78 +71,47 @@
 :where(html[data-mode="light"]) .cal-cell.selected .cal-dot{
   background:#f7f1e9;
 }
-:where(html[data-mode="light"]) .cal-ev-row{
-  background:rgba(15,23,42,0.033);
-}
 :where(html[data-mode="light"]) .cal-ev-time{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .app-tray-tab{
-  box-shadow:0 12px 30px rgba(0,0,0,0.158);
-}
 :where(html[data-mode="light"]) .medal.t2{
-  --m1:#252a33;
-  --m2:#616772;
+  --m1:#1b1e25;
+  --m2:#50555e;
 }
 :where(html[data-mode="light"]) .medal .mi{
   background:radial-gradient(circle at 35% 30%,#fdfefe,#f8f8fb);
-  box-shadow:inset 0 2px 6px rgba(0,0,0,0.248);
 }
 :where(html[data-mode="light"]) .chip.on{
+  background:rgba(232,163,61,0.5);
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .dock-item.active{
+  background:rgba(232,163,61,0.44);
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .app-tray-item.active{
+  background:rgba(232,163,61,0.44);
   color:#bc8406;
-}
-:where(html[data-mode="light"]) .dock-item{
-  background:rgba(15,23,42,0.033);
 }
 
 /* ---- from css/style.css ---- */
 :root:where([data-mode="light"]){
   --amber-hi:#bc8406;
 }
-:where(html[data-mode="light"]) input[type=text]{
-  background:rgba(0,0,0,0.15);
-}
 :where(html[data-mode="light"]) .tile b{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .acctbtn{
-  background:rgba(15,23,42,0.066);
-}
-:where(html[data-mode="light"]) .kd-scrap-page{
-  box-shadow:0 10px 30px rgba(0,0,0,0.158);
-}
-:where(html[data-mode="light"]) .kd-scrap-it.kd-scrap-photo.kd-scrap-f-polaroid{
-  box-shadow:0 4px 14px rgba(0,0,0,0.135);
-}
 :where(html[data-mode="light"]) .kd-scrap-h{
-  border:2px solid #e3d4bf;
-}
-:where(html[data-mode="light"]) .kd-scrap-menu{
-  box-shadow:0 12px 30px rgba(0,0,0,0.18);
+  border:2px solid #b2874d;
 }
 :where(html[data-mode="light"]) .kd-unlock-ov{
   background:rgba(10,13,24,0.42);
 }
-:where(html[data-mode="light"]) .kd-unlock-card{
-  box-shadow:0 20px 50px rgba(0,0,0,0.225);
-}
 :where(html[data-mode="light"]) .kd-unlock-err{
-  color:#a51d1d;
+  color:#a81a1a;
 }
 :where(html[data-mode="light"]) .modal{
   background:rgba(10,13,24,0.36);
-}
-:where(html[data-mode="light"]) .mcard{
-  box-shadow:0 20px 50px rgba(0,0,0,0.225);
-}
-:where(html[data-mode="light"]) select{
-  background:rgba(0,0,0,0.15);
 }
 :where(html[data-mode="light"]) .linechart polyline{
   stroke:#af7b13;
@@ -178,73 +119,51 @@
 :where(html[data-mode="light"]) .linechart circle{
   fill:#bc8406;
 }
-:where(html[data-mode="light"]) .delta{
-  background:rgba(0,0,0,0.12);
-}
 :where(html[data-mode="light"]) .delta.up{
   color:#21a121;
 }
 :where(html[data-mode="light"]) .delta.down{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .theme-swatch{
-  background:rgba(0,0,0,0.09);
+:where(html[data-mode="light"]) .theme-swatch.on{
+  background:rgba(232,163,61,0.42);
 }
 :where(html[data-mode="light"]) .theme-swatch-dot{
-  box-shadow:inset 0 0 0 2px rgba(0,0,0,0.1);
-}
-:where(html[data-mode="light"]) .langpill button:not(.on):hover{
-  background:rgba(15,23,42,0.088);
-}
-:where(html[data-mode="light"]) .iconbtn{
-  background:rgba(15,23,42,0.055);
-}
-:where(html[data-mode="light"]) .xp{
-  background:rgba(15,23,42,0.066);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,0.16);
 }
 :where(html[data-mode="light"]) .xp b{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .subwidget{
-  background:rgba(0,0,0,0.09);
-}
-:where(html[data-mode="light"]) .bar>div{
-  background:rgba(15,23,42,0.132);
-}
 :where(html[data-mode="light"]) .bar b{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .note-card{
-  background:rgba(15,23,42,0.033);
+:where(html[data-mode="light"]) .note-card.unread{
+  background:rgba(232,163,61,0.4);
 }
 :where(html[data-mode="light"]) .note-card.unread .note-top b{
   color:#bc8406;
 }
 :where(html[data-mode="light"]) #toast.soft{
   background:#fafbfc;
-  color:#152233;
+  color:#0e1823;
 }
 :where(html[data-mode="light"]) #toast.good{
   background:linear-gradient(135deg,#faf9f5,#fdfefe);
-  color:#3f3310;
+  color:#2d240b;
 }
 :where(html[data-mode="light"]) .warn{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .pill{
-  background:rgba(15,23,42,0.11);
-}
 :where(html[data-mode="light"]) .pill.ok{
+  background:rgba(155,232,155,0.31);
   color:#21a121;
 }
 :where(html[data-mode="light"]) .pill.warn{
+  background:rgba(232,163,61,0.48);
   color:#bc8406;
 }
-:where(html[data-mode="light"]) input[type=number].numin{
-  background:rgba(0,0,0,0.15);
-}
-:where(html[data-mode="light"]) .famcard{
-  background:rgba(0,0,0,0.108);
+:where(html[data-mode="light"]) .famcard.on{
+  background:rgba(232,163,61,0.4);
 }
 :where(html[data-mode="light"]) .famlv b{
   color:#bc8406;
@@ -252,18 +171,8 @@
 :where(html[data-mode="light"]) .famopen{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .hbar .track{
-  background:rgba(15,23,42,0.132);
-}
-:where(html[data-mode="light"]) .wishrow,
 :where(html[data-mode="light"]) .wishgoal{
-  background:rgba(0,0,0,0.096);
-}
-:where(html[data-mode="light"]) .gday{
-  background:rgba(15,23,42,0.066);
-}
-:where(html[data-mode="light"]) .ring .rbg{
-  stroke:rgba(15,23,42,0.132);
+  background:rgba(232,163,61,0.4);
 }
 :where(html[data-mode="light"]) .ring .rfg{
   stroke:#af7b13;
@@ -271,14 +180,8 @@
 :where(html[data-mode="light"]) .ring.full .rfg{
   stroke:#21a121;
 }
-:where(html[data-mode="light"]) .starters li{
-  background:rgba(0,0,0,0.108);
-}
 :where(html[data-mode="light"]) .starters li::before{
   color:#af7b13;
-}
-:where(html[data-mode="light"]) .digest{
-  background:rgba(0,0,0,0.096);
 }
 :where(html[data-mode="light"]) .dghead b{
   color:#bc8406;
@@ -286,36 +189,28 @@
 @media print{
 :where(html[data-mode="light"]) body.print-digest .print-target,
 :where(html[data-mode="light"]) body.print-digest .print-target *{
-  border-color:#cccccc!important;
+  border-color:#7a7a7a!important;
 }
-}
-:where(html[data-mode="light"]) .prrep{
-  background:rgba(0,0,0,0.096);
 }
 :where(html[data-mode="light"]) .prline b{
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .demotab{
+  background:rgba(232,163,61,0.5);
   color:#bc8406;
-}
-:where(html[data-mode="light"]) .demopanel{
-  box-shadow:0 10px 30px rgba(0,0,0,0.203);
 }
 :where(html[data-mode="light"]) .dock-item .badge,
 :where(html[data-mode="light"]) .app-tray-item .badge{
-  color:#1a1a1a;
+  color:#0f0f0f;
 }
-:where(html[data-mode="light"]) .app-tray-item{
-  background:rgba(15,23,42,0.033);
+:where(html[data-mode="light"]) .layout-mode-opt.active{
+  background:rgba(232,163,61,0.38);
 }
 :where(html[data-mode="light"]) .switch-row input{
   accent-color:#af7b13;
 }
 :where(html[data-mode="light"]) .nfilters .chip i{
   color:#bc8406;
-}
-:where(html[data-mode="light"]) .s3ring .rg-bg{
-  stroke:rgba(15,23,42,0.143);
 }
 :where(html[data-mode="light"]) .s3ring .rg-fg{
   stroke:#af7b13;
@@ -325,90 +220,69 @@
 }
 :where(html[data-mode="light"]) .s3almost{
   color:#bc8406;
+  background:rgba(232,163,61,0.44);
+  border:1px solid rgba(205,132,24,0.9);
 }
 :where(html[data-mode="light"]) .s3streak b{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .s3p{
-  background:rgba(0,0,0,0.108);
+:where(html[data-mode="light"]) .s3tiles .tile:hover{
+  border-color:rgba(205,132,24,0.9);
+}
+:where(html[data-mode="light"]) .s3p:hover{
+  border-color:rgba(205,132,24,0.9);
 }
 :where(html[data-mode="light"]) .s3 .col.today span{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .status-card{
-  background:rgba(0,0,0,0.108);
-}
-:where(html[data-mode="light"]) .st-item{
-  background:rgba(0,0,0,0.12);
-}
-:where(html[data-mode="light"]) .st-pill{
-  background:rgba(15,23,42,0.11);
-}
 :where(html[data-mode="light"]) .lv-good .st-pill{
+  background:rgba(155,232,155,0.31);
   color:#21a121;
 }
 :where(html[data-mode="light"]) .lv-watch .st-pill{
+  background:rgba(232,163,61,0.48);
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .lv-off .st-pill{
+  background:rgba(255,138,128,0.31);
   color:#c21000;
-}
-:where(html[data-mode="light"]) .medal{
-  box-shadow:0 3px 14px rgba(0,0,0,0.203),0 0 14px color-mix(in srgb,var(--m1) 55%,transparent);
 }
 :where(html[data-mode="light"]) .medal::after{
   background:linear-gradient(110deg,transparent 0,rgba(15,23,42,0.77) 48%,transparent 62%);
 }
 :where(html[data-mode="light"]) .bc-hero{
-  background:radial-gradient(520px 200px at 12% 0%,rgba(var(--amber-rgb),.22),transparent 70%),linear-gradient(180deg,rgba(15,23,42,0.055),rgba(15,23,42,0.022));
+  border:1px solid rgba(205,132,24,0.9);
+  background:radial-gradient(520px 200px at 12% 0%,rgba(232,163,61,0.52),transparent 70%),linear-gradient(180deg,var(--tk-tint-2),var(--tk-tint-1));
 }
 :where(html[data-mode="light"]) .bc-count{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .bc-chip{
-  background:rgba(15,23,42,0.077);
-}
 :where(html[data-mode="light"]) .bc-chip.t2 i,
 :where(html[data-mode="light"]) .bc-shelf.t2{
-  --m1:#252a33;
-  --m2:#616772;
+  --m1:#1b1e25;
+  --m2:#50555e;
 }
 :where(html[data-mode="light"]) .bc-cabinet{
-  border:7px solid #e1dad2;
-  box-shadow:inset 0 0 0 2px rgba(107,78,44,0.45),inset 0 14px 40px rgba(0,0,0,0.203),0 12px 30px rgba(0,0,0,0.158);
-  background:radial-gradient(700px 260px at 50% -10%,rgba(255,236,170,.16),transparent 70%),linear-gradient(180deg,#fbfbfc,#f3f4f8);
+  border:7px solid #9f8970;
+  box-shadow:inset 0 0 0 2px rgba(107,78,44,0.65),inset 0 14px 40px var(--tk-shadow-4),0 12px 30px var(--tk-shadow-3);
+  background:radial-gradient(700px 260px at 50% -10%,rgba(255,236,170,0.31),transparent 70%),linear-gradient(180deg,#fbfbfc,#f3f4f8);
 }
 :where(html[data-mode="light"]) .bc-shelf h3{
   color:#00a4c2;
 }
-:where(html[data-mode="light"]) .bc-shelf h3 span{
-  background:rgba(15,23,42,0.11);
-}
-:where(html[data-mode="light"]) .bc-item:hover,
-:where(html[data-mode="light"]) .bc-item:focus-visible{
-  background:rgba(15,23,42,0.055);
-}
 :where(html[data-mode="light"]) .bc-ledge{
-  background:linear-gradient(180deg,rgba(190,225,255,.5),rgba(120,170,230,.18) 55%,rgba(0,0,0,0.15));
-  box-shadow:0 6px 12px rgba(0,0,0,0.18),inset 0 1px 0 rgba(0,0,0,0.175);
-}
-:where(html[data-mode="light"]) .bc-prizes{
-  background:rgba(15,23,42,0.033);
+  background:linear-gradient(180deg,rgba(190,225,255,0.65),rgba(120,170,230,0.33) 55%,var(--tk-shade-2));
+  box-shadow:0 6px 12px var(--tk-shadow-4),inset 0 1px 0 rgba(0,0,0,0.28);
 }
 :where(html[data-mode="light"]) .bc-prizes h3{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .bc-prizes h3 span{
-  background:rgba(15,23,42,0.11);
+:where(html[data-mode="light"]) .bc-prize{
+  border:1px dashed rgba(205,132,24,0.9);
+  background:linear-gradient(135deg,rgba(232,163,61,0.44),rgba(232,163,61,0.34));
 }
 :where(html[data-mode="light"]) .bc-back{
   background:rgba(10,13,24,0.432);
-}
-:where(html[data-mode="light"]) .bc-card{
-  box-shadow:0 20px 60px rgba(0,0,0,0.27),0 0 40px rgba(var(--amber-rgb),.25);
-}
-:where(html[data-mode="light"]) .bc-x:hover{
-  background:rgba(15,23,42,0.11);
 }
 :where(html[data-mode="light"]) .bc-tier{
   color:#bc8406;
@@ -419,22 +293,23 @@
 :where(html[data-mode="light"]) .pulse-val{
   color:#bc8406;
 }
-:where(html[data-mode="light"]) .pulse-bar{
-  background:rgba(15,23,42,0.077);
-}
-:where(html[data-mode="light"]) .pulse-me{
-  box-shadow:0 0 0 2px rgba(0,0,0,0.158);
-}
-:where(html[data-mode="light"]) .att-day{
-  background:rgba(15,23,42,0.055);
+:where(html[data-mode="light"]) .pulse-band{
+  background:rgba(155,232,155,0.43);
+  border:1px solid rgba(43,187,43,0.9);
 }
 :where(html[data-mode="light"]) .att-day.ok{
+  background:rgba(74,222,128,0.33);
+  border-color:rgba(35,194,93,0.9);
   color:#1ba74e;
 }
 :where(html[data-mode="light"]) .att-day.late{
+  background:rgba(250,204,21,0.33);
+  border-color:rgba(225,181,5,0.9);
   color:#c29b00;
 }
 :where(html[data-mode="light"]) .att-day.abs{
+  background:rgba(248,113,113,0.35);
+  border-color:rgba(219,11,11,0.9);
   color:#bd0505;
 }
 :where(html[data-mode="light"]) .att-key.ok{
@@ -446,6 +321,10 @@
 :where(html[data-mode="light"]) .att-key.abs{
   color:#bd0505;
 }
+:where(html[data-mode="light"]) .st-item:hover,
+:where(html[data-mode="light"]) .sm-tiles .tile:hover{
+  border-color:rgba(205,132,24,0.9);
+}
 :where(html[data-mode="light"]) .sp-spark{
   color:#c28e00;
 }
@@ -454,46 +333,64 @@
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .sgrid .subwidget:not(#sm-stats):hover{
-  box-shadow:0 10px 28px rgba(0,0,0,0.171),0 0 0 1px rgba(var(--amber-rgb),.22),0 0 24px rgba(var(--amber-rgb),.14);
+  border-color:rgba(205,132,24,0.9);
 }
 :where(html[data-mode="light"]) .subwidget .tile:hover{
-  box-shadow:0 8px 18px rgba(0,0,0,0.158),0 0 16px rgba(var(--amber-rgb),.3);
+  background:rgba(232,163,61,0.43);
+}
+:where(html[data-mode="light"]) .subwidget .srow:hover{
+  background:rgba(232,163,61,0.39);
 }
 :where(html[data-mode="light"]) .subwidget .srow:hover b{
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .gday:hover::after{
-  color:#1a1a1a;
+  color:#0f0f0f;
 }
 :where(html[data-mode="light"]) .ring.full::after{
-  color:#1a1a1a;
+  color:#0f0f0f;
 }
 :where(html[data-mode="light"]) #sm-trends .col i::after{
   background:linear-gradient(100deg,transparent 0,rgba(15,23,42,0.88) 50%,transparent 100%);
 }
+:where(html[data-mode="light"]) .delta:hover{
+  background:rgba(232,163,61,0.42);
+}
 :where(html[data-mode="light"]) .note-card:hover{
-  box-shadow:0 8px 20px rgba(0,0,0,0.158),0 0 18px rgba(var(--amber-rgb),.16);
+  border-color:rgba(205,132,24,0.9);
 }
 :where(html[data-mode="light"]) .note-card::after{
   color:#bc8406;
 }
+:where(html[data-mode="light"]) .note-card.unread::before{
+  background:linear-gradient(100deg,transparent 0,rgba(255,224,138,0.37) 50%,transparent 100%);
+}
+:root:where([data-mode="light"]){
+  --st-good-bg:rgba(46,230,107,0.37);
+  --st-watch-bg:rgba(255,230,0,0.35);
+  --st-bad-bg:rgba(255,59,59,0.39);
+}
+:where(html[data-mode="light"]) .sm-tiles .tile{
+  border:2px solid rgba(216,135,13,0.9);
+  background:rgba(245,184,92,0.35);
+}
 :where(html[data-mode="light"]) .sm-tiles .tile b{
-  color:#c28400;
+  color:#bc8406;
 }
 :where(html[data-mode="light"]) .sm-tiles .tile > span{
   color:#b4800e;
 }
+:where(html[data-mode="light"]) .sm-tiles .tile:hover{
+  border-color:rgba(216,135,13,0.9);
+}
 :where(html[data-mode="light"]) details.join-classcode summary{
-  color:var(--muted, #51515c);
+  color:var(--muted, #42424b);
 }
 :where(html[data-mode="light"]) .pro-on{
   color:#bc8406;
 }
 :where(html[data-mode="light"]) .unofficial-build{
-  color:#1a1a1a;
-}
-:where(html[data-mode="light"]) .sb-card img{
-  background:rgba(0,0,0,0.12);
+  color:#0f0f0f;
 }
 :where(html[data-mode="light"]) .sb-modal{
   background:rgba(10,14,24,0.36);
@@ -502,99 +399,53 @@
   background:var(--panel2,#f7f8fa);
 }
 :where(html[data-mode="light"]) .pay-box{
-  border:1px solid rgba(236,236,236,0.3);
-}
-:where(html[data-mode="light"]) .shop-card{
-  background:rgba(0,0,0,0.072);
-}
-:where(html[data-mode="light"]) .shop-stage{
-  background:rgba(0,0,0,0.108);
+  border:1px solid rgba(154,154,154,0.3);
 }
 :where(html[data-mode="light"]) .shop-stage.shop-dark{
   background:radial-gradient(120% 120% at 50% 0,#fefefe,#eff1f3);
 }
 :where(html[data-mode="light"]) .shop-more{
-  color:#2c303b;
-  background:rgba(0,0,0,0.27);
+  color:#21242c;
 }
 :where(html[data-mode="light"]) .shop-bundle b{
   color:#af7b13;
-}
-:where(html[data-mode="light"]) .shop-dock{
-  box-shadow:0 6px 16px rgba(0,0,0,0.18);
 }
 :where(html[data-mode="light"]) .shop-dock i{
   background:rgba(15,23,42,0.605);
 }
 :where(html[data-mode="light"]) .th-files .store-item i{
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.16);
 }
 :where(html[data-mode="light"]) .shop-layouts span{
   background:rgba(15,23,42,0.9);
 }
 :where(html[data-mode="light"]) .store-new{
   background:var(--panel,#f7f8fa);
-  box-shadow:0 12px 30px rgba(0,0,0,0.18);
 }
 :where(html[data-mode="light"]) .store-new b{
   color:#af7b13;
 }
 
 /* ---- from css/drawdeck-engine.css ---- */
-:where(html[data-mode="light"]) .dd-top,
-:where(html[data-mode="light"]) .dd-bottom{
-  background:rgba(15,23,42,0.039);
-}
-:where(html[data-mode="light"]) .dd-rail{
-  background:rgba(15,23,42,0.028);
-}
-:where(html[data-mode="light"]) .dd-btn:hover:not(:disabled){
-  background:rgba(15,23,42,0.099);
-}
-:where(html[data-mode="light"]) .dd-tabs{
-  background:rgba(0,0,0,0.168);
-}
-:where(html[data-mode="light"]) .dd-tab.on{
-  box-shadow:0 1px 3px rgba(0,0,0,0.135);
-}
 :where(html[data-mode="light"]) .dd-sw{
-  border:2px solid rgba(15,23,42,0.605);
-  box-shadow:0 0 0 1px rgba(0,0,0,0.158);
+  border:2px solid rgba(15,23,42,0.9);
 }
-:where(html[data-mode="light"]) .dd-size:hover{
-  background:rgba(15,23,42,0.099);
-}
-:where(html[data-mode="light"]) .dd-kind{
-  background:rgba(15,23,42,0.055);
-}
-:where(html[data-mode="light"]) .dd-kind:hover{
-  background:rgba(15,23,42,0.121);
+:where(html[data-mode="light"]) .dd-size.on{
+  background:rgba(232,163,61,0.37);
 }
 :where(html[data-mode="light"]) .dd-hint{
-  color:#7d848d;
+  color:#696f78;
 }
 :where(html[data-mode="light"]) .dd-unfocus{
   background:rgba(15,23,42,0.9);
-  box-shadow:0 2px 8px rgba(0,0,0,0.113);
-}
-:where(html[data-mode="light"]) .dd-mi:hover{
-  background:rgba(15,23,42,0.099);
 }
 :where(html[data-mode="light"]) .dd-mi.danger{
   color:#a81a1a;
-}
-:where(html[data-mode="light"]) .dd-modal{
-  background:rgba(0,0,0,0.3);
-}
-:where(html[data-mode="light"]) .dd-stk-b:hover,
-:where(html[data-mode="light"]) .dd-stk-b:focus-visible{
-  background:rgba(15,23,42,0.066);
 }
 :where(html[data-mode="light"]) .dd-wall.dd-wall-chrome .dd-top,
 :where(html[data-mode="light"]) .dd-wall.dd-wall-chrome .dd-rail,
 :where(html[data-mode="light"]) .dd-wall.dd-wall-chrome .dd-bottom{
   background:var(--ink-2, rgba(241,242,245,0.92));
-  box-shadow:0 8px 28px rgba(0,0,0,0.158);
 }
 
 /* ---- css/light.extra.css (hand-written) ---- */
@@ -603,7 +454,7 @@
    2. Light-mode fixes the generator can't guess, each scoped to html[data-mode="light"]. */
 
 /* ---------- 1. where the Light / Dark switch sits (its look is css/mode.css, shared by all four apps) ---------- */
-.theme-label{ margin:0 0 6px; font-size:11.5px; font-weight:700; letter-spacing:.3px; color:var(--lo); }
+.theme-label{ margin:0 0 6px; font-size:var(--tk-fs-12); font-weight:700; letter-spacing:.3px; color:var(--lo); }
 #th-mode{ margin-bottom:14px; }
 #mode-toggle{ --deck-bar-h:32px; --deck-bar-r:10px; }
 

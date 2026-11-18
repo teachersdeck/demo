@@ -1,0 +1,254 @@
+/* =========================================================
+   The staff apps' shared shell (cleanup Phase 2, Nov 2026).
+   ---------------------------------------------------------
+   ONE FILE IN TWO APPS: teachersdeck/css/shell-staff.css is the copy to edit; tools/check_shared.py keeps AdminDeck's
+   identical. Each app's css/style.css loads it right after css/tokens.css, before its own rules.
+
+   What is here: the rules TeachersDeck and AdminDeck both had, word for word, in their own style.css (the page, the top
+   bar, windows, the docks, the app tray, the layout switch). They were moved, not rewritten. A rule moved only if
+   nothing left behind in either app could have been beating it before, so every tie still falls the same way.
+
+   What both shells have word for word is in css/shell.css (all four apps), loaded just before this file; what is
+   left here still differs from the family shell (css/shell-family.css).
+   ========================================================= */
+html,body{ height:100%; margin:0; overflow:hidden; }
+/* ---------- Background theme layer ---------- */
+.bg-layer{
+  position:fixed; inset:0; z-index:0;
+  background: var(--theme-bg, linear-gradient(180deg,#1a2740 0%, #2c3b57 38%, #3f4f68 62%, #263248 100%));
+  background-size:cover; background-position:center;
+  transition: background .4s ease;
+}
+.bg-overlay{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background: rgba(6,9,14,.28);
+  transition: opacity .3s ease;
+}
+.bg-overlay.no-dim{ opacity:0; }
+/* ---------- Top bar ---------- */
+.topbar{
+  position:relative; z-index:5;
+  display:flex; align-items:center; gap:16px;
+  padding:18px 22px 0;
+}
+.brand{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.top-actions{ display:flex; gap:8px; align-items:center; margin-left:auto; flex-shrink:0; }
+/* Top widget dock: sits immediately after the brand name, left-justified,
+   up to 5 widget launchers, icon-only to fit the header's height. */
+.dock-top-widgets{
+  display:flex; align-items:center; gap:6px; overflow-x:auto;
+  min-width:0; flex:0 1 auto;
+}
+.dock-top-widgets:empty{ display:none; }
+.lang-toggle{
+  display:flex; border:1px solid var(--tk-line); border-radius:11px; overflow:hidden;
+  background:rgba(20,26,34,.55); backdrop-filter: blur(6px); height:38px;
+}
+.icon-btn:active{ transform:scale(.94); }
+/* ---------- Wall (widget canvas) ---------- */
+.wall{
+  position:absolute; inset:0; z-index:2;
+  padding:0;
+}
+.widget-head:active{ cursor:grabbing; }
+.widget-drag{
+  flex-shrink:0; width:20px; height:20px; border:none; border-radius:6px;
+  background:transparent; color:var(--tk-text-lo); cursor:grab;
+  display:flex; align-items:center; justify-content:center; touch-action:none;
+}
+.widget-drag:hover{ background:var(--tk-tint-2); color:var(--tk-text-hi); }
+.widget-drag:active{ cursor:grabbing; }
+.widget-title{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.widget-head-actions{ display:flex; gap:2px; flex-shrink:0; }
+.widget.minimized{ height:auto !important; }
+.wbtn:active{ transform:scale(.97); }
+input[type=text]:focus, textarea:focus{ outline:2px solid var(--tk-accent); outline-offset:1px; }
+select:focus{ outline:2px solid var(--tk-accent); outline-offset:1px; }
+.dock{
+  z-index:5; display:flex; gap:4px; padding:8px 10px;
+  background:var(--tk-dock-bg); border:1px solid var(--tk-line);
+  border-radius:16px; backdrop-filter: blur(12px);
+  box-shadow:var(--tk-shadow-panel);
+  max-width:100%; overflow-x:auto;
+}
+.wsvg{ fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+/* ---------- App tray tab + sheet ---------- */
+.app-tray-tab{
+  z-index:6; width:46px; height:20px; padding:0; flex-shrink:0;
+  border-radius:12px 12px 4px 4px; border:1px solid var(--tk-line); border-bottom:none;
+  background:var(--tk-dock-bg); color:var(--tk-text-lo); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  backdrop-filter:blur(12px); box-shadow:var(--tk-shadow-panel);
+  transition:background .15s ease;
+  margin-bottom:-1px; /* overlaps the dock's own top border so the two read as one piece */
+}
+.lock-hint{ color:var(--tk-accent-hi) !important; margin-top:-4px; }
+select:disabled{ cursor:not-allowed; opacity:.7; }
+.drawer-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 16px 12px; border-bottom:1px solid var(--tk-line);
+}
+.drawer-body{ padding:16px; overflow-y:auto; flex:1; }
+.swatch{
+  height:56px; border-radius:10px; border:2px solid transparent; cursor:pointer;
+  background-size:cover; background-position:center;
+}
+.ghost-btn{
+  width:100%; padding:9px; border-radius:9px; margin-top:8px;
+  background:transparent; border:1px solid var(--tk-line); color:var(--tk-text-hi); cursor:pointer;
+}
+.dock-vis-list{
+  display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:6px;
+  max-height:260px; overflow-y:auto; padding-right:2px;
+}
+.edge-dock-items{ display:flex; }
+.edge-dock-left .edge-dock-items, .edge-dock-right .edge-dock-items{
+  flex-direction:column; gap:4px;
+}
+.ss-st[data-st="good"]::before{ content:'●'; }
+ .ss-st[data-st="watch"]::before{ content:'▲'; }
+ .ss-st[data-st="bad"]::before{ content:'■'; }
+/* v0.15.3 — demo mode (js/demo.js): the Cloud demo panel */
+.demobar{ position:fixed; left:10px; bottom:84px; z-index:900; display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+body{
+  font-family:'Inter', system-ui, sans-serif;
+  color:var(--tk-text-hi);
+  background:var(--tk-surface-0);
+  -webkit-font-smoothing:antialiased;
+}
+.lang-toggle button{
+  border:none; background:transparent; color:var(--tk-text-lo); cursor:pointer;
+  font-family:'Quicksand'; font-weight:700; font-size:var(--tk-fs-12); padding:0 12px;
+  letter-spacing:.3px;
+}
+.lang-toggle button.active{ background:var(--tk-accent); color:var(--tk-text-on-accent); }
+.lang-toggle button:not(.active):hover{ background:var(--tk-tint-2); color:var(--tk-text-hi); }
+.icon-btn:hover{ background:rgba(30,39,50,.85); }
+.widget.dragging{ opacity:.92; box-shadow:0 20px 40px var(--tk-shadow-4); }
+.widget-min:hover{ background:var(--tk-tint-3); color:var(--tk-text-hi); }
+.widget-close:hover{ background:rgba(var(--tk-danger-rgb), .18); color:var(--tk-danger); }
+.widget.minimized .widget-body,
+.widget.minimized .widget-resize{ display:none; }
+.widget-resize svg{ display:none; }
+.wbtn:hover{ background:#37424f; }
+.wbtn.primary{ background:var(--tk-accent); color:var(--tk-text-on-accent); border-color:transparent; }
+.wbtn.primary:hover{ background:var(--tk-accent-hi); }
+.wbtn:disabled{ opacity:.4; cursor:not-allowed; }
+select{
+  background:var(--tk-surface-2); border:1px solid var(--tk-line); border-radius:8px;
+  color:var(--tk-text-hi); padding:6px 8px; font-family:'Inter'; font-size:var(--tk-fs-13);
+}
+.layout-mode-opt{
+  display:flex; flex-direction:column; align-items:flex-start; gap:3px;
+  width:100%; text-align:left; padding:10px 12px; border-radius:10px;
+  border:1px solid var(--tk-line); background:transparent; color:var(--tk-text-hi); cursor:pointer;
+  transition:border-color .15s ease, background .15s ease;
+}
+.drawer[hidden]{ display:none; }
+.drawer-head h2{ font-family:'Quicksand'; font-size:var(--tk-fs-16); margin:0; }
+.placement-row select{
+  flex-shrink:0; background:var(--tk-surface-2); color:var(--tk-text-hi); border:1px solid var(--tk-line);
+  border-radius:7px; font-size:var(--tk-fs-12); padding:4px 6px; max-width:120px;
+}
+/* the colour key above a stoplight-tiled grid — same pill pattern as AdminDeck's School Stats legend */
+.ss-st[data-st]{ display:inline-block; padding:1px 9px; border-radius:999px; border:1.5px solid currentColor; font-weight:700; line-height:1.5; }
+.ss-st[data-st]::before{ font-size:.7em; margin-right:5px; vertical-align:.1em; }
+.ss-stlegend details{ flex:1 1 260px; color:var(--tk-text-lo); font-weight:500; font-size:var(--tk-fs-13); margin-left:6px; }
+.ss-stlegend details p{ margin:5px 0 0; }
+/* ================= v0.14.1 ================= */
+/* The header bar sits above the widget layer; let clicks fall through its empty space so a widget dragged to the very top
+   can still be grabbed by its title bar (the brand, XP pill, launchers and pills stay clickable). */
+.topbar{ pointer-events:none; }
+.brand-name{
+  font-family:'Quicksand', sans-serif; font-weight:700; font-size:var(--tk-fs-16);
+  letter-spacing:.2px;
+}
+.widget-head{
+  display:flex; align-items:center; gap:6px;
+  /* the whole title bar drags, so it needs the pointer to itself */
+  cursor:grab; touch-action:none;
+  padding:9px 10px;
+  border-bottom:1px solid var(--tk-line);
+  font-family:'Quicksand', sans-serif; font-weight:600; font-size:var(--tk-fs-12);
+  letter-spacing:.6px; color:var(--tk-text-lo);
+  background:var(--tk-tint-1);
+}
+.app-tray-title{
+  font-family:'Quicksand'; font-weight:700; font-size:var(--tk-fs-13); letter-spacing:.4px;
+  color:var(--tk-text-lo); text-align:center; margin:0 0 14px;
+}
+.app-tray-item{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:10px 4px 8px; cursor:pointer; border:none; background:var(--tk-tint-1);
+  color:var(--tk-text-lo); font-family:var(--tk-font-ui); font-weight:600; font-size:var(--tk-fs-11);
+  border-radius:14px; transition:background .15s ease, color .15s ease, transform .12s ease;
+}
+.layout-mode-name{ font-family:'Quicksand'; font-weight:700; font-size:var(--tk-fs-13); }
+.switch-row{ display:flex; align-items:center; justify-content:space-between; font-size:var(--tk-fs-13); color:var(--tk-text-lo); margin-top:4px; }
+.primary-btn{
+  margin-top:10px; width:100%; padding:10px; border-radius:9px; border:none;
+  background:var(--tk-accent); color:var(--tk-text-on-accent); font-weight:700; font-family:'Inter'; cursor:pointer;
+}
+.dock-vis-hint{ font-size:var(--tk-fs-12); color:var(--tk-text-lo); margin:0 0 10px; }
+.dock-vis-row span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.app-version{
+  margin:18px 0 0; font-size:var(--tk-fs-11); color:var(--tk-text-lo); text-align:center; letter-spacing:.3px;
+}
+/* Toast */
+.toast{
+  position:fixed; left:50%; bottom:90px; transform:translateX(-50%);
+  background:var(--tk-surface-2); border:1px solid var(--tk-line); padding:9px 16px;
+  border-radius:10px; font-size:var(--tk-fs-13); z-index:30; box-shadow:var(--tk-shadow-panel);
+  /* longer messages (e.g. the Lesson Planner's) wrap inside a sensible column
+     instead of squeezing into the right half of the screen */
+  width:max-content; max-width:min(440px, 92vw); text-align:center; line-height:1.45;
+}
+.ss-stlegend{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 12px; margin:2px 0 10px; font-size:var(--tk-fs-13); font-weight:600; }
+.widget{
+  position:absolute;
+  min-width:220px;
+  background:rgba(22,28,37,.86);
+  border:1px solid var(--tk-line);
+  border-radius:var(--tk-radius-panel);
+  box-shadow:var(--tk-shadow-panel);
+  backdrop-filter: blur(10px);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  user-select:none;
+}
+.wbtn{
+  border:1px solid var(--tk-line); background:var(--tk-surface-3); color:var(--tk-text-hi);
+  padding:7px 14px; border-radius:var(--tk-radius-chip); font-size:var(--tk-fs-13); cursor:pointer;
+  font-family:'Inter'; font-weight:600;
+}
+.dock-item{
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  width:var(--tk-dock-btn); padding:8px 4px 6px; cursor:pointer;
+  border:none; background:var(--tk-tint-1); color:var(--tk-text-lo);
+  font-family:var(--tk-font-ui); font-weight:600; font-size:var(--tk-fs-11);
+  transition:background .15s ease, color .15s ease, transform .12s ease;
+  position:relative;
+  border-radius:12px;
+  margin:0 1px;
+}
+.app-tray-grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(86px,1fr)); gap:8px;
+}
+/* ---------- Drawers ---------- */
+.drawer{
+  position:fixed; top:0; right:0; height:100%; width:340px; z-index:20;
+  background:var(--tk-surface-1); border-left:1px solid var(--tk-line);
+  box-shadow:-16px 0 40px var(--tk-shadow-4);
+  display:flex; flex-direction:column;
+  animation: slidein .18s ease;
+}
+.ss-st[data-st="good"]{ color:var(--st-good); background:var(--st-good-bg); }
+.ss-st[data-st="watch"]{ color:var(--st-watch); background:var(--st-watch-bg); }
+.ss-st[data-st="bad"]{ color:var(--st-bad); background:var(--st-bad-bg); }
+
+/* ---- The combined window look (owner's decision, 17 Nov 2026) ----
+   The title starts at the left like the family apps' windows, in the brighter text colour; the drag handle (a cue only:
+   the whole title bar drags) moves next to the window buttons instead of holding the title in from the left. */
+.widget-title{ order:-1; color:var(--tk-text-hi); }
+.widget-drag{ order:0; }
+.widget-head-actions{ order:1; }
