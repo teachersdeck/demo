@@ -650,3 +650,7 @@ body.fs-open .widget.widget-full{top:0;border-top:0}
    Inter for reading (the body rule above) and Quicksand for titles, buttons and big numbers, as in TeachersDeck,
    instead of whatever font the device has. A premium theme's own font still wins (css/premium.css). */
 .brand,.widget-title,.btn,.chip,.app-tray-title,.cal-month,.clock-digital,.tm-time,.big,h3,h4,h5{font-family:var(--tk-font-ui)}
+
+/* 18 Nov 2026 (owner): the Theme pop picks backgrounds, themes and docks with the card deck (js/facepicker.js) */
+#theme-pop .swatch-grid.fp-row, #theme-pop .dock-pick.fp-row{ display:flex; justify-content:flex-start; max-width:none; margin-bottom:6px; }
+#theme-pop .fp-row .fp-trigger{ margin:0; }
