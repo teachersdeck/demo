@@ -1,42 +1,42 @@
 {
   "development": {
     "teachersdeck": {
-      "version": "0.48.0",
-      "label": "0.48.0 beta"
+      "version": "0.49.0",
+      "label": "0.49.0 beta"
     },
     "studentdeck": {
-      "version": "0.31.0",
-      "label": "0.31.0"
-    },
-    "parentdeck": {
       "version": "0.32.0",
       "label": "0.32.0 beta"
     },
+    "parentdeck": {
+      "version": "0.33.0",
+      "label": "0.33.0 beta"
+    },
     "admindeck": {
-      "version": "0.21.0",
-      "label": "0.21.0 beta"
+      "version": "0.22.0",
+      "label": "0.22.0 beta"
     }
   },
   "apps": {
     "teachersdeck": {
-      "version": "0.47.0",
-      "label": "0.47.0 beta",
-      "date": "2026-11-17"
+      "version": "0.49.0",
+      "label": "0.49.0 beta",
+      "date": "2026-11-18"
     },
     "studentdeck": {
-      "version": "0.30.0",
-      "label": "0.30.0",
-      "date": "2026-11-17"
+      "version": "0.32.0",
+      "label": "0.32.0 beta",
+      "date": "2026-11-18"
     },
     "parentdeck": {
-      "version": "0.31.0",
-      "label": "0.31.0 beta",
-      "date": "2026-11-17"
+      "version": "0.33.0",
+      "label": "0.33.0 beta",
+      "date": "2026-11-18"
     },
     "admindeck": {
-      "version": "0.20.0",
-      "label": "0.20.0 beta",
-      "date": "2026-11-17"
+      "version": "0.22.0",
+      "label": "0.22.0 beta",
+      "date": "2026-11-18"
     }
   }
 }

@@ -370,11 +370,7 @@ Object.assign(STRINGS, T1_STRINGS);   // js/tier1.js (loaded first) — titles, 
 Object.assign(STRINGS, DrawDeck.strings);   // js/drawdeck-engine.js (loaded first) — toolbar/menu strings
 Object.assign(STRINGS, KD_STRINGS);   // js/keepdeck.js (loaded first) — KeepDeck's own strings, v0.23.0
 Object.assign(STRINGS, SHOP_STRINGS);   // js/shop.js (loaded first) — the Shop, v0.28.0
-function t(key, vars) {
-  let s = (STRINGS[key] && (STRINGS[key][ui.lang] || STRINGS[key].en)) || key;
-  if (vars) for (const k in vars) s = s.replace('{' + k + '}', vars[k]);
-  return s;
-}
+function t(key, vars) { return DeckI18n.t(STRINGS, ui.lang, key, vars); }   // js/i18n.js, the same in every suite app
 
 function loadUI() {
   let s = {}; try { s = JSON.parse(localStorage.getItem(UIKEY)) || {}; } catch (e) {}

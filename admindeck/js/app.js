@@ -457,19 +457,12 @@ if(typeof FL_STRINGS !== 'undefined') Object.assign(STRINGS, FL_STRINGS);
 if(typeof SHELL_I18N !== 'undefined'){
   Object.keys(SHELL_I18N).forEach(k=>{ STRINGS[k] = Object.assign({}, SHELL_I18N[k], STRINGS[k] || {}); });
 }
-function t(key, vars){
-  const entry = STRINGS[key];
-  let str = (entry && (entry[state.lang] || entry.en)) || key;
-  if(vars){ Object.keys(vars).forEach(k=>{ str = str.replace(`{${k}}`, vars[k]); }); }
-  return str;
-}
+function t(key, vars){ return DeckI18n.t(STRINGS, state.lang, key, vars); }   // js/i18n.js, the same in every suite app
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function localizeNode(root){
-  root = root || document;
-  root.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.dataset.i18n); });
-  root.querySelectorAll('[data-i18n-widget-label]').forEach(el=>{ el.textContent = widgetLabel(el.dataset.i18nWidgetLabel); });
-  root.querySelectorAll('[data-i18n-aria]').forEach(el=>{ el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
-  root.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.title = t(el.dataset.i18nTitle); });
+function localizeNode(root){   // js/i18n.js does the shared attributes; widget labels are AdminDeck's own
+  DeckI18n.localize(root, t, scope => {
+    scope.querySelectorAll('[data-i18n-widget-label]').forEach(el=>{ el.textContent = widgetLabel(el.dataset.i18nWidgetLabel); });
+  });
 }
 
 /* ---------------- Icons ---------------- */
