@@ -1997,7 +1997,7 @@ document.addEventListener('keydown', e => {                      // Esc leaves a
    A student is Pro when a parent linked to them has ParentDeck Pro (backend v2.1.0 writes students/{id}.pro).
    PRO_GATE_ENABLED stays false until launch: nothing is locked. ?progate=1 previews the gate. A locked widget
    tells the child to ask a grown-up — StudentDeck never shows children a price or a purchase link. */
-const PRO_GATE_ENABLED = false;
+const PRO_GATE_ENABLED = true;   // ON since 24 Nov 2026 (owner: "Switch it on now")
 const PRO_WIDGETS = ['games', 'translate', 'dict', 'cards', 'idiom', 'scrap'];
 ProGate.configure({
   enabled: PRO_GATE_ENABLED, ids: PRO_WIDGETS, pro: (() => { try { return localStorage.getItem('sd_pro') === '1'; } catch (e) { return false; } })(),

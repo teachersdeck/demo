@@ -518,7 +518,7 @@ function saveState(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); 
 /* ---------- v0.9.3: Pro, schools, notes to teachers (backend v2.1.0) — PRO-TIERS.md ----------
    AdminDeck Pro is a licence for one school (ADPRO-… key, Settings → School & licence). The platform owner always has
    Pro. PRO_GATE_ENABLED stays false until launch: nothing is locked. ?progate=1 previews the gate. */
-const PRO_GATE_ENABLED = false;
+const PRO_GATE_ENABLED = true;   // ON since 24 Nov 2026 (owner: "Switch it on now")
 const PRO_WIDGETS = ['points', 'assignments', 'pulse', 'funnel', 'families', 'engage', 'schooldeck', 'theme'];
 let WHO = null;
 // v0.9.4 anti-theft: exports carry the school's watermark (js/watermark.js); AdminDeck Key Manager traces it.

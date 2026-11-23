@@ -138,6 +138,7 @@ const STRINGS = {
   pay_done:           { en:'Payment received: ParentDeck Pro is on for you and your children.', vi:'Đã nhận thanh toán: ParentDeck Pro đã bật cho bạn và các con.' },
   pay_renewed:        { en:'Payment received: your ParentDeck Pro is renewed.', vi:'Đã nhận thanh toán: ParentDeck Pro đã được gia hạn.' },
   pay_unofficial:     { en:'This copy of ParentDeck is not an official build, so it can\'t buy Pro.', vi:'Bản ParentDeck này không phải bản chính thức nên không thể mua Pro.' },
+  pro_redeem_sign_in: { en:'Sign in to switch on the ParentDeck Pro you bought.', vi:'Đăng nhập để bật ParentDeck Pro bạn đã mua.' },
   pro_activated:      { en:'ParentDeck Pro is active. {n} linked child(ren) now have StudentDeck Pro.', vi:'Đã kích hoạt ParentDeck Pro. {n} học sinh đã liên kết giờ có StudentDeck Pro.' },
   pro_signin_first:   { en:'Sign in first, then activate ParentDeck Pro from your account.', vi:'Hãy đăng nhập trước, rồi kích hoạt ParentDeck Pro trong tài khoản.' },
   acct_link_notfound: { en:'That code wasn\u2019t found. Check it with your child (StudentDeck \u2192 Class) or the teacher.', vi:'Không tìm thấy mã này. Hãy kiểm tra lại với con (StudentDeck \u2192 Lớp) hoặc giáo viên.' },
@@ -640,7 +641,7 @@ $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM
    ParentDeck Pro is a key bound to this parent's account; while it is active, every linked child is Pro in
    StudentDeck too (backend v2.1.0). PRO_GATE_ENABLED stays false until launch: nothing is locked. ?progate=1
    previews the gate. Never gated: anything a teacher sends (notes, reports, homework, calendar, attendance). */
-const PRO_GATE_ENABLED = false;
+const PRO_GATE_ENABLED = true;   // ON since 24 Nov 2026 (owner: "Switch it on now")
 const PRO_WIDGETS = ['badges', 'hwc', 'wish', 'starters', 'digest', 'pulse'];
 // One price per family, every linked child included (owner, 7 Nov 2026). Shown only: the backend's payments.js prices
 // every order (= the quote engine's `family`). Paid by VietQR with a note token (v0.27.0).
@@ -762,6 +763,28 @@ async function checkPdOrder() {
 }
 if (PD.onProChanged) PD.onProChanged(on => { if (on && readPdOrder()) checkPdOrder(); });
 if (PD.onAuthChanged) PD.onAuthChanged(s => { if (s) setTimeout(checkPdOrder, 3000); });
+
+// v0.34.0: a key bought on the website Store arrives as #redeem=PDPRO-…; it waits in this tab until the parent is signed
+// in, then switches Pro on for the account (and every linked child). It is taken off the address at once.
+(function redeemFromLink() {
+  const m = /(?:^|[#&])redeem=(PDPRO-[A-Za-z0-9-]{4,30})/i.exec(location.hash || '');
+  if (m) { try { sessionStorage.setItem('pd_redeem', m[1].toUpperCase()); history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* private mode: the link still works once */ } }
+  const pending = () => { try { return sessionStorage.getItem('pd_redeem'); } catch (e) { return m ? m[1].toUpperCase() : null; } };
+  const done = () => { try { sessionStorage.removeItem('pd_redeem'); } catch (e) { /* nothing kept */ } };
+  let busy = false, signedIn = false;
+  const go = async () => {
+    const key = pending();
+    if (!key || busy || !signedIn) return;
+    if (!isOfficialBuild()) { done(); return; }
+    busy = true;
+    try { const r = await PD.activatePro(key); done(); toast(t('pro_activated', { n: r.children || 0 })); refreshAll(); }
+    catch (e) { done(); toast(e.message || String(e)); }
+    finally { busy = false; }
+  };
+  if (!pending()) return;
+  if (PD.onAuthChanged) PD.onAuthChanged(s => { signedIn = !!s; go(); });
+  setTimeout(() => { if (pending() && !signedIn) { toast(t('pro_redeem_sign_in')); try { openAccountModal(); } catch (e) { /* the modal opens from the account button */ } } }, 3500);
+})();
 setInterval(() => { if (accountModalOpen && readPdOrder()) checkPdOrder(); }, 20000);
 function openAccountModal() {
   accountModalOpen = true;
