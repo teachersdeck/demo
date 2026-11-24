@@ -142,7 +142,7 @@
     <p class="kicker">Live demos</p>
     <h1>Try every app with example data</h1>
     <p class="lede">Each demo opens in its own window with a pretend class, student or school already set up. Nothing is saved to a server, and you can close the window at any time. The demos follow the latest development, so they can be ahead of the released versions.</p>
-    <div class="jump" id="jump"><a class="btn" href="#preschool">Preschool</a><a class="btn" href="#school">School</a><a class="btn" href="#uni">University</a><a class="btn" href="#lms">Platforms</a></div>
+    <div class="jump" id="jump"><a class="btn" href="#preschool">Preschool</a><a class="btn" href="#school">School</a><a class="btn" href="#office">BackOffice-Deck</a><a class="btn" href="#uni">University</a><a class="btn" href="#lms">Platforms</a></div>
     <ul class="legend" aria-label="What the lights mean">
       <li><span class="lamp" data-s="ok"></span>Online</li>
       <li><span class="lamp" data-s="slow"></span>Slow to answer</li>
@@ -181,6 +181,14 @@
     </ul>
   </section>
 
+  <section class="box" id="office">
+    <div class="head"><h2>BackOffice-Deck</h2><p>CRM-Deck, for running a school or language centre: enquiries, families, fee quotes, the calendar and MessageDeck staff chat.</p></div>
+    <ul class="list">
+      <li class="app" data-web="https://crm-deck-demo.onrender.com/"><div class="id"><span class="ic" aria-hidden="true">CR<span class="lamp" data-s="checking"></span></span><div><h3>CRM-Deck<span class="ver">Preview</span></h3><p class="who"><b>For the school office</b> · Enquiries, families, fee quotes, the school calendar and MessageDeck staff chat. Sign in with Google.</p><p class="state" role="status">Checking…</p></div></div>
+        <div class="go"><a class="btn primary play" href="https://crm-deck-demo.onrender.com/"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play demo</a><a class="tab" href="https://crm-deck-demo.onrender.com/" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>
+    </ul>
+  </section>
+
   <section class="box" id="uni">
     <div class="head"><h2>University</h2><p>UniDeck, the university edition, in early preview: for colleges, graduate programs, language centers and test-prep schools.</p></div>
     <ul class="list">
@@ -209,7 +217,7 @@
   </div>
 </main>
 
-<footer><div class="bar"><span>Updated 23 Nov 2026, 21:20 UTC (build 1bd5bbb)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
+<footer><div class="bar"><span>Updated 24 Nov 2026, 08:17 UTC (build 5b71a1e)</span><span><a href="https://myteachersdeck.com/apps/">Get the apps</a> · <a href="https://myteachersdeck.com/">myteachersdeck.com</a></span></div></footer>
 
 <script>
 (function () {
@@ -262,7 +270,8 @@
     school: 'For schools and language centers: one app for each person in the class.',
     preschool: 'KinderDeck, the preschool edition, for kindergartens: one app for the office, one for each class teacher and one for families.',
     uni: 'UniDeck, the university edition, in early preview: for colleges, graduate programs, language centers and test-prep schools.',
-    lms: 'TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.'
+    lms: 'TeachersDeck built to run inside the platforms schools already use. These are separate builds, so their versions can differ from the suite above.',
+    office: 'CRM-Deck, for running a school or language centre: enquiries, families, fee quotes, the calendar and MessageDeck staff chat.'
   };
   // Demos the site's list doesn't link yet: the preschool apps, which teachersdeck/kinderdeck-suite publishes to kinder/.
   // (Get the apps keeps "Book a demo" for them; a "demo" in the site's list wins over these.)
@@ -279,8 +288,15 @@
   function idBlock(a, inner, lamp) {
     return '<div class="id"><span class="ic" aria-hidden="true">' + esc(initials(a.name)) + (lamp ? '<span class="lamp" data-s="checking"></span>' : '') + '</span><div>' + inner + '</div></div>';
   }
+  // An app hosted on its own address (not on GitHub Pages, e.g. CRM-Deck on Render) can't be read across sites: its row
+  // uses data-web, where any answer means online.
+  var OWN_HOST = /^https:\/\/teachersdeck\.github\.io\//;
   function demoRow(a) {
     var href = a.demo, folder = href.split(/[?#]/)[0];
+    if (/^https?:\/\//.test(href) && !OWN_HOST.test(href)) {
+      return '<li class="app" data-web="' + esc(folder) + '">' + idBlock(a, '<h3>' + esc(a.name) + (STATUS[a.status] ? '<span class="ver">' + esc(STATUS[a.status]) + '</span>' : '<span class="ver"></span>') + '</h3>' + who(a) + '<p class="state" role="status">Checking…</p>', true) +
+        '<div class="go"><a class="btn primary play" href="' + esc(href) + '">' + PLAY + 'Play demo</a><a class="tab" href="' + esc(href) + '" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>';
+    }
     // the LMS builds ship build-info.json instead of a manifest.json
     return '<li class="app" data-path="' + esc(folder) + '"' + (a.group === 'lms' ? ' data-check="build-info.json"' : '') + '>' + idBlock(a, '<h3>' + esc(a.name) + '<span class="ver"></span></h3>' + who(a) + '<p class="state" role="status">Checking…</p>', true) +
       '<div class="go"><a class="btn primary play" href="' + esc(href) + '">' + PLAY + 'Play demo</a><a class="tab" href="' + esc(href) + '" target="_blank" rel="noopener">Open in a tab ↗</a></div></li>';
